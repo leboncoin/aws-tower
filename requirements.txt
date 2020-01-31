@@ -1,0 +1,3 @@
+boto3>=1.9.246
+#networkx==2.3
+#plotly==4.1.1
