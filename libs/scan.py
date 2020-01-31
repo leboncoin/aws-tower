@@ -14,7 +14,7 @@ import logging
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.2.0'
+VERSION = '1.3.0'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -62,9 +62,13 @@ def parse_report(report):
     new_report['ELBV2'] = list()
     for vpc in report:
         for subnet in report[vpc]['Subnets']:
+            mini_name = report[vpc]['Subnets'][subnet]['Name'].split('-{}'.format(
+                report[vpc]['Subnets'][subnet]['AvailabilityZone']))[0]
             for ec2 in report[vpc]['Subnets'][subnet]['EC2']:
+                report[vpc]['Subnets'][subnet]['EC2'][ec2].update({'Subnet Name': mini_name})
                 new_report['EC2'].append(report[vpc]['Subnets'][subnet]['EC2'][ec2])
             for elbv2 in report[vpc]['Subnets'][subnet]['ELBV2']:
+                report[vpc]['Subnets'][subnet]['ELBV2'][elbv2].update({'Subnet Name': mini_name})
                 new_report['ELBV2'].append(report[vpc]['Subnets'][subnet]['ELBV2'][elbv2])
 
     return new_report
@@ -142,7 +146,10 @@ def ec2_scan(boto_session, public_only=False):
                     report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']]['PublicIpAddress'] = ec2_['PublicIpAddress']
                 if 'SecurityGroups' in ec2_:
                     for sg in ec2_['SecurityGroups']:
-                        report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']][sg['GroupId']] = draw_sg(sg['GroupId'], sg_raw)
+                        draw = draw_sg(sg['GroupId'], sg_raw)
+                        if not draw:
+                            continue
+                        report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']][sg['GroupId']] = draw
                 # if 'ImageId' in ec2_:
                 #     report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']]['ImageId'] = ec2_['ImageId']
 

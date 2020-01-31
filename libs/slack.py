@@ -9,6 +9,10 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 
 # Standard library imports
 import json
+import logging
+
+# Debug
+# from pdb import set_trace as st
 
 BLACKLIST_KEY = ['Scheme']
 
@@ -19,7 +23,9 @@ COLOR_MAPPING = {
     'high': '#b32b2b',
 }
 
-def slack_alert(session, slack, asset, aws, patrowl, criticity='medium'):
+LOGGER = logging.getLogger('aws-tower')
+
+def slack_alert(session, slack, asset, aws, patrowl, criticity='medium', simulate=False):
     """
     Post report on Slack
     """
@@ -41,6 +47,15 @@ def slack_alert(session, slack, asset, aws, patrowl, criticity='medium'):
     attachments['fields'].append({'title': 'Patrowl asset link', 'value': '{}/assets/details/{}'.format(patrowl['public_endpoint'], asset['id'])})
 
     payload['attachments'] = [attachments]
+
+    if simulate:
+        LOGGER.warning('#######################')
+        LOGGER.warning(attachments['pretext'])
+        for item in attachments['fields']:
+            LOGGER.warning('# ' + item['title'])
+            LOGGER.warning(item['value'])
+        LOGGER.warning('#######################')
+        return True
 
     response = session.post(slack['webhook'], data=json.dumps(payload))
 
