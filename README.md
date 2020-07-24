@@ -20,3 +20,8 @@ optional arguments:
   --all                 Display all assets
 ```
 
+# License
+Licensed under the [Apache License](https://github.com/leboncoin/aws-tower/blob/master/LICENSE), Version 2.0 (the "License").
+
+# Copyright
+Copyright 2020 Leboncoin

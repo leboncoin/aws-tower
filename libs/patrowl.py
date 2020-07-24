@@ -2,7 +2,7 @@
 """
 Patrowl library
 
-Copyright 2020 Nicolas BEGUIER
+Copyright 2020 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
