@@ -12,6 +12,7 @@ from argparse import ArgumentParser
 
 # Third party library imports
 import boto3
+import botocore
 
 from libs.scan import ec2_scan, parse_report, print_subnet
 from libs.slack import slack_alert
@@ -19,13 +20,17 @@ from libs.slack import slack_alert
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.3.0'
+VERSION = '1.3.1'
 
 def main(args):
     """
     Main function
     """
-    session = boto3.Session(profile_name=args.account)
+    try:
+        session = boto3.Session(profile_name=args.account)
+    except botocore.exceptions.ProfileNotFound:
+        print('The profile "{}" can\'t be found...'.format(args.account))
+        return False
     report = ec2_scan(
         session,
         public_only=not args.all,
