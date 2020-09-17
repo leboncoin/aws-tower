@@ -11,10 +11,13 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 import json
 import logging
 
+# Third party library imports
+from botocore.config import Config
+
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.4.0'
+VERSION = '1.4.1'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -120,7 +123,12 @@ def ec2_scan(
         enable_ec2 = True
         enable_elbv2 = True
         enable_rds = True
-    ec2_client = boto_session.client('ec2')
+    config = Config(
+        retries = dict(
+            max_attempts = 10
+        )
+    )
+    ec2_client = boto_session.client('ec2', config=config)
     vpcs_raw = ec2_client.describe_vpcs()['Vpcs']
     subnets_raw = ec2_client.describe_subnets()['Subnets']
     nacls_raw = ec2_client.describe_network_acls()['NetworkAcls']
