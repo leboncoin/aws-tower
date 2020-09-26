@@ -1,1 +1,4 @@
-boto3>=1.14.63
+boto3==1.15.6
+Patrowl4py==1.1.0
+python-slugify==4.0.1
+requests==2.22.0
