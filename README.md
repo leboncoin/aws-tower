@@ -20,6 +20,24 @@ optional arguments:
   --all                 Display all assets
 ```
 
+## Usage (lambda)
+
+```
+$ pip install -r requirements.txt --target ./package
+
+$ cp config.sample config
+$ export PATROWL_APITOKEN=xxxxxxxxxxxxxxx
+$ export PATROWL_ASSETGROUP=1
+$ export PATROWL_PRIVATE_ENDPOINT=http://localhost/
+$ export PATROWL_PUBLIC_ENDPOINT=http://localhost/
+$ export SLACK_CHANNEL='#test'
+$ export SLACK_ICON_EMOJI=':test:'
+$ export SLACK_USERNAME=test
+$ export SLACK_WEBHOOK='http://localhost/'
+
+$ python -c 'import aws_tower_lambda; aws_tower_lambda.main()' 
+```
+
 # License
 Licensed under the [Apache License](https://github.com/leboncoin/aws-tower/blob/master/LICENSE), Version 2.0 (the "License").
 
