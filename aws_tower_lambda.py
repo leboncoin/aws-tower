@@ -28,7 +28,7 @@ from libs.slack import slack_alert
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.2.0'
+VERSION = '1.2.1'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -57,7 +57,11 @@ def main():
             aws_account_id = line.split(' = ')[1].split('\n')[0]
             LOGGER.warning(aws_account_name)
             session = get_session(aws_account_id)
-            report = parse_report(ec2_scan(session, public_only=True))
+            try:
+                report = parse_report(ec2_scan(session, public_only=True))
+            except Exception as err_msg:
+                LOGGER.warning(err_msg)
+                continue
             assets = get_assets(PATROWL_API, PATROWL['assetgroup'])
             for ec2 in report['EC2']:
                 new_asset = True
