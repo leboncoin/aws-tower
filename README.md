@@ -2,13 +2,13 @@
 
 ## Prerequisites
 
-```
-pip3 install -r requirements.txt
+```bash
+pip install -r requirements.txt
 ```
 
 ## Usage
 
-```
+```bash
 $ ./aws_tower_cli.py --help
 usage: aws_tower_cli.py [-h] [--version] [-a ACCOUNT] [--all]
 
@@ -22,7 +22,7 @@ optional arguments:
 
 ## Usage (lambda)
 
-```
+```bash
 $ pip install -r requirements.txt --target ./package
 
 $ cp config.sample config
@@ -33,7 +33,7 @@ $ export PATROWL_PUBLIC_ENDPOINT=http://localhost/
 $ export SLACK_CHANNEL='#test'
 $ export SLACK_ICON_EMOJI=':test:'
 $ export SLACK_USERNAME=test
-$ export SLACK_WEBHOOK='http://localhost/'
+$ export SLACK_WEBHOOK=http://localhost/
 
 $ python -c 'import aws_tower_lambda; aws_tower_lambda.main()' 
 ```
