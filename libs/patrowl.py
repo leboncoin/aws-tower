@@ -7,19 +7,23 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
-VERSION = '1.1.0'
+VERSION = '1.1.1'
 
 def add_asset(patrowl_api, title, description):
     """
     Create an asset
     """
-    return patrowl_api.add_asset(
-        title,
-        description,
-        'domain',
-        description,
-        'medium',
-        tags=['All'])
+    try:
+        return patrowl_api.add_asset(
+            title,
+            description,
+            'domain',
+            description,
+            'medium',
+            tags=['All'])
+    except:
+        pass
+    return None
 
 
 def get_assets(patrowl_api, assetgroup_id):

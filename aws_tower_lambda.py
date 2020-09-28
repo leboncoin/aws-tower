@@ -30,20 +30,27 @@ from libs.session import get_session
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.0.0'
+VERSION = '2.0.3'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
 PATROWL['assetgroup'] = int(os.environ['PATROWL_ASSETGROUP'])
 PATROWL['private_endpoint'] = os.environ['PATROWL_PRIVATE_ENDPOINT']
 PATROWL['public_endpoint'] = os.environ['PATROWL_PUBLIC_ENDPOINT']
-SLACK = dict()
-SLACK['channel'] = os.environ['SLACK_CHANNEL']
-SLACK['icon_emoji'] = os.environ['SLACK_ICON_EMOJI']
-SLACK['username'] = os.environ['SLACK_USERNAME']
-SLACK['webhook'] = os.environ['SLACK_WEBHOOK']
 
 LOGGER = logging.getLogger('aws-tower')
+
+META = {
+    'EC2': {
+        'Name': 'Name'
+    },
+    'ELBV2': {
+        'Name': 'DNSName'
+    },
+    'RDS': {
+        'Name': 'Name'
+    }
+}
 
 PATROWL_API = PatrowlManagerApi(
     url=PATROWL['private_endpoint'],
@@ -73,7 +80,7 @@ def main():
             for aws_asset in report[report_type]:
                 new_asset = True
                 asset_id = None
-                asset_patrowl_name = f'[{aws_account_name}] {aws_asset["Name"]}'
+                asset_patrowl_name = f'[{aws_account_name}] {aws_asset[META[report_type]["Name"]]}'
                 for asset in assets:
                     if asset['name'] == asset_patrowl_name:
                         new_asset = False
@@ -83,8 +90,11 @@ def main():
                     LOGGER.warning('Add a new asset: %s', asset_patrowl_name)
                     created_asset = add_asset(
                         PATROWL_API,
-                        aws_asset['Name'],
+                        aws_asset[META[report_type]['Name']],
                         asset_patrowl_name)
+                    if not created_asset:
+                        LOGGER.critical('Error during asset %s creation...', asset_patrowl_name)
+                        continue
                     asset_id = created_asset['id']
                     add_in_assetgroup(
                         PATROWL_API,
