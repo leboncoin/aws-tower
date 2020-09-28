@@ -2,13 +2,13 @@
 
 ## Prerequisites
 
-```
-pip3 install -r requirements.txt
+```bash
+pip install -r requirements.txt
 ```
 
 ## Usage
 
-```
+```bash
 $ ./aws_tower_cli.py --help
 usage: aws_tower_cli.py [-h] [--version] [-a ACCOUNT] [--all] [-n] [--ec2] [--elbv2] [--rds]
 
@@ -26,7 +26,7 @@ optional arguments:
 
 ## Usage (lambda)
 
-```
+```bash
 $ pip install -r requirements.txt --target ./package
 
 $ cp config.sample config
