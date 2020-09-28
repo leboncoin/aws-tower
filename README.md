@@ -10,7 +10,7 @@ pip3 install -r requirements.txt
 
 ```
 $ ./aws_tower_cli.py --help
-usage: aws_tower_cli.py [-h] [--version] [-a ACCOUNT] [--all]
+usage: aws_tower_cli.py [-h] [--version] [-a ACCOUNT] [--all] [-n] [--ec2] [--elbv2] [--rds]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -18,6 +18,10 @@ optional arguments:
   -a ACCOUNT, --account ACCOUNT
                         Account Name
   --all                 Display all assets
+  -n, --names-only      Display only names
+  --ec2                 Display EC2
+  --elbv2               Display ELBV2
+  --rds                 Display RDS
 ```
 
 ## Usage (lambda)
@@ -30,10 +34,6 @@ $ export PATROWL_APITOKEN=xxxxxxxxxxxxxxx
 $ export PATROWL_ASSETGROUP=1
 $ export PATROWL_PRIVATE_ENDPOINT=http://localhost/
 $ export PATROWL_PUBLIC_ENDPOINT=http://localhost/
-$ export SLACK_CHANNEL='#test'
-$ export SLACK_ICON_EMOJI=':test:'
-$ export SLACK_USERNAME=test
-$ export SLACK_WEBHOOK='http://localhost/'
 
 $ python -c 'import aws_tower_lambda; aws_tower_lambda.main()' 
 ```

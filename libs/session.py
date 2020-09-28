@@ -10,7 +10,7 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 # Third party library imports
 import boto3
 
-PIVOTAL_ROLE = 'arn:aws:iam::xxxxxxxxxx:role/AWS-Tower'
+PIVOTAL_ROLE = 'arn:aws:iam::xxxxxxxxxxxx:role/AWS-Tower'
 
 def get_session(account_id):
     """

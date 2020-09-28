@@ -11,13 +11,10 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 import json
 import logging
 
-# Third party library imports
-from botocore.config import Config
-
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.4.1'
+VERSION = '1.4.3'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -37,22 +34,22 @@ def draw_sg(security_group, sg_raw):
                 continue
             if ip_perm['IpProtocol'] == '-1':
                 for group in ip_perm['UserIdGroupPairs']:
-                    result += '{},'.format(group['GroupId'])
+                    result += f'{group["GroupId"]},'
                 for cidr in ip_perm['IpRanges']:
-                    result += '{},'.format(cidr['CidrIp'])
-                result = result[:-1] + '->All '
+                    result += f'{cidr["CidrIp"]},'
+                result = f'{result[:-1]}->All '
                 continue
             from_port = ip_perm['FromPort']
             to_port = ip_perm['FromPort']
             ip_range = ip_perm['IpRanges']
             userid_group_pairs = ip_perm['UserIdGroupPairs']
             for group in userid_group_pairs:
-                result += '{},'.format(group['GroupId'])
+                result += f'{group["GroupId"]},'
             for cidr in ip_range:
-                result += '{},'.format(cidr['CidrIp'])
-            result = result[:-1] + '=>{}'.format(from_port)
+                result += f'{cidr["CidrIp"]},'
+            result = f'{result[:-1]}=>{from_port}'
             if from_port != to_port:
-                result += '-{}'.format(to_port)
+                result += f'-{to_port}'
             result += ' '
     return result[:-1]
 
@@ -123,12 +120,7 @@ def ec2_scan(
         enable_ec2 = True
         enable_elbv2 = True
         enable_rds = True
-    config = Config(
-        retries = dict(
-            max_attempts = 10
-        )
-    )
-    ec2_client = boto_session.client('ec2', config=config)
+    ec2_client = boto_session.client('ec2')
     vpcs_raw = ec2_client.describe_vpcs()['Vpcs']
     subnets_raw = ec2_client.describe_subnets()['Subnets']
     nacls_raw = ec2_client.describe_network_acls()['NetworkAcls']

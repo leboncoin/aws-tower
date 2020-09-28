@@ -8,8 +8,10 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
 # Standard library imports
+import json
 import logging
 import os
+from pathlib import Path
 import sys
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -20,15 +22,15 @@ from patrowl4py.api import PatrowlManagerApi
 from requests import Session
 
 # Own library
-from libs.patrowl import add_asset, add_in_assetgroup, add_finding, get_assets
+from libs.patrowl import add_asset, add_in_assetgroup, add_finding, get_assets, get_findings
+from libs.pattern import get_dangerous_pattern
 from libs.scan import ec2_scan, parse_report
 from libs.session import get_session
-from libs.slack import slack_alert
 
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.2.1'
+VERSION = '2.0.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -51,61 +53,67 @@ PATROWL_API = PatrowlManagerApi(
 SESSION = Session()
 
 def main():
-    with open('config', 'r') as aws_config:
-        for line in aws_config.readlines():
-            aws_account_name = line.split(' = ')[0]
-            aws_account_id = line.split(' = ')[1].split('\n')[0]
-            LOGGER.warning(aws_account_name)
-            session = get_session(aws_account_id)
-            try:
-                report = parse_report(ec2_scan(session, public_only=True))
-            except Exception as err_msg:
-                LOGGER.warning(err_msg)
-                continue
-            assets = get_assets(PATROWL_API, PATROWL['assetgroup'])
-            for ec2 in report['EC2']:
+    """
+    Main function
+    """
+    aws_config_path = Path('config')
+    aws_config = aws_config_path.open()
+    for line in aws_config.readlines():
+        aws_account_name = line.split(' = ')[0]
+        aws_account_id = line.split(' = ')[1].split('\n')[0]
+        LOGGER.warning(aws_account_name)
+        session = get_session(aws_account_id)
+        try:
+            report = parse_report(ec2_scan(session, public_only=True))
+        except Exception as err_msg:
+            LOGGER.warning(err_msg)
+            continue
+        assets = get_assets(PATROWL_API, PATROWL['assetgroup'])
+        for report_type in report:
+            for aws_asset in report[report_type]:
                 new_asset = True
+                asset_id = None
+                asset_patrowl_name = f'[{aws_account_name}] {aws_asset["Name"]}'
                 for asset in assets:
-                    if asset['name'] == ec2['Name']:
+                    if asset['name'] == asset_patrowl_name:
                         new_asset = False
+                        asset_id = asset['id']
                         continue
                 if new_asset:
-                    created_asset = add_asset(PATROWL_API, ec2['Name'], ec2['Name'])
-                    is_ok = slack_alert(SESSION, SLACK, {'metadata': ec2, 'type': 'EC2', 'id': created_asset['id']}, {'account_name': aws_account_name}, PATROWL)
-                    if not is_ok:
-                        continue
-                    add_in_assetgroup(PATROWL_API, PATROWL['assetgroup'], created_asset['id'])
-                    add_finding(PATROWL_API, created_asset, 'Public EC2 has been found in {}'.format(aws_account_name), str(ec2), 'high')
-            for elbv2 in report['ELBV2']:
-                new_asset = True
-                for asset in assets:
-                    if asset['name'] == elbv2['DNSName']:
-                        new_asset = False
-                        continue
-                if new_asset:
-                    hostname = '.'.join(elbv2['DNSName'].split('.')[:-4])
-                    created_asset = add_asset(PATROWL_API, hostname, elbv2['DNSName'])
-                    is_ok = slack_alert(SESSION, SLACK, {'metadata': elbv2, 'type': 'ELBV2', 'id': created_asset['id']}, {'account_name': aws_account_name}, PATROWL)
-                    if not is_ok:
-                        continue
-                    add_in_assetgroup(PATROWL_API, PATROWL['assetgroup'], created_asset['id'])
-                    add_finding(PATROWL_API, created_asset, 'Public ELBV2 has been found in {}'.format(aws_account_name), str(elbv2), 'high')
-            for rds in report['RDS']:
-                new_asset = True
-                for asset in assets:
-                    if asset['name'] == rds['Name']:
-                        new_asset = False
-                        continue
-                if new_asset:
-                    hostname = '.'.join(rds['Name'].split('.')[:-4])
-                    created_asset = add_asset(PATROWL_API, hostname, rds['Name'])
-                    is_ok = slack_alert(SESSION, SLACK, {'metadata': rds, 'type': 'RDS', 'id': created_asset['id']}, {'account_name': aws_account_name}, PATROWL)
-                    if not is_ok:
-                        continue
-                    add_in_assetgroup(PATROWL_API, PATROWL['assetgroup'], created_asset['id'])
-                    add_finding(PATROWL_API, created_asset, 'Public RDS has been found in {}'.format(aws_account_name), str(rds), 'high')
-
-
+                    LOGGER.warning('Add a new asset: %s', asset_patrowl_name)
+                    created_asset = add_asset(
+                        PATROWL_API,
+                        aws_asset['Name'],
+                        asset_patrowl_name)
+                    asset_id = created_asset['id']
+                    add_in_assetgroup(
+                        PATROWL_API,
+                        PATROWL['assetgroup'],
+                        asset_id)
+                    add_finding(
+                        PATROWL_API,
+                        asset_id,
+                        f'Public {report_type} has been found in {aws_account_name}',
+                        json.dumps(aws_asset, indent=4, sort_keys=True),
+                        'info')
+                findings = get_findings(PATROWL_API, asset_id)
+                for pattern in get_dangerous_pattern(aws_asset):
+                    new_finding = True
+                    for finding in findings:
+                        if finding['title'] == pattern['title'] and \
+                            finding['severity'] == pattern['severity']:
+                            new_finding = False
+                    if new_finding:
+                        LOGGER.warning('Add a %s finding: %s for asset %s',
+                            pattern['severity'],
+                            pattern['title'],
+                            asset_patrowl_name)
+                        add_finding(
+                            PATROWL_API,
+                            asset_id,
+                            pattern['title'],
+                            json.dumps(aws_asset, indent=4, sort_keys=True),
+                            pattern['severity'])
 
 def handler(event, context):
     main()

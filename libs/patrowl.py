@@ -7,11 +7,19 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
+VERSION = '1.1.0'
+
 def add_asset(patrowl_api, title, description):
     """
     Create an asset
     """
-    return patrowl_api.add_asset(title, description, 'domain', description, 'medium', tags=['All'])
+    return patrowl_api.add_asset(
+        title,
+        description,
+        'domain',
+        description,
+        'medium',
+        tags=['All'])
 
 
 def get_assets(patrowl_api, assetgroup_id):
@@ -38,10 +46,15 @@ def add_in_assetgroup(patrowl_api, assetgroup_id, asset_id):
     dst_assetgroup = patrowl_api.get_assetgroup_by_id(assetgroup_id)
     for current_asset in dst_assetgroup['assets']:
         new_assets_ids.append(current_asset['id'])
-    patrowl_api.edit_assetgroup(assetgroup_id, dst_assetgroup['name'], dst_assetgroup['description'], dst_assetgroup['criticity'], new_assets_ids)
+    patrowl_api.edit_assetgroup(
+        assetgroup_id,
+        dst_assetgroup['name'],
+        dst_assetgroup['description'],
+        dst_assetgroup['criticity'],
+        new_assets_ids)
 
 
-def add_finding(patrowl_api, asset, title, description, criticity):
+def add_finding(patrowl_api, asset_id, title, description, criticity):
     """
     Add finding
     """
@@ -51,6 +64,16 @@ def add_finding(patrowl_api, asset, title, description, criticity):
             description,
             'aws_tower',
             criticity,
-            asset['id'])
+            asset_id)
     except:
         pass
+
+def get_findings(patrowl_api, asset_id):
+    """
+    Get asset findings
+    """
+    try:
+        return patrowl_api.get_asset_findings_by_id(asset_id)
+    except:
+        pass
+    return list()
