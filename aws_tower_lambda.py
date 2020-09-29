@@ -30,7 +30,7 @@ from libs.session import get_session
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.0.3'
+VERSION = '2.1.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -90,7 +90,7 @@ def main():
                     LOGGER.warning('Add a new asset: %s', asset_patrowl_name)
                     created_asset = add_asset(
                         PATROWL_API,
-                        aws_asset[META[report_type]['Name']],
+                        asset_patrowl_name,
                         asset_patrowl_name)
                     if not created_asset:
                         LOGGER.critical('Error during asset %s creation...', asset_patrowl_name)

@@ -7,7 +7,7 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
-VERSION = '1.1.1'
+VERSION = '1.2.0'
 
 def add_asset(patrowl_api, title, description):
     """
@@ -16,7 +16,7 @@ def add_asset(patrowl_api, title, description):
     try:
         return patrowl_api.add_asset(
             title,
-            description,
+            title,
             'domain',
             description,
             'medium',
