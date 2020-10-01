@@ -14,7 +14,7 @@ import logging
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.4.4'
+VERSION = '1.5.0'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -107,6 +107,61 @@ def print_subnet(report, names_only=False):
 
     LOGGER.warning(json.dumps(new_report, sort_keys=True, indent=4))
 
+def ec2_scan(report, ec2, public_only, sg_raw):
+    """
+    Scan EC2
+    """
+    if 'VpcId' in ec2 and 'SubnetId' in ec2:
+        if public_only and not 'PublicIpAddress' in ec2:
+            return report
+        report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']] = dict()
+        report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['Type'] = 'EC2'
+        if 'Tags' in ec2:
+            report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['Name'] = get_tag(ec2['Tags'], 'Name')
+        else:
+            report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['Name'] = ec2['InstanceId']
+        if 'PrivateIpAddress' in ec2:
+            report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['PrivateIpAddress'] = ec2['PrivateIpAddress']
+        if 'PublicIpAddress' in ec2:
+            report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['PublicIpAddress'] = ec2['PublicIpAddress']
+        if 'SecurityGroups' in ec2:
+            for sg in ec2['SecurityGroups']:
+                draw = draw_sg(sg['GroupId'], sg_raw)
+                if not draw:
+                    return report
+                report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']][sg['GroupId']] = draw
+        # if 'ImageId' in ec2:
+        #     report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['ImageId'] = ec2['ImageId']
+    return report
+
+def elbv2_scan(report, elbv2, public_only, sg_raw):
+    """
+    Scan ELBv2
+    """
+    if public_only and elbv2['Scheme'] == 'internal':
+        return report
+    report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']] = dict()
+    report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['Type'] = 'ELBV2'
+    report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['Scheme'] = elbv2['Scheme']
+    report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['DNSName'] = elbv2['DNSName']
+    if 'SecurityGroups' in elbv2:
+        for sg in elbv2['SecurityGroups']:
+            report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']][sg] = draw_sg(sg, sg_raw)
+    return report
+
+def rds_scan(report, rds, public_only):
+    """
+    Scan RDS
+    """
+    if public_only and not rds['PubliclyAccessible']:
+        return report
+    report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']] = dict()
+    report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Type'] = 'RDS'
+    report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Name'] = rds['DBInstanceIdentifier']
+    report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Address'] = rds['Endpoint']['Address']
+    report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Engine'] = '{}=={}'.format(rds['Engine'], rds['EngineVersion'])
+    return report
+
 def aws_scan(
     boto_session,
     public_only=False,
@@ -114,7 +169,7 @@ def aws_scan(
     enable_elbv2=True,
     enable_rds=True):
     """
-    SCAN EC2
+    SCAN AWS
     """
     if not enable_ec2 and not enable_elbv2 and not enable_rds:
         enable_ec2 = True
@@ -160,47 +215,14 @@ def aws_scan(
     if enable_ec2:
         for ec2 in ec2_raw:
             for ec2_ in ec2['Instances']:
-                if 'VpcId' in ec2_ and 'SubnetId' in ec2_:
-                    if public_only and not 'PublicIpAddress' in ec2_:
-                        continue
-                    report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']] = dict()
-                    report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']]['Type'] = 'EC2'
-                    if 'Tags' in ec2_:
-                        report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']]['Name'] = get_tag(ec2_['Tags'], 'Name')
-                    else:
-                        report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']]['Name'] = ec2_['InstanceId']
-                    if 'PrivateIpAddress' in ec2_:
-                        report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']]['PrivateIpAddress'] = ec2_['PrivateIpAddress']
-                    if 'PublicIpAddress' in ec2_:
-                        report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']]['PublicIpAddress'] = ec2_['PublicIpAddress']
-                    if 'SecurityGroups' in ec2_:
-                        for sg in ec2_['SecurityGroups']:
-                            draw = draw_sg(sg['GroupId'], sg_raw)
-                            if not draw:
-                                continue
-                            report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']][sg['GroupId']] = draw
-                    # if 'ImageId' in ec2_:
-                    #     report[ec2_['VpcId']]['Subnets'][ec2_['SubnetId']]['EC2'][ec2_['InstanceId']]['ImageId'] = ec2_['ImageId']
+                report = ec2_scan(report, ec2_, public_only, sg_raw)
 
     if enable_elbv2:
         for elbv2 in load_balancers_raw:
-            if public_only and elbv2['Scheme'] == 'internal':
-                continue
-            report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']] = dict()
-            report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['Type'] = 'ELBV2'
-            report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['Scheme'] = elbv2['Scheme']
-            report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['DNSName'] = elbv2['DNSName']
-            if 'SecurityGroups' in elbv2:
-                for sg in elbv2['SecurityGroups']:
-                    report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']][sg] = draw_sg(sg, sg_raw)
+            report = elbv2_scan(report, elbv2, public_only, sg_raw)
 
     if enable_rds:
         for rds in rds_raw:
-            if public_only and not rds['PubliclyAccessible']:
-                continue
-            report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']] = dict()
-            report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Type'] = 'RDS'
-            report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Name'] = rds['DBInstanceIdentifier']
-            report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Address'] = rds['Endpoint']['Address']
-            report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Engine'] = '{}=={}'.format(rds['Engine'], rds['EngineVersion'])
+            report = rds_scan(report, rds, public_only)
+
     return report
