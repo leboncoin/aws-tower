@@ -14,7 +14,7 @@ import logging
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.5.0'
+VERSION = '1.6.0'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -162,6 +162,24 @@ def rds_scan(report, rds, public_only):
     report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Engine'] = '{}=={}'.format(rds['Engine'], rds['EngineVersion'])
     return report
 
+def route53_scan(report, record_value, record):
+    """
+    Scan Route53
+    """
+    # Look into report
+    for vpc in report:
+        for subnet in report[vpc]['Subnets']:
+            for ec2 in report[vpc]['Subnets'][subnet]['EC2']:
+                value = report[vpc]['Subnets'][subnet]['EC2'][ec2]
+                if ('PrivateIpAddress' in value and record_value == value['PrivateIpAddress']) or \
+                    ('Name' in value and record_value == value['Name']) or \
+                    ('PublicIpAddress' in value and record_value == value['PublicIpAddress']):
+                    report[vpc]['Subnets'][subnet]['EC2'][ec2]['DnsRecord'] = record['Name']
+            for elbv2 in report[vpc]['Subnets'][subnet]['ELBV2']:
+                value = report[vpc]['Subnets'][subnet]['ELBV2'][elbv2]
+                if ('DNSName' in value and record_value == f'{value["DNSName"]}.'):
+                    report[vpc]['Subnets'][subnet]['ELBV2'][elbv2]['DnsRecord'] = record['Name']
+
 def aws_scan(
     boto_session,
     public_only=False,
@@ -185,6 +203,7 @@ def aws_scan(
     load_balancers_raw = elbv2_client.describe_load_balancers()['LoadBalancers']
     rds_client = boto_session.client('rds')
     rds_raw = rds_client.describe_db_instances()['DBInstances']
+    route53_client = boto_session.client('route53')
 
     report = dict()
 
@@ -224,5 +243,17 @@ def aws_scan(
     if enable_rds:
         for rds in rds_raw:
             report = rds_scan(report, rds, public_only)
+
+
+    for hosted_zone in route53_client.list_hosted_zones()['HostedZones']:
+        print(f'detect zone {hosted_zone}')
+        for record in route53_client.list_resource_record_sets(HostedZoneId=hosted_zone['Id'])['ResourceRecordSets']:
+            if 'ResourceRecords' in record:
+                for record_ in record['ResourceRecords']:
+                    if 'Value' not in record_:
+                        continue
+                    route53_scan(report, record_['Value'], record)
+            elif 'AliasTarget' in record:
+                route53_scan(report, record['AliasTarget']['DNSName'], record)
 
     return report
