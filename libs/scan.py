@@ -14,7 +14,7 @@ import logging
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.4.3'
+VERSION = '1.4.4'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -107,7 +107,7 @@ def print_subnet(report, names_only=False):
 
     LOGGER.warning(json.dumps(new_report, sort_keys=True, indent=4))
 
-def ec2_scan(
+def aws_scan(
     boto_session,
     public_only=False,
     enable_ec2=True,

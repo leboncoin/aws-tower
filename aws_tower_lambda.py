@@ -24,13 +24,13 @@ from requests import Session
 # Own library
 from libs.patrowl import add_asset, add_in_assetgroup, add_finding, get_assets, get_findings
 from libs.pattern import get_dangerous_pattern
-from libs.scan import ec2_scan, parse_report
+from libs.scan import aws_scan, parse_report
 from libs.session import get_session
 
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.1.0'
+VERSION = '2.1.1'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -71,7 +71,7 @@ def main():
         LOGGER.warning(aws_account_name)
         session = get_session(aws_account_id)
         try:
-            report = parse_report(ec2_scan(session, public_only=True))
+            report = parse_report(aws_scan(session, public_only=True))
         except Exception as err_msg:
             LOGGER.warning(err_msg)
             continue

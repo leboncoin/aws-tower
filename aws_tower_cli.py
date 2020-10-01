@@ -14,12 +14,12 @@ from argparse import ArgumentParser
 import boto3
 import botocore
 
-from libs.scan import ec2_scan, print_subnet
+from libs.scan import aws_scan, print_subnet
 
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.4.0'
+VERSION = '1.4.1'
 
 def main(args):
     """
@@ -30,7 +30,7 @@ def main(args):
     except botocore.exceptions.ProfileNotFound:
         print('The profile "{}" can\'t be found...'.format(args.account))
         return False
-    report = ec2_scan(
+    report = aws_scan(
         session,
         public_only=not args.all,
         enable_ec2=args.ec2,
