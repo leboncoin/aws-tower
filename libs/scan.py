@@ -14,7 +14,7 @@ import logging
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.6.0'
+VERSION = '1.6.1'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -246,7 +246,6 @@ def aws_scan(
 
 
     for hosted_zone in route53_client.list_hosted_zones()['HostedZones']:
-        print(f'detect zone {hosted_zone}')
         for record in route53_client.list_resource_record_sets(HostedZoneId=hosted_zone['Id'])['ResourceRecordSets']:
             if 'ResourceRecords' in record:
                 for record_ in record['ResourceRecords']:
