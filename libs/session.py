@@ -12,7 +12,7 @@ import boto3
 
 PIVOTAL_ROLE = 'arn:aws:iam::xxxxxxxxxxxx:role/AWS-Tower'
 
-def get_session(account_id):
+def get_session(role_arn):
     """
     Returns a session for the specified accountId
     """
@@ -34,7 +34,7 @@ def get_session(account_id):
     )
 
     acct_b = sts_connection_2.assume_role(
-        RoleArn='arn:aws:iam::{}:role/readonly'.format(account_id),
+        RoleArn=role_arn,
         RoleSessionName='Readonly'
     )
 

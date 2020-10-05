@@ -8,10 +8,10 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
 # Standard library imports
+from configparser import ConfigParser
 import json
 import logging
 import os
-from pathlib import Path
 import sys
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -30,7 +30,7 @@ from libs.session import get_session
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.2.0'
+VERSION = '2.3.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -63,17 +63,26 @@ def main():
     """
     Main function
     """
-    aws_config_path = Path('config')
-    aws_config = aws_config_path.open()
-    for line in aws_config.readlines():
-        aws_account_name = line.split(' = ')[0]
-        aws_account_id = line.split(' = ')[1].split('\n')[0]
+    config = ConfigParser()
+    config.read('config')
+    for profile in config.sections():
+        if not profile.startswith('profile '):
+            LOGGER.critical('Profile %s is malformed...', profile)
+            continue
+        aws_account_name = profile.split()[1]
+        if 'role_arn' not in config[profile]:
+            LOGGER.critical('No role_arn in %s', profile)
+            continue
         LOGGER.warning(aws_account_name)
-        session = get_session(aws_account_id)
+        try:
+            session = get_session(config[profile]['role_arn'])
+        except Exception as err_msg:
+            LOGGER.critical(err_msg)
+            continue
         try:
             report = parse_report(aws_scan(session, public_only=True))
         except Exception as err_msg:
-            LOGGER.warning(err_msg)
+            LOGGER.critical(err_msg)
             continue
         assets = get_assets(PATROWL_API, PATROWL['assetgroup'])
         for report_type in report:

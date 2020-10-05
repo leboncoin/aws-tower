@@ -1,2 +1,6 @@
-some-account = 12345678999
-some-another-account = 223456788888
+[profile some-account]
+role_arn = arn:aws:iam::12345678999:role/readonly
+
+[profile some-another-account]
+role_arn = arn:aws:iam::223456788888:role/readonly
+
