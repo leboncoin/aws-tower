@@ -14,7 +14,7 @@ import logging
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.6.1'
+VERSION = '1.7.0'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -87,7 +87,21 @@ def parse_report(report):
 
     return new_report
 
-def print_subnet(report, names_only=False):
+def remove_key_from_report(report, del_key, is_startswith=False):
+    """
+    Remove key from report
+    """
+    key_to_delete = list()
+    for key in report:
+        if is_startswith and key.startswith(del_key):
+            key_to_delete.append(key)
+        elif key == del_key:
+            key_to_delete.append(key)
+    for key in key_to_delete:
+        del report[key]
+    return report
+
+def print_subnet(report, names_only=False, hide_sg=False):
     """
     Print subnets
     """
@@ -105,6 +119,8 @@ def print_subnet(report, names_only=False):
                     continue
                 for asset in report[vpc]['Subnets'][subnet][asset_type]:
                     asset_report = report[vpc]['Subnets'][subnet][asset_type][asset]
+                    if hide_sg:
+                        remove_key_from_report(asset_report, 'sg-', is_startswith=True)
                     if names_only:
                         asset_report = f'{asset_type}: {asset_report[META[asset_type]["Name"]]}'
                     new_report[vpc][mini_name].append(asset_report)

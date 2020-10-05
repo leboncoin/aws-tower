@@ -30,7 +30,7 @@ from libs.session import get_session
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.3.0'
+VERSION = '2.3.1'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']

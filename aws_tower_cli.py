@@ -19,7 +19,7 @@ from libs.scan import aws_scan, print_subnet
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.5.0'
+VERSION = '1.6.0'
 
 def main(args):
     """
@@ -32,11 +32,14 @@ def main(args):
         return False
     report = aws_scan(
         session,
-        public_only=not args.all,
+        public_only=not args.even_private,
         enable_ec2=args.ec2,
         enable_elbv2=args.elbv2,
         enable_rds=args.rds)
-    print_subnet(report, names_only=args.names_only)
+    print_subnet(
+        report,
+        names_only=args.names_only,
+        hide_sg=args.hide_sg)
 
 if __name__ == '__main__':
     PARSER = ArgumentParser()
@@ -44,8 +47,8 @@ if __name__ == '__main__':
     PARSER.add_argument('--version', action='version', version=VERSION)
     PARSER.add_argument('-a', '--account', action='store',\
                         help='Account Name')
-    PARSER.add_argument('--all', action='store_true',\
-                        help='Display all assets')
+    PARSER.add_argument('--even-private', action='store_true',\
+                        help='Display public and private assets')
     PARSER.add_argument('-n', '--names-only', action='store_true',\
                         help='Display only names')
     PARSER.add_argument('--ec2', action='store_true',\
@@ -54,5 +57,7 @@ if __name__ == '__main__':
                         help='Display ELBV2')
     PARSER.add_argument('--rds', action='store_true',\
                         help='Display RDS')
+    PARSER.add_argument('--hide-sg', action='store_true',\
+                        help='Hide Security Groups')
     ARGS = PARSER.parse_args()
     main(ARGS)

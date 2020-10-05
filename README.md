@@ -10,18 +10,19 @@ pip install -r requirements.txt
 
 ```bash
 $ ./aws_tower_cli.py --help
-usage: aws_tower_cli.py [-h] [--version] [-a ACCOUNT] [--all] [-n] [--ec2] [--elbv2] [--rds]
+usage: aws_tower_cli.py [-h] [--version] [-a ACCOUNT] [--even-private] [-n] [--ec2] [--elbv2] [--rds] [--hide-sg]
 
 optional arguments:
   -h, --help            show this help message and exit
   --version             show program's version number and exit
   -a ACCOUNT, --account ACCOUNT
                         Account Name
-  --all                 Display all assets
+  --even-private        Display public and private assets
   -n, --names-only      Display only names
   --ec2                 Display EC2
   --elbv2               Display ELBV2
   --rds                 Display RDS
+  --hide-sg             Hide Security Groups
 ```
 
 ## Usage (lambda)
