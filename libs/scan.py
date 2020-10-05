@@ -18,6 +18,18 @@ VERSION = '1.6.1'
 
 LOGGER = logging.getLogger('aws-tower')
 
+META = {
+    'EC2': {
+        'Name': 'Name'
+    },
+    'ELBV2': {
+        'Name': 'DNSName'
+    },
+    'RDS': {
+        'Name': 'Name'
+    }
+}
+
 def get_tag(tags, key):
     names = [item['Value'] for item in tags if item['Key'] == key]
     if not names:
@@ -58,22 +70,20 @@ def parse_report(report):
     Return anomalies from report
     """
     new_report = dict()
-    new_report['EC2'] = list()
-    new_report['ELBV2'] = list()
-    new_report['RDS'] = list()
+    for asset_type in META:
+        new_report[asset_type] = list()
+
     for vpc in report:
         for subnet in report[vpc]['Subnets']:
             mini_name = report[vpc]['Subnets'][subnet]['Name'].split('-{}'.format(
                 report[vpc]['Subnets'][subnet]['AvailabilityZone']))[0]
-            for ec2 in report[vpc]['Subnets'][subnet]['EC2']:
-                report[vpc]['Subnets'][subnet]['EC2'][ec2].update({'Subnet Name': mini_name})
-                new_report['EC2'].append(report[vpc]['Subnets'][subnet]['EC2'][ec2])
-            for elbv2 in report[vpc]['Subnets'][subnet]['ELBV2']:
-                report[vpc]['Subnets'][subnet]['ELBV2'][elbv2].update({'Subnet Name': mini_name})
-                new_report['ELBV2'].append(report[vpc]['Subnets'][subnet]['ELBV2'][elbv2])
-            for rds in report[vpc]['Subnets'][subnet]['RDS']:
-                report[vpc]['Subnets'][subnet]['RDS'][rds].update({'Subnet Name': mini_name})
-                new_report['RDS'].append(report[vpc]['Subnets'][subnet]['RDS'][rds])
+            for asset_type in report[vpc]['Subnets'][subnet]:
+                if asset_type not in META:
+                    continue
+                for asset in report[vpc]['Subnets'][subnet][asset_type]:
+                    report[vpc]['Subnets'][subnet][asset_type][asset].update(
+                        {'Subnet Name': mini_name})
+                    new_report[asset_type].append(report[vpc]['Subnets'][subnet][asset_type][asset])
 
     return new_report
 
@@ -89,21 +99,15 @@ def print_subnet(report, names_only=False):
                 report[vpc]['Subnets'][subnet]['AvailabilityZone']))[0]
             if not mini_name in new_report[vpc]:
                 new_report[vpc][mini_name] = list()
-            for ec2 in report[vpc]['Subnets'][subnet]['EC2']:
-                ec2_report = report[vpc]['Subnets'][subnet]['EC2'][ec2]
-                if names_only:
-                    ec2_report = 'EC2: {}'.format(ec2_report['Name'])
-                new_report[vpc][mini_name].append(ec2_report)
-            for elbv2 in report[vpc]['Subnets'][subnet]['ELBV2']:
-                elbv2_report = report[vpc]['Subnets'][subnet]['ELBV2'][elbv2]
-                if names_only:
-                    elbv2_report = 'ELBV2: {}'.format(elbv2_report['DNSName'])
-                new_report[vpc][mini_name].append(elbv2_report)
-            for rds in report[vpc]['Subnets'][subnet]['RDS']:
-                rds_report = report[vpc]['Subnets'][subnet]['RDS'][rds]
-                if names_only:
-                    rds_report = 'RDS: {}'.format(rds_report['Name'])
-                new_report[vpc][mini_name].append(rds_report)
+
+            for asset_type in report[vpc]['Subnets'][subnet]:
+                if asset_type not in META:
+                    continue
+                for asset in report[vpc]['Subnets'][subnet][asset_type]:
+                    asset_report = report[vpc]['Subnets'][subnet][asset_type][asset]
+                    if names_only:
+                        asset_report = f'{asset_type}: {asset_report[META[asset_type]["Name"]]}'
+                    new_report[vpc][mini_name].append(asset_report)
 
     LOGGER.warning(json.dumps(new_report, sort_keys=True, indent=4))
 
