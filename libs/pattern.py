@@ -7,7 +7,7 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
-VERSION = '1.1.0'
+VERSION = '1.2.0'
 
 def get_dangerous_pattern(metadata):
     """
@@ -32,5 +32,10 @@ def get_dangerous_pattern(metadata):
         report.append({
             'title': 'No security group present',
             'severity': 'high'})
+
+    if 'DnsRecord' in metadata:
+        report.append({
+            'title': f'DnsRecord: {metadata["DnsRecord"]}',
+            'severity': 'medium'})
 
     return report
