@@ -147,9 +147,8 @@ def ec2_scan(report, ec2, public_only, sg_raw):
         if 'SecurityGroups' in ec2:
             for sg in ec2['SecurityGroups']:
                 draw = draw_sg(sg['GroupId'], sg_raw)
-                if not draw:
-                    return report
-                report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']][sg['GroupId']] = draw
+                if draw:
+                    report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']][sg['GroupId']] = draw
         # if 'ImageId' in ec2:
         #     report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['ImageId'] = ec2['ImageId']
     return report
