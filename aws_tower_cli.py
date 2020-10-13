@@ -5,6 +5,7 @@ AWS Tower CLI
 Copyright 2020 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
+Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 """
 
 # Standard library imports
@@ -39,7 +40,8 @@ def main(args):
     print_subnet(
         report,
         names_only=args.names_only,
-        hide_sg=args.hide_sg)
+        hide_sg=args.hide_sg,
+        security=args.security)
 
 if __name__ == '__main__':
     PARSER = ArgumentParser()
@@ -59,5 +61,7 @@ if __name__ == '__main__':
                         help='Display RDS')
     PARSER.add_argument('--hide-sg', action='store_true',\
                         help='Hide Security Groups')
+    PARSER.add_argument('-s', '--security', action='store_true',
+                        help='Check security issues on your services')
     ARGS = PARSER.parse_args()
     main(ARGS)
