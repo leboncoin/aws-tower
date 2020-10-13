@@ -3,3 +3,6 @@ __pycache__
 venv
 package
 .env
+
+# Config
+config/rules.json
