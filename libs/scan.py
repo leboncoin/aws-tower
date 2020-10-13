@@ -19,7 +19,7 @@ from .patterns import Patterns
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.7.1'
+VERSION = '1.7.2'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -113,11 +113,6 @@ def print_subnet(report, names_only=False, hide_sg=False, security=False):
     Print subnets
     """
     new_report = dict()
-    try:
-        patterns = Patterns(PATTERNS_RULES_PATH)
-    except Exception as err_msg:
-        LOGGER.critical(err_msg)
-        return False
     for vpc in report:
         new_report[vpc] = dict()
         for subnet in report[vpc]['Subnets']:
@@ -136,6 +131,11 @@ def print_subnet(report, names_only=False, hide_sg=False, security=False):
                     if names_only:
                         asset_report = f'{asset_type}: {asset_report[META[asset_type]["Name"]]}'
                     if security:
+                        try:
+                            patterns = Patterns(PATTERNS_RULES_PATH)
+                        except Exception as err_msg:
+                            LOGGER.critical(err_msg)
+                            return False
                         asset_report['SecurityIssues'] = patterns.get_dangerous_patterns(report[vpc]['Subnets'][subnet][asset_type][asset])
                     new_report[vpc][mini_name].append(asset_report)
     LOGGER.warning(json.dumps(new_report, sort_keys=True, indent=4))
