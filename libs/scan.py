@@ -5,6 +5,7 @@ Scan library
 Copyright 2020 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
+Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 """
 
 # Standard library imports
@@ -18,7 +19,7 @@ from .patterns import Patterns
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.7.0'
+VERSION = '1.7.1'
 
 LOGGER = logging.getLogger('aws-tower')
 

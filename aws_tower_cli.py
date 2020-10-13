@@ -5,6 +5,7 @@ AWS Tower CLI
 Copyright 2020 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
+Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 """
 
 # Standard library imports
