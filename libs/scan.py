@@ -18,7 +18,7 @@ from .patterns import Patterns
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.7.0'
+VERSION = '1.7.1'
 
 LOGGER = logging.getLogger('aws-tower')
 
