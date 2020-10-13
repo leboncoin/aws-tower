@@ -10,6 +10,10 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 # Standard library imports
 import json
 import logging
+from pathlib import Path
+
+from .patterns import Patterns
+
 
 # Debug
 # from pdb import set_trace as st
@@ -29,6 +33,8 @@ META = {
         'Name': 'Name'
     }
 }
+
+PATTERNS_RULES_PATH = Path(__file__).parent.parent / 'config' / 'rules.json'
 
 def get_tag(tags, key):
     names = [item['Value'] for item in tags if item['Key'] == key]
@@ -101,11 +107,16 @@ def remove_key_from_report(report, del_key, is_startswith=False):
         del report[key]
     return report
 
-def print_subnet(report, names_only=False, hide_sg=False):
+def print_subnet(report, names_only=False, hide_sg=False, security=False):
     """
     Print subnets
     """
     new_report = dict()
+    try:
+        patterns = Patterns(PATTERNS_RULES_PATH)
+    except Exception as err_msg:
+        LOGGER.critical(err_msg)
+        return False
     for vpc in report:
         new_report[vpc] = dict()
         for subnet in report[vpc]['Subnets']:
@@ -123,9 +134,26 @@ def print_subnet(report, names_only=False, hide_sg=False):
                         remove_key_from_report(asset_report, 'sg-', is_startswith=True)
                     if names_only:
                         asset_report = f'{asset_type}: {asset_report[META[asset_type]["Name"]]}'
+                    if security:
+                        asset_report['SecurityIssues'] = patterns.get_dangerous_patterns(report[vpc]['Subnets'][subnet][asset_type][asset])
                     new_report[vpc][mini_name].append(asset_report)
-
     LOGGER.warning(json.dumps(new_report, sort_keys=True, indent=4))
+
+def check_security_patterns(report):
+    vulns_report = list()
+    try:
+        patterns = Patterns(PATTERNS_RULES_PATH)
+    except Exception as err_msg:
+        LOGGER.critical(err_msg)
+        return False
+    for vpc in report:
+        for subnet in report[vpc]['Subnets']:
+            for asset_type in report[vpc]['Subnets'][subnet]:
+                if asset_type in META:
+                    for asset in report[vpc]['Subnets'][subnet][asset_type]:
+                        vulns_report += patterns.get_dangerous_patterns(report[vpc]['Subnets'][subnet][asset_type][asset])
+    return vulns_report
+
 
 def ec2_scan(report, ec2, public_only, sg_raw):
     """
@@ -273,5 +301,4 @@ def aws_scan(
                     route53_scan(report, record_['Value'], record)
             elif 'AliasTarget' in record:
                 route53_scan(report, record['AliasTarget']['DNSName'], record)
-
     return report
