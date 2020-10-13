@@ -1,0 +1,20 @@
+{
+    "version": "1.0.0",
+    "types": {
+        "security_group": [{
+            "message": "Too wide security group",
+            "patterns": [{
+                "type": "in",
+                "value": "0.0.0.0/0"
+            }],
+            "severity": "high"
+        }, {
+            "message": "Allow connection to all port from same source",
+            "patterns": [{
+                "type": "in",
+                "value": "->All"
+            }],
+            "severity": "medium"
+        }], "network_acl": {}
+    }
+}
