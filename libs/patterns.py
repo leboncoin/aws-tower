@@ -11,7 +11,7 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 from pathlib import Path
 import json
 
-VERSION = '2.0.0'
+VERSION = '2.1.0'
 
 class Patterns:
     _patterns = list()
@@ -76,7 +76,7 @@ class Patterns:
         if not is_sg:
             report.append({
                 'title': 'No security group present',
-                'severity': 'high'
+                'severity': 'info'
             })
 
         if 'DnsRecord' in metadata:

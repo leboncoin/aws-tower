@@ -20,7 +20,7 @@ from libs.scan import aws_scan, print_subnet
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.6.0'
+VERSION = '1.6.1'
 
 def main(args):
     """
