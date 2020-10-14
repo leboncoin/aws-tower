@@ -30,7 +30,7 @@ optional arguments:
 ```bash
 $ pip install -r requirements.txt --target ./package
 
-$ cp config.sample config
+$ cp config/lambda.config.sample config/lambda.config
 $ export PATROWL_APITOKEN=xxxxxxxxxxxxxxx
 $ export PATROWL_ASSETGROUP=1
 $ export PATROWL_PRIVATE_ENDPOINT=http://localhost/

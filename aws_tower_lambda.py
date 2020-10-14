@@ -32,7 +32,7 @@ from libs.session import get_session
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.4.1'
+VERSION = '2.5.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -68,7 +68,7 @@ def main():
     Main function
     """
     config = ConfigParser()
-    config.read('config')
+    config.read('config/lambda.config')
     try:
         patterns = Patterns(PATTERNS_RULES_PATH)
     except Exception as err_msg:

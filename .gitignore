@@ -6,3 +6,5 @@ package
 
 # Config
 config/rules.json
+config/lambda.config
+
