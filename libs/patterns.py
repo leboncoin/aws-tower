@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 """
-Pattern library
+Patterns library
 
 Copyright 2020 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 """
-
 from pathlib import Path
 import json
 
