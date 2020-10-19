@@ -19,23 +19,9 @@ from .patterns import Patterns
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.7.3'
+VERSION = '1.8.0'
 
 LOGGER = logging.getLogger('aws-tower')
-
-META = {
-    'EC2': {
-        'Name': 'Name'
-    },
-    'ELBV2': {
-        'Name': 'DNSName'
-    },
-    'RDS': {
-        'Name': 'Name'
-    }
-}
-
-PATTERNS_RULES_PATH = Path(__file__).parent.parent / 'config' / 'rules.json'
 
 def get_tag(tags, key):
     names = [item['Value'] for item in tags if item['Key'] == key]
@@ -72,12 +58,12 @@ def draw_sg(security_group, sg_raw):
             result += ' '
     return result[:-1]
 
-def parse_report(report):
+def parse_report(report, meta_types):
     """
     Return anomalies from report
     """
     new_report = dict()
-    for asset_type in META:
+    for asset_type in meta_types:
         new_report[asset_type] = list()
 
     for vpc in report:
@@ -85,7 +71,7 @@ def parse_report(report):
             mini_name = report[vpc]['Subnets'][subnet]['Name'].split('-{}'.format(
                 report[vpc]['Subnets'][subnet]['AvailabilityZone']))[0]
             for asset_type in report[vpc]['Subnets'][subnet]:
-                if asset_type not in META:
+                if asset_type not in meta_types:
                     continue
                 for asset in report[vpc]['Subnets'][subnet][asset_type]:
                     report[vpc]['Subnets'][subnet][asset_type][asset].update(
@@ -108,14 +94,19 @@ def remove_key_from_report(report, del_key, is_startswith=False):
         del report[key]
     return report
 
-def print_subnet(report, names_only=False, hide_sg=False, security=False):
+def print_subnet(report, meta_types, names_only=False, hide_sg=False, security=None):
     """
     Print subnets
     """
     new_report = dict()
     if security:
         try:
-            patterns = Patterns(PATTERNS_RULES_PATH)
+            patterns = Patterns(
+                security['findings_rules_path'],
+                security['severity_levels'],
+                security['min_severity'],
+                security['max_severity']
+            )
         except Exception as err_msg:
             LOGGER.critical(err_msg)
             return False
@@ -128,7 +119,7 @@ def print_subnet(report, names_only=False, hide_sg=False, security=False):
                 new_report[vpc][mini_name] = list()
 
             for asset_type in report[vpc]['Subnets'][subnet]:
-                if asset_type not in META:
+                if asset_type not in meta_types:
                     continue
                 for asset in report[vpc]['Subnets'][subnet][asset_type]:
                     asset_report = report[vpc]['Subnets'][subnet][asset_type][asset]
