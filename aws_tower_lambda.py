@@ -14,7 +14,6 @@ import json
 import logging
 import os
 import sys
-from pathlib import Path
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -136,4 +135,7 @@ def main():
                                 pattern['severity'])
 
 def handler(event, context):
+    """
+    Sepecific entrypoint for lambda
+    """
     main()

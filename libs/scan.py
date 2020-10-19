@@ -11,7 +11,6 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 # Standard library imports
 import json
 import logging
-from pathlib import Path
 
 from .patterns import Patterns
 
@@ -19,21 +18,25 @@ from .patterns import Patterns
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.8.0'
+VERSION = '1.8.1'
 
 LOGGER = logging.getLogger('aws-tower')
 
 def get_tag(tags, key):
+    """ Returns a specific value in aws tags, from specified key
+    """
     names = [item['Value'] for item in tags if item['Key'] == key]
     if not names:
         return ''
     return names[0]
 
 def draw_sg(security_group, sg_raw):
+    """ Returns a full definition of security groups
+    """
     result = dict()
-    for sg in sg_raw:
-        if sg['GroupId'] == security_group:
-            for ip_perm in sg['IpPermissions']:
+    for _sg in sg_raw:
+        if _sg['GroupId'] == security_group:
+            for ip_perm in _sg['IpPermissions']:
                 if ip_perm['IpProtocol'] in ['tcp', '-1']:
                     if ip_perm['IpProtocol'] == '-1':
                         if 'all' not in result:
@@ -145,6 +148,7 @@ def print_subnet(report, meta_types, names_only=False, hide_sg=False, security=N
                             )
                     new_report[vpc][mini_name].append(asset_report)
     LOGGER.warning(json.dumps(new_report, sort_keys=True, indent=4))
+    return True
 
 def ec2_scan(report, ec2, public_only, sg_raw):
     """
@@ -165,10 +169,10 @@ def ec2_scan(report, ec2, public_only, sg_raw):
             report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['PublicIpAddress'] = ec2['PublicIpAddress']
         if 'SecurityGroups' in ec2:
             report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['SecurityGroups'] = dict()
-            for sg in ec2['SecurityGroups']:
-                draw = draw_sg(sg['GroupId'], sg_raw)
+            for security_group in ec2['SecurityGroups']:
+                draw = draw_sg(security_group['GroupId'], sg_raw)
                 if draw:
-                    report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['SecurityGroups'][sg['GroupId']] = draw
+                    report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['SecurityGroups'][security_group['GroupId']] = draw
         # if 'ImageId' in ec2:
         #     report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['ImageId'] = ec2['ImageId']
     return report
@@ -185,8 +189,8 @@ def elbv2_scan(report, elbv2, public_only, sg_raw):
     report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['DNSName'] = elbv2['DNSName']
     if 'SecurityGroups' in elbv2:
         report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['SecurityGroups'] = dict()
-        for sg in elbv2['SecurityGroups']:
-            report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['SecurityGroups'][sg] = draw_sg(sg, sg_raw)
+        for security_group in elbv2['SecurityGroups']:
+            report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['SecurityGroups'][security_group] = draw_sg(security_group, sg_raw)
     return report
 
 def rds_scan(report, rds, public_only):

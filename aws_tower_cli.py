@@ -17,6 +17,7 @@ import botocore
 
 from libs.scan import aws_scan, print_subnet
 from config import variables
+
 # Debug
 # from pdb import set_trace as st
 

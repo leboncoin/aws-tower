@@ -7,12 +7,11 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 """
-from pathlib import Path
 import json
 import re
 import logging
 
-VERSION = '2.2.0'
+VERSION = '2.2.1'
 
 class Patterns:
     """Get findings from patterns
@@ -68,9 +67,6 @@ class Patterns:
             raise Exception(f'Error: min severity ({min_severity}) higher than max severity ({max_severity})')
 
     def _get_findings_rules_from_type(self, type_name):
-        '''
-        Returns rules from patterns
-        '''
         """Get findings rules from _patterns
 
         :param type_name: Type of findings we want to get (like metadata, security_groups, ...)
@@ -94,9 +90,9 @@ class Patterns:
         :return: True if we find it, else return False
         :rtype: bool
         """
-        if type(variable) is str:
+        if isinstance(variable, str):
             return value.lower() in variable.lower()
-        elif type(variable) is list:
+        if isinstance(variable, list):
             for element in variable:
                 if value.lower() == element.lower():
                     return True
@@ -176,7 +172,7 @@ class Patterns:
         :rtype: dict
         """
         report_message = dict()
-        if type(message) is str:
+        if isinstance(message, str):
             report_message = {
                 'title': f'{message}',
                 'severity': f'{severity}'
@@ -270,7 +266,6 @@ class Patterns:
         """
         if len(self._patterns) == 0 or len(metadata) == 0:
             return list()
-        is_sg = False
         report = list()
         if 'SecurityGroups' in metadata:
             for sg_name, sg_rules in metadata['SecurityGroups'].items():
@@ -297,9 +292,6 @@ class Patterns:
         :return: Report generated
         :rtype: list()
         """
-        '''
-        Try to find dangerous patterns in differents settings like SG, ACL, ...
-        '''
         report = list()
         report += self.extract_findings_from_security_groups(metadata)
         return report
