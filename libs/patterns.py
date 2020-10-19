@@ -14,6 +14,13 @@ VERSION = '2.1.0'
 
 class Patterns:
     _patterns = list()
+    _regex_patterns = {
+        'is_cidr': re.compile(r'^(?:[0-9]{1,3}\.){3}[0-9]{1,3}\/(?:[1-2]?[0-9]|3[0-2])$'),
+        'is_private_cidr': re.compile(r'^(?:127\.|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[0-1]\.|192\.168\.)')
+    }
+    _types_regex = {
+        'port_range': re.compile(r'^(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])(?:-(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5]))?$')
+    }
 
     def __init__(self, patterns_path):
         try:
@@ -26,7 +33,7 @@ class Patterns:
             except Exception as e:
                 raise Exception(f'Unable to load json data: {e}')
 
-    def _get_rules_from_type(self, type_name):
+    def _get_findings_rules_from_type(self, type_name):
         '''
         Returns rules from patterns
         '''
@@ -35,15 +42,85 @@ class Patterns:
         return self._patterns['types'][type_name]
 
     def _check_rule_in(self, variable, value):
-        '''
-        Check rule "in" and return True or False
-        '''
+        """Check if value may be found in variable
+        Check rule "in"
+
+        :param variable: Variable where we want to find the value
+        :type variable: mixed
+        :param value: Value to find in variable
+        :type value: str
+        :return: True if we find it, else return False
+        :rtype: bool
+        """
+        if type(variable) is str:
+            return value.lower() in variable.lower()
+        elif type(variable) is list:
+            for element in variable:
+                if value.lower() == element.lower():
+                    return True
+            return False
         return value in variable
 
-    def _check_patterns_security_groups(self, sg_name, sg_line):
-        sg_rules = self._get_rules_from_type('security_group')
-        if sg_rules is False:
-            return False
+    def _check_rule_not_in(self, variable, value):
+        """Check if value is not in variable
+        Check rule "not_in"
+
+        :param variable: variable where we want to find the value
+        :type variable: mixed
+        :param value: value to find in variable
+        :type value: str
+        :return: True if we don't find it, else return False
+        :rtype: bool
+        """
+        return not self._check_rule_in(variable, value)
+
+    def _check_rule_is_cidr(self, source, is_cidr=True):
+        """Check if source is a valid CIDR (example: 10.0.0.0/8)
+        Check rule "is_cidr"
+        If is_cidr is False, then it will return True if source
+        is not a CIDR
+
+        :param source: value we want to validate as a CIDR
+        :type source: str
+        :param is_cidr: If True then return source == cidr, else source != cidr
+        :type is_cidr: bool, optional
+        :return: Return True if source and cidr are validated
+        :rtype: bool
+        """
+        result = self._regex_patterns['is_cidr'].match(source) is not None
+        return result is is_cidr
+
+    def _check_rule_is_private_cidr(self, source, is_private_cidr=True):
+        """Check with a regex if source is a private CIDR or not
+        Check rule "is_private_cidr"
+        If is_private_cidr is False, then it will return True if
+        source is not a private cidr
+
+        :param source: Value we want to validate as a private CIDR
+        :type source: str
+        :param is_private_cidr: If True then return source == private, else source != private
+        :type is_cidr: bool, optional
+        :return: Return True if source and cidr are validated
+        :rtype: bool
+        """
+        result = self._regex_patterns['is_private_cidr'].match(source) is not None
+        return result is is_private_cidr
+
+    def _check_rule_type_regex(self, ports, type_regex):
+        """Check if ports if valid via regex
+        Check rule "type_regex"
+        It will check with self._types_regex
+
+        :param ports: Ports to validate (examples: '80', '9000-9001')
+        :type ports: str
+        :param type_regex: Type we want to check (example: 'port_range')
+        :type type_regex: str
+        :return: True if we can find and validate the type of regex
+        :rtype: bool
+        """
+        if type_regex in self._types_regex:
+            return self._types_regex[type_regex].match(ports) is not None
+        return False
         report = list()
         for sg_rule in sg_rules:
             for pattern in sg_rule['patterns']:
