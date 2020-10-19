@@ -23,16 +23,17 @@ sys.path.append('package')
 from patrowl4py.api import PatrowlManagerApi
 from requests import Session
 
-# Own library
+# Own library and config files
 from libs.patrowl import add_asset, add_in_assetgroup, add_finding, get_assets, get_findings
 from libs.patterns import Patterns
 from libs.scan import aws_scan, parse_report
 from libs.session import get_session
+from config import variables
 
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.5.1'
+VERSION = '2.6.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -41,20 +42,6 @@ PATROWL['private_endpoint'] = os.environ['PATROWL_PRIVATE_ENDPOINT']
 PATROWL['public_endpoint'] = os.environ['PATROWL_PUBLIC_ENDPOINT']
 
 LOGGER = logging.getLogger('aws-tower')
-
-PATTERNS_RULES_PATH = Path(__file__).parent / 'config' / 'rules.json'
-
-META = {
-    'EC2': {
-        'Name': 'Name'
-    },
-    'ELBV2': {
-        'Name': 'DNSName'
-    },
-    'RDS': {
-        'Name': 'Name'
-    }
-}
 
 PATROWL_API = PatrowlManagerApi(
     url=PATROWL['private_endpoint'],
@@ -70,7 +57,12 @@ def main():
     config = ConfigParser()
     config.read('config/lambda.config')
     try:
-        patterns = Patterns(PATTERNS_RULES_PATH)
+        patterns = Patterns(
+            variables.FINDING_RULES_PATH,
+            variables.SEVERITY_LEVELS,
+            list(variables.SEVERITY_LEVELS.keys())[0],
+            list(variables.SEVERITY_LEVELS.keys())[-1]
+        )
     except Exception as err_msg:
         LOGGER.critical(err_msg)
     else:
@@ -89,7 +81,7 @@ def main():
                 LOGGER.critical(err_msg)
                 continue
             try:
-                report = parse_report(aws_scan(session, public_only=True))
+                report = parse_report(aws_scan(session, public_only=True), variables.META_TYPES)
             except Exception as err_msg:
                 LOGGER.critical(err_msg)
                 continue
@@ -98,7 +90,7 @@ def main():
                 for aws_asset in report[report_type]:
                     new_asset = True
                     asset_id = None
-                    asset_patrowl_name = f'[{aws_account_name}] {aws_asset[META[report_type]["Name"]]}'
+                    asset_patrowl_name = f'[{aws_account_name}] {aws_asset[variables.META_TYPES[report_type]["Name"]]}'
                     for asset in assets:
                         if asset['name'] == asset_patrowl_name:
                             new_asset = False
@@ -125,7 +117,7 @@ def main():
                             json.dumps(aws_asset, indent=4, sort_keys=True),
                             'info')
                     findings = get_findings(PATROWL_API, asset_id)
-                    for pattern in patterns.get_dangerous_patterns(aws_asset):
+                    for pattern in patterns.extract_findings(aws_asset):
                         new_finding = True
                         for finding in findings:
                             if finding['title'] == pattern['title'] and \

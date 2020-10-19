@@ -19,23 +19,9 @@ from .patterns import Patterns
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.7.3'
+VERSION = '1.8.0'
 
 LOGGER = logging.getLogger('aws-tower')
-
-META = {
-    'EC2': {
-        'Name': 'Name'
-    },
-    'ELBV2': {
-        'Name': 'DNSName'
-    },
-    'RDS': {
-        'Name': 'Name'
-    }
-}
-
-PATTERNS_RULES_PATH = Path(__file__).parent.parent / 'config' / 'rules.json'
 
 def get_tag(tags, key):
     names = [item['Value'] for item in tags if item['Key'] == key]
@@ -44,40 +30,50 @@ def get_tag(tags, key):
     return names[0]
 
 def draw_sg(security_group, sg_raw):
-    result = ''
+    result = dict()
     for sg in sg_raw:
-        if sg['GroupId'] != security_group:
-            continue
-        for ip_perm in sg['IpPermissions']:
-            if ip_perm['IpProtocol'] not in ['tcp', '-1']:
-                continue
-            if ip_perm['IpProtocol'] == '-1':
-                for group in ip_perm['UserIdGroupPairs']:
-                    result += f'{group["GroupId"]},'
-                for cidr in ip_perm['IpRanges']:
-                    result += f'{cidr["CidrIp"]},'
-                result = f'{result[:-1]}->All '
-                continue
-            from_port = ip_perm['FromPort']
-            to_port = ip_perm['FromPort']
-            ip_range = ip_perm['IpRanges']
-            userid_group_pairs = ip_perm['UserIdGroupPairs']
-            for group in userid_group_pairs:
-                result += f'{group["GroupId"]},'
-            for cidr in ip_range:
-                result += f'{cidr["CidrIp"]},'
-            result = f'{result[:-1]}=>{from_port}'
-            if from_port != to_port:
-                result += f'-{to_port}'
-            result += ' '
-    return result[:-1]
+        if sg['GroupId'] == security_group:
+            for ip_perm in sg['IpPermissions']:
+                if ip_perm['IpProtocol'] in ['tcp', '-1']:
+                    if ip_perm['IpProtocol'] == '-1':
+                        if 'all' not in result:
+                            result['all'] = list()
+                        value = None
+                        for group in ip_perm['UserIdGroupPairs']:
+                            value = f'{group["GroupId"]}'
+                            if value not in result['all']:
+                                result['all'].append(value)
+                        for cidr in ip_perm['IpRanges']:
+                            value = f'{cidr["CidrIp"]}'
+                            if value not in result['all']:
+                                result['all'].append(value)
+                    else:
+                        from_port = ip_perm['FromPort']
+                        to_port = ip_perm['ToPort']
+                        key_ports = f'{from_port}'
+                        if from_port != to_port:
+                            key_ports += f'-{to_port}'
+                        if key_ports  not in result:
+                            result[key_ports] = list()
+                        ip_range = ip_perm['IpRanges']
+                        userid_group_pairs = ip_perm['UserIdGroupPairs']
+                        value = None
+                        for group in userid_group_pairs:
+                            value = f'{group["GroupId"]}'
+                            if value not in result[key_ports]:
+                                result[key_ports].append(value)
+                        for cidr in ip_range:
+                            value = f'{cidr["CidrIp"]}'
+                            if value not in result[key_ports]:
+                                result[key_ports].append(value)
+    return result
 
-def parse_report(report):
+def parse_report(report, meta_types):
     """
     Return anomalies from report
     """
     new_report = dict()
-    for asset_type in META:
+    for asset_type in meta_types:
         new_report[asset_type] = list()
 
     for vpc in report:
@@ -85,7 +81,7 @@ def parse_report(report):
             mini_name = report[vpc]['Subnets'][subnet]['Name'].split('-{}'.format(
                 report[vpc]['Subnets'][subnet]['AvailabilityZone']))[0]
             for asset_type in report[vpc]['Subnets'][subnet]:
-                if asset_type not in META:
+                if asset_type not in meta_types:
                     continue
                 for asset in report[vpc]['Subnets'][subnet][asset_type]:
                     report[vpc]['Subnets'][subnet][asset_type][asset].update(
@@ -108,14 +104,19 @@ def remove_key_from_report(report, del_key, is_startswith=False):
         del report[key]
     return report
 
-def print_subnet(report, names_only=False, hide_sg=False, security=False):
+def print_subnet(report, meta_types, names_only=False, hide_sg=False, security=None):
     """
     Print subnets
     """
     new_report = dict()
     if security:
         try:
-            patterns = Patterns(PATTERNS_RULES_PATH)
+            patterns = Patterns(
+                security['findings_rules_path'],
+                security['severity_levels'],
+                security['min_severity'],
+                security['max_severity']
+            )
         except Exception as err_msg:
             LOGGER.critical(err_msg)
             return False
@@ -128,16 +129,20 @@ def print_subnet(report, names_only=False, hide_sg=False, security=False):
                 new_report[vpc][mini_name] = list()
 
             for asset_type in report[vpc]['Subnets'][subnet]:
-                if asset_type not in META:
+                if asset_type not in meta_types:
                     continue
                 for asset in report[vpc]['Subnets'][subnet][asset_type]:
                     asset_report = report[vpc]['Subnets'][subnet][asset_type][asset]
-                    if hide_sg:
-                        remove_key_from_report(asset_report, 'sg-', is_startswith=True)
                     if names_only:
-                        asset_report = f'{asset_type}: {asset_report[META[asset_type]["Name"]]}'
-                    if security:
-                        asset_report['SecurityIssues'] = patterns.get_dangerous_patterns(report[vpc]['Subnets'][subnet][asset_type][asset])
+                        asset_report = f'{asset_type}: {asset_report[meta_types[asset_type]["Name"]]}'
+                    else:
+                        if hide_sg:
+                            if 'SecurityGroups' in asset_report:
+                                del asset_report['SecurityGroups']
+                        if security:
+                            asset_report['SecurityIssues'] = patterns.extract_findings(
+                                report[vpc]['Subnets'][subnet][asset_type][asset]
+                            )
                     new_report[vpc][mini_name].append(asset_report)
     LOGGER.warning(json.dumps(new_report, sort_keys=True, indent=4))
 
@@ -159,10 +164,11 @@ def ec2_scan(report, ec2, public_only, sg_raw):
         if 'PublicIpAddress' in ec2:
             report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['PublicIpAddress'] = ec2['PublicIpAddress']
         if 'SecurityGroups' in ec2:
+            report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['SecurityGroups'] = dict()
             for sg in ec2['SecurityGroups']:
                 draw = draw_sg(sg['GroupId'], sg_raw)
                 if draw:
-                    report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']][sg['GroupId']] = draw
+                    report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['SecurityGroups'][sg['GroupId']] = draw
         # if 'ImageId' in ec2:
         #     report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['ImageId'] = ec2['ImageId']
     return report
@@ -178,8 +184,9 @@ def elbv2_scan(report, elbv2, public_only, sg_raw):
     report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['Scheme'] = elbv2['Scheme']
     report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['DNSName'] = elbv2['DNSName']
     if 'SecurityGroups' in elbv2:
+        report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['SecurityGroups'] = dict()
         for sg in elbv2['SecurityGroups']:
-            report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']][sg] = draw_sg(sg, sg_raw)
+            report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['SecurityGroups'][sg] = draw_sg(sg, sg_raw)
     return report
 
 def rds_scan(report, rds, public_only):
