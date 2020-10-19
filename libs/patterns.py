@@ -21,8 +21,16 @@ class Patterns:
     _types_regex = {
         'port_range': re.compile(r'^(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])(?:-(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5]))?$')
     }
+    _severity_levels = dict()
+    _min_severity = 0
+    _max_severity = 0
 
-    def __init__(self, patterns_path):
+    def __init__(self, patterns_path, severity_levels, min_severity, max_severity):
+        """Constructor method
+        Get patterns from the json file
+        Set min_severity / max_severity to at least 0 if any issue
+        """
+        self._logger = logging.getLogger('aws-tower_patterns')
         try:
             patterns = patterns_path.read_text()
         except Exception as e:
@@ -32,6 +40,19 @@ class Patterns:
                 self._patterns = json.loads(patterns)
             except Exception as e:
                 raise Exception(f'Unable to load json data: {e}')
+        self._severity_levels = severity_levels
+        if min_severity not in self._severity_levels:
+            raise Exception(f'Unable to found severity {min_severity} in {list(self._severity_levels.keys())}')
+        if max_severity not in self._severity_levels:
+            raise Exception(f'Unable to found severity {max_severity} in {list(self._severity_levels.keys())}')
+        self._min_severity = self._severity_levels[min_severity]
+        self._max_severity = self._severity_levels[max_severity]
+        if self._min_severity < 0:
+            self._min_severity = 0
+        if self._max_severity < 0:
+            self._max_severity = 0
+        if self._max_severity < self._min_severity:
+            raise Exception(f'Error: min severity ({min_severity}) higher than max severity ({max_severity})')
 
     def _get_findings_rules_from_type(self, type_name):
         '''
