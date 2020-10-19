@@ -142,6 +142,57 @@ class Patterns:
         if type_regex in self._types_regex:
             return self._types_regex[type_regex].match(ports) is not None
         return False
+
+    def _generate_report_message(self, message, severity, **kwargs):
+        """Generate a message for the report
+
+        :param message: Message data from the finding (may be a string or dictionary)
+        :type message: mixed
+        :param severity: Severity of the message (examples: 'info', 'high', ..)
+        :type severity: str
+        :param kwargs: Variables we may need to generate the message (like metadata, name, source, ...)
+        :return: Message generated
+        :rtype: dict
+        """
+        report_message = dict()
+        if type(message) is str:
+            report_message = {
+                'title': f'{message}',
+                'severity': f'{severity}'
+            }
+        else:
+            try:
+                args = dict()
+                for key, value in message['args'].items():
+                    if value['type'] == 'dict':
+                        if value['variable'] in kwargs:
+                            if value['key'] in kwargs[value['variable']]:
+                                args[key] = kwargs[value['variable']][value['key']]
+                            else:
+                                self._logger.error(f'Unable to find variable {value["key"]} in {list(kwargs[value["variable"]].keys())}')
+                                return False
+                        else:
+                            self._logger.error(f'Unable to find variable {value["type"]} in {list(kwargs.keys())}')
+                            return False
+                    elif value['type'] == 'var':
+                        if value['variable'] in kwargs:
+                            args[key] = kwargs[value['variable']]
+                        else:
+                            self._logger.error(f'Unable to find variable {value["type"]} in {list(kwargs.keys())}')
+                            return False
+            except Exception as e:
+                self._logger.error(f'Unable to prepare variables for the report message: {e}', exc_info=True)
+                return False
+            else:
+                try:
+                    report_message = {
+                        'title': message['text'].format(**args),
+                        'severity': f'{severity}'
+                    }
+                except Exception as e:
+                    self._logger.error(f'Unable to generate report message: {e}')
+                    return False
+        return report_message
         report = list()
         for sg_rule in sg_rules:
             for pattern in sg_rule['patterns']:
