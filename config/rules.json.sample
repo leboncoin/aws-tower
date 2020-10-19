@@ -132,7 +132,7 @@
                     "value": true,
                     "variable": "source"
                 }],
-                "severity": "medium"
+                "severity": "low"
             }]
         }, "metadata": {
             "description": "Check each rule on an asset (named metadata)",
