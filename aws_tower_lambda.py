@@ -117,7 +117,7 @@ def main():
                             json.dumps(aws_asset, indent=4, sort_keys=True),
                             'info')
                     findings = get_findings(PATROWL_API, asset_id)
-                    for pattern in patterns.get_dangerous_patterns(aws_asset):
+                    for pattern in patterns.extract_findings(aws_asset):
                         new_finding = True
                         for finding in findings:
                             if finding['title'] == pattern['title'] and \

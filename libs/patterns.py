@@ -9,10 +9,23 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 """
 from pathlib import Path
 import json
+import re
+import logging
 
-VERSION = '2.1.0'
+VERSION = '2.2.0'
 
 class Patterns:
+    """Get findings from patterns
+
+    :param patterns_path: Patterns' path
+    :type patterns_path: pathlib.Path
+    :param severity_levels: List of severities available
+    :type severity_levels: dict
+    :param min_severity: Minimum level of severity (info for example) to check
+    :type min_severity: str
+    :param max_severity: Maximum level of severity (critical for example) to check
+    :type max_severity: str
+    """
     _patterns = list()
     _regex_patterns = {
         'is_cidr': re.compile(r'^(?:[0-9]{1,3}\.){3}[0-9]{1,3}\/(?:[1-2]?[0-9]|3[0-2])$'),
@@ -58,9 +71,17 @@ class Patterns:
         '''
         Returns rules from patterns
         '''
-        if not type_name in self._patterns['types']:
+        """Get findings rules from _patterns
+
+        :param type_name: Type of findings we want to get (like metadata, security_groups, ...)
+        :type type_name: str
+        :return: Return findings rules
+        :rtype: dict
+        """
+        if not type_name in self._patterns['types'] or \
+            'findings' not in self._patterns['types'][type_name]:
             return False
-        return self._patterns['types'][type_name]
+        return self._patterns['types'][type_name]['findings']
 
     def _check_rule_in(self, variable, value):
         """Check if value may be found in variable
@@ -193,51 +214,92 @@ class Patterns:
                     self._logger.error(f'Unable to generate report message: {e}')
                     return False
         return report_message
+
+    def _check_findings_by_type(self, findings_type, **kwargs):
+        """Check every finding rule on kwargs
+        Example: Try to check if a source is a valid CIDR and is a private CIDR
+
+        :param findings_type: Findings to use like metadata, security_groups, ...
+        :type findings_type: str
+        :return: Report generated from the findings
+        :rtype: list
+        """
+        self._logger.debug(f'Kwargs in check_findings_by_type: {kwargs}')
+        findings_rules = self._get_findings_rules_from_type(findings_type)
+        if findings_rules is False:
+            self._logger.warning(f'Unable to find findings rules for {findings_type}')
+            return False
         report = list()
-        for sg_rule in sg_rules:
-            for pattern in sg_rule['patterns']:
-                if 'type' in pattern and 'value' in pattern:
-                    func_rule = f'_check_rule_{pattern["type"]}'
-                    if hasattr(self, func_rule):
-                        if getattr(self, func_rule)(sg_line, pattern['value']):
-                            report.append({
-                                'title': f'[{sg_name}] {sg_rule["message"]} ({sg_line})',
-                                'severity': sg_rule['severity']
-                            })
+        for finding in findings_rules:
+            finding_found = False
+            if finding['severity'] in self._severity_levels and \
+                (self._severity_levels[finding['severity']] >= self._min_severity and \
+                    self._severity_levels[finding['severity']] <= self._max_severity):
+                finding_found = True
+                for rule in finding['rules']:
+                    if 'type' in rule and 'value' in rule and 'variable' in rule:
+                        func_rule = f'_check_rule_{rule["type"]}'
+                        if hasattr(self, func_rule) and rule['variable'] in kwargs:
+                            if not getattr(self, func_rule)(kwargs[rule['variable']], rule['value']):
+                                finding_found = False
+                                break
+                        else:
+                            self._logger.error(f'Uanble to find function {func_rule} or {rule["variable"]} in {kwargs}')
+                            finding_found = False
+                    else:
+                        self._logger.error(f'Unable to find "type", "value" or "variable" in {rule}')
+                        finding_found = False
+                        break
+            if finding_found:
+                report_message = self._generate_report_message(
+                    finding['message'],
+                    finding['severity'],
+                    **kwargs
+                )
+                if report_message is not False:
+                    report.append(report_message)
         return report
 
-    def get_dangerous_patterns_from_security_groups(self, metadata):
-        '''
-        Try to find dangerous patterns from security groups
-        '''
+    def extract_findings_from_security_groups(self, metadata):
+        """Try to extract findings from security groups
+
+        :param metadata: Metadata from aws asset
+        :type metadata: dict
+        :return: Report generated from the findings
+        :rtype: list
+        """
         if len(self._patterns) == 0 or len(metadata) == 0:
             return list()
         is_sg = False
         report = list()
-        for sg_name in metadata:
-            if sg_name.startswith('sg-'):
-                is_sg = True
-                for sg_rule in metadata[sg_name].split():
-                    result = self._check_patterns_security_groups(sg_name, sg_rule)
-                    if result is not False:
-                        report += result
-        if not is_sg:
-            report.append({
-                'title': 'No security group present',
-                'severity': 'info'
-            })
-
-        if 'DnsRecord' in metadata:
-            report.append({
-                'title': f'DnsRecord: {metadata["DnsRecord"]}',
-                'severity': 'medium'
-            })
+        if 'SecurityGroups' in metadata:
+            for sg_name, sg_rules in metadata['SecurityGroups'].items():
+                for ports, sources in sg_rules.items():
+                    for source in sources:
+                        result = self._check_findings_by_type(
+                            'security_group',
+                            sg_name=sg_name,
+                            ports=ports,
+                            source=source
+                        )
+                        if result is not False:
+                            report += result
+        report_metadata = self._check_findings_by_type('metadata', metadata=metadata)
+        if report_metadata is not False:
+            report += report_metadata
         return report
 
-    def get_dangerous_patterns(self, metadata):
+    def extract_findings(self, metadata):
+        """Try to extract findings from metadata
+
+        :param metadata: Metadata from aws asset
+        :type metadata: dict
+        :return: Report generated
+        :rtype: list()
+        """
         '''
         Try to find dangerous patterns in differents settings like SG, ACL, ...
         '''
         report = list()
-        report += self.get_dangerous_patterns_from_security_groups(metadata)
+        report += self.extract_findings_from_security_groups(metadata)
         return report

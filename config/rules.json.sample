@@ -1,20 +1,169 @@
 {
     "version": "1.0.0",
     "types": {
-        "security_group": [{
-            "message": "Too wide security group",
-            "patterns": [{
-                "type": "in",
-                "value": "0.0.0.0/0"
-            }],
-            "severity": "high"
-        }, {
-            "message": "Allow connection to all port from same source",
-            "patterns": [{
-                "type": "in",
-                "value": "->All"
-            }],
-            "severity": "medium"
-        }], "network_acl": {}
+        "security_group": {
+            "description": "Check each rule on each security group and on each source",
+            "findings": [{
+                "message": {
+                    "text": "[{name}] Allow connection to specific port (or range) from public network ({source}=>{ports})",
+                    "args": {
+                        "name": {
+                            "type": "var",
+                            "variable": "sg_name"
+                        }, "source": {
+                            "type": "var",
+                            "variable": "source"
+                        }, "ports": {
+                            "type": "var",
+                            "variable": "ports"
+                        }
+                    }
+                },
+                "rules": [{
+                    "type": "type_regex",
+                    "description": "Check if ports is a specific port (or range) (like 9000-9001)",
+                    "value": "port_range",
+                    "variable": "ports"
+                }, {
+                    "type": "is_cidr",
+                    "description": "Check if source is a valid CIDR block",
+                    "value": true,
+                    "variable": "source"
+                },{
+                    "type": "is_private_cidr",
+                    "description": "Check if source is not a private CIDR block - RFC 1918",
+                    "value": false,
+                    "variable": "source"
+                }],
+                "severity": "high"
+            }, {
+                "message": {
+                    "text": "[{name}] Allow connection to all port from public network ({source}=>{ports})",
+                    "args": {
+                        "name": {
+                            "type": "var",
+                            "variable": "sg_name"
+                        }, "source": {
+                            "type": "var",
+                            "variable": "source"
+                        }, "ports": {
+                            "type": "var",
+                            "variable": "ports"
+                        }
+                    }
+                },
+                "rules": [{
+                    "type": "in",
+                    "value": "all",
+                    "variable": "ports"
+                },{
+                    "type": "is_cidr",
+                    "description": "Check if source is a valid CIDR block",
+                    "value": true,
+                    "variable": "source"
+                }, {
+                    "type": "is_private_cidr",
+                    "description": "Check if source is not a private CIDR block - RFC 1918",
+                    "value": false,
+                    "variable": "source"
+                }],
+                "severity": "high"
+            }, {
+                "message": {
+                    "text": "[{name}] Allow connection to all port from private network ({source}=>{ports})",
+                    "args": {
+                        "name": {
+                            "type": "var",
+                            "variable": "sg_name"
+                        }, "source": {
+                            "type": "var",
+                            "variable": "source"
+                        }, "ports": {
+                            "type": "var",
+                            "variable": "ports"
+                        }
+                    }
+                },
+                "rules": [{
+                    "type": "in",
+                    "value": "all",
+                    "variable": "ports"
+                },{
+                    "type": "is_cidr",
+                    "description": "Check if source is a valid CIDR block",
+                    "value": true,
+                    "variable": "source"
+                }, {
+                    "type": "is_private_cidr",
+                    "description": "Check if source is a private CIDR block - RFC 1918",
+                    "value": true,
+                    "variable": "source"
+                }],
+                "severity": "medium"
+            }, {
+                "message": {
+                    "text": "[{name}] Allow connection to specific port (or range) from private network ({source}=>{ports})",
+                    "args": {
+                        "name": {
+                            "type": "var",
+                            "variable": "sg_name"
+                        }, "source": {
+                            "type": "var",
+                            "variable": "source"
+                        }, "ports": {
+                            "type": "var",
+                            "variable": "ports"
+                        }
+                    }
+                },
+                "rules": [{
+                    "type": "type_regex",
+                    "description": "Check if ports is a specific port (or range) (like 9000-9001)",
+                    "value": "port_range",
+                    "variable": "ports"
+                }, {
+                    "type": "is_cidr",
+                    "description": "Check if source is a valid CIDR block",
+                    "value": true,
+                    "variable": "source"
+                },{
+                    "type": "is_private_cidr",
+                    "description": "Check if source is a private CIDR block - RFC 1918",
+                    "value": true,
+                    "variable": "source"
+                }],
+                "severity": "medium"
+            }]
+        }, "metadata": {
+            "description": "Check each rule on an asset (named metadata)",
+            "findings": [{
+                "message": "No security group present",
+                "severity": "info",
+                "rules": [{
+                    "type": "not_in",
+                    "description": "Check if SecurityGroups is not in metadata",
+                    "value": "SecurityGroups",
+                    "variable": "metadata"
+                }]
+            }, {
+                "message": {
+                    "text": "DnsRecord: {dns_record}",
+                    "args": {
+                        "dns_record": {
+                            "type": "dict",
+                            "key": "DnsRecord",
+                            "variable": "metadata"
+                        }
+                    }
+                },
+                "severity": "medium",
+                "rules": [{
+                    "type": "in",
+                    "description": "Check if DnsRecord is in metadata",
+                    "value": "DnsRecord",
+                    "variable": "metadata"
+                }]
+            }]
+        }
     }
 }

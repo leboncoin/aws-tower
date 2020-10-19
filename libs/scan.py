@@ -140,7 +140,9 @@ def print_subnet(report, meta_types, names_only=False, hide_sg=False, security=N
                             if 'SecurityGroups' in asset_report:
                                 del asset_report['SecurityGroups']
                         if security:
-                        asset_report['SecurityIssues'] = patterns.get_dangerous_patterns(report[vpc]['Subnets'][subnet][asset_type][asset])
+                            asset_report['SecurityIssues'] = patterns.extract_findings(
+                                report[vpc]['Subnets'][subnet][asset_type][asset]
+                            )
                     new_report[vpc][mini_name].append(asset_report)
     LOGGER.warning(json.dumps(new_report, sort_keys=True, indent=4))
 
