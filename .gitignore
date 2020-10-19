@@ -8,3 +8,6 @@ package
 config/rules.json
 config/lambda.config
 
+# Documentation
+
+docs/build/*
