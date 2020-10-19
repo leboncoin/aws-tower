@@ -1,0 +1,3 @@
+Patrowl4py==1.1.0
+requests==2.22.0
+python-slugify==4.0.1

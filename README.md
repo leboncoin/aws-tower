@@ -9,7 +9,7 @@ $ cp config/rules.json.sample config/rules.json # if you want to use --security 
 
 ## Usage
 
-```bash
+```
 $ ./aws_tower_cli.py --help
 usage: aws_tower_cli.py [-h] [--version] [-a ACCOUNT] [--even-private] [-n] [--ec2] [--elbv2] [--rds] [--hide-sg] [-s] [--min_severity MIN_SEVERITY] [--max_severity MAX_SEVERITY]
 
@@ -34,7 +34,7 @@ optional arguments:
 ## Usage (lambda)
 
 ```bash
-$ pip install -r requirements.txt --target ./package
+$ pip install -r requirements.lambda.txt --target ./package
 
 $ cp config/lambda.config.sample config/lambda.config
 $ export PATROWL_APITOKEN=xxxxxxxxxxxxxxx
@@ -42,7 +42,7 @@ $ export PATROWL_ASSETGROUP=1
 $ export PATROWL_PRIVATE_ENDPOINT=http://localhost/
 $ export PATROWL_PUBLIC_ENDPOINT=http://localhost/
 
-$ python -c 'import aws_tower_lambda; aws_tower_lambda.main()' 
+$ python -c 'import aws_tower_lambda; aws_tower_lambda.main()'
 ```
 
 ## Findings
