@@ -30,33 +30,43 @@ def get_tag(tags, key):
     return names[0]
 
 def draw_sg(security_group, sg_raw):
-    result = ''
+    result = dict()
     for sg in sg_raw:
-        if sg['GroupId'] != security_group:
-            continue
-        for ip_perm in sg['IpPermissions']:
-            if ip_perm['IpProtocol'] not in ['tcp', '-1']:
-                continue
-            if ip_perm['IpProtocol'] == '-1':
-                for group in ip_perm['UserIdGroupPairs']:
-                    result += f'{group["GroupId"]},'
-                for cidr in ip_perm['IpRanges']:
-                    result += f'{cidr["CidrIp"]},'
-                result = f'{result[:-1]}->All '
-                continue
-            from_port = ip_perm['FromPort']
-            to_port = ip_perm['FromPort']
-            ip_range = ip_perm['IpRanges']
-            userid_group_pairs = ip_perm['UserIdGroupPairs']
-            for group in userid_group_pairs:
-                result += f'{group["GroupId"]},'
-            for cidr in ip_range:
-                result += f'{cidr["CidrIp"]},'
-            result = f'{result[:-1]}=>{from_port}'
-            if from_port != to_port:
-                result += f'-{to_port}'
-            result += ' '
-    return result[:-1]
+        if sg['GroupId'] == security_group:
+            for ip_perm in sg['IpPermissions']:
+                if ip_perm['IpProtocol'] in ['tcp', '-1']:
+                    if ip_perm['IpProtocol'] == '-1':
+                        if 'all' not in result:
+                            result['all'] = list()
+                        value = None
+                        for group in ip_perm['UserIdGroupPairs']:
+                            value = f'{group["GroupId"]}'
+                            if value not in result['all']:
+                                result['all'].append(value)
+                        for cidr in ip_perm['IpRanges']:
+                            value = f'{cidr["CidrIp"]}'
+                            if value not in result['all']:
+                                result['all'].append(value)
+                    else:
+                        from_port = ip_perm['FromPort']
+                        to_port = ip_perm['ToPort']
+                        key_ports = f'{from_port}'
+                        if from_port != to_port:
+                            key_ports += f'-{to_port}'
+                        if key_ports  not in result:
+                            result[key_ports] = list()
+                        ip_range = ip_perm['IpRanges']
+                        userid_group_pairs = ip_perm['UserIdGroupPairs']
+                        value = None
+                        for group in userid_group_pairs:
+                            value = f'{group["GroupId"]}'
+                            if value not in result[key_ports]:
+                                result[key_ports].append(value)
+                        for cidr in ip_range:
+                            value = f'{cidr["CidrIp"]}'
+                            if value not in result[key_ports]:
+                                result[key_ports].append(value)
+    return result
 
 def parse_report(report, meta_types):
     """
@@ -123,11 +133,13 @@ def print_subnet(report, meta_types, names_only=False, hide_sg=False, security=N
                     continue
                 for asset in report[vpc]['Subnets'][subnet][asset_type]:
                     asset_report = report[vpc]['Subnets'][subnet][asset_type][asset]
-                    if hide_sg:
-                        remove_key_from_report(asset_report, 'sg-', is_startswith=True)
                     if names_only:
-                        asset_report = f'{asset_type}: {asset_report[META[asset_type]["Name"]]}'
-                    if security:
+                        asset_report = f'{asset_type}: {asset_report[meta_types[asset_type]["Name"]]}'
+                    else:
+                        if hide_sg:
+                            if 'SecurityGroups' in asset_report:
+                                del asset_report['SecurityGroups']
+                        if security:
                         asset_report['SecurityIssues'] = patterns.get_dangerous_patterns(report[vpc]['Subnets'][subnet][asset_type][asset])
                     new_report[vpc][mini_name].append(asset_report)
     LOGGER.warning(json.dumps(new_report, sort_keys=True, indent=4))
@@ -150,10 +162,11 @@ def ec2_scan(report, ec2, public_only, sg_raw):
         if 'PublicIpAddress' in ec2:
             report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['PublicIpAddress'] = ec2['PublicIpAddress']
         if 'SecurityGroups' in ec2:
+            report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['SecurityGroups'] = dict()
             for sg in ec2['SecurityGroups']:
                 draw = draw_sg(sg['GroupId'], sg_raw)
                 if draw:
-                    report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']][sg['GroupId']] = draw
+                    report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['SecurityGroups'][sg['GroupId']] = draw
         # if 'ImageId' in ec2:
         #     report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['ImageId'] = ec2['ImageId']
     return report
@@ -169,8 +182,9 @@ def elbv2_scan(report, elbv2, public_only, sg_raw):
     report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['Scheme'] = elbv2['Scheme']
     report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['DNSName'] = elbv2['DNSName']
     if 'SecurityGroups' in elbv2:
+        report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['SecurityGroups'] = dict()
         for sg in elbv2['SecurityGroups']:
-            report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']][sg] = draw_sg(sg, sg_raw)
+            report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['SecurityGroups'][sg] = draw_sg(sg, sg_raw)
     return report
 
 def rds_scan(report, rds, public_only):
