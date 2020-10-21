@@ -10,8 +10,9 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 import json
 import re
 import logging
+import ipaddress
 
-VERSION = '2.2.1'
+VERSION = '2.3.0'
 
 class Patterns:
     """Get findings from patterns
@@ -26,10 +27,6 @@ class Patterns:
     :type max_severity: str
     """
     _patterns = list()
-    _regex_patterns = {
-        'is_cidr': re.compile(r'^(?:[0-9]{1,3}\.){3}[0-9]{1,3}\/(?:[1-2]?[0-9]|3[0-2])$'),
-        'is_private_cidr': re.compile(r'^(?:127\.|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[0-1]\.|192\.168\.)')
-    }
     _types_regex = {
         'port_range': re.compile(r'^(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])(?:-(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5]))?$')
     }
@@ -125,11 +122,19 @@ class Patterns:
         :return: Return True if source and cidr are validated
         :rtype: bool
         """
-        result = self._regex_patterns['is_cidr'].match(source) is not None
-        return result is is_cidr
+        self._logger.debug(f'Check rule is_cidr. Source: {source} | is_cidr: {is_cidr}')
+        try:
+            ipaddress.ip_network(source)
+        except ValueError:
+            return not is_cidr
+        except Exception as e:
+            self._logger.warning(f'Error in creating ip_network from {source}: {e}')
+            return False
+        else:
+            return is_cidr
 
     def _check_rule_is_private_cidr(self, source, is_private_cidr=True):
-        """Check with a regex if source is a private CIDR or not
+        """Check if source is a private CIDR or not
         Check rule "is_private_cidr"
         If is_private_cidr is False, then it will return True if
         source is not a private cidr
@@ -141,8 +146,17 @@ class Patterns:
         :return: Return True if source and cidr are validated
         :rtype: bool
         """
-        result = self._regex_patterns['is_private_cidr'].match(source) is not None
-        return result is is_private_cidr
+        self._logger.debug(f'Check rule is_private_cidr. Source: {source} | is_private_cidr: {is_private_cidr}')
+        try:
+            ip_network = ipaddress.ip_network(source)
+        except ValueError:
+            self._logger.warning(f'Unable to create ip_network from {source}: Bad format!')
+            return False
+        except Exception as e:
+            self._logger.warning(f'Error in creating ip_network from {source}: {e}')
+            return False
+        return ip_network.is_private == is_private_cidr
+
 
     def _check_rule_type_regex(self, ports, type_regex):
         """Check if ports if valid via regex
