@@ -258,12 +258,14 @@ class Patterns:
                     return False
         return report_message
 
-    def _check_findings_by_type(self, findings_type, **kwargs):
+    def _check_findings_by_type(self, findings_type, loop=True, **kwargs):
         """Check every finding rule on kwargs
         Example: Try to check if a source is a valid CIDR and is a private CIDR
 
         :param findings_type: Findings to use like metadata, security_groups, ...
         :type findings_type: str
+        :param loop: If True then we don't stop after the first finding found
+        :type loop: bool, optional
         :return: Report generated from the findings
         :rtype: list
         """
@@ -301,6 +303,8 @@ class Patterns:
                 )
                 if report_message is not False:
                     report.append(report_message)
+                    if loop is False:
+                        break
         return report
 
     def extract_findings_from_security_groups(self, metadata):
@@ -320,6 +324,7 @@ class Patterns:
                     for source in sources:
                         result = self._check_findings_by_type(
                             'security_group',
+                            loop=False,
                             sg_name=sg_name,
                             ports=ports,
                             source=source
