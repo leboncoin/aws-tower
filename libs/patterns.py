@@ -155,7 +155,12 @@ class Patterns:
         except Exception as e:
             self._logger.warning(f'Error in creating ip_network from {source}: {e}')
             return False
-        return ip_network.is_private == is_private_cidr
+        is_private = True
+        if source.startswith('0.0.0.0'):
+            is_private = False
+        else:
+            is_private = ip_network.is_private
+        return is_private ==  is_private_cidr
 
     def _check_rule_is_in_networks(self, source, networks):
         """Check if source is in one of the networks
