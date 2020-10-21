@@ -157,6 +157,39 @@ class Patterns:
             return False
         return ip_network.is_private == is_private_cidr
 
+    def _check_rule_is_in_networks(self, source, networks):
+        """Check if source is in one of the networks
+        Check rule "is_in_specific_networks"
+
+        :param source: Value we want to validate as a private CIDR
+        :type source: str
+        :param networks: List of networks we want to check check
+        :type networks: list
+        """
+        self._logger.debug(f'Check rule is_in_networks. Source: {source} | networks: {networks}')
+        if not isinstance(networks, list):
+            self._logger.warnig(f'Bad format for networks. Got {type(networks)} instead of list')
+            return False
+        try:
+            ip_network = ipaddress.ip_network(source)
+        except ValueError:
+            self._logger.warning(f'Unable to create ip_network from {source}: Bad format!')
+            return False
+        except Exception as e:
+            self._logger.warning(f'Error in creating ip_network from {source}: {e}')
+            return False
+        for network_str in networks:
+            try:
+                network = ipaddress.ip_network(network_str)
+            except ValueError:
+                self._logger.warning(f'Unable to create ip_network from {source}: Bad format!')
+                continue
+            except Exception as e:
+                self._logger.warning(f'Error in creating ip_network from {source}: {e}')
+                continue
+            if network.supernet_of(ip_network):
+                return True
+        return False
 
     def _check_rule_type_regex(self, ports, type_regex):
         """Check if ports if valid via regex
