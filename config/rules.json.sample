@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "types": {
         "security_group": {
             "description": "Check each rule on each security group and on each source",
@@ -24,11 +24,6 @@
                     "description": "Check if ports is a specific port (or range) (like 9000-9001)",
                     "value": "port_range",
                     "variable": "ports"
-                }, {
-                    "type": "is_cidr",
-                    "description": "Check if source is a valid CIDR block",
-                    "value": true,
-                    "variable": "source"
                 },{
                     "type": "is_private_cidr",
                     "description": "Check if source is not a private CIDR block - RFC 1918",
@@ -56,11 +51,6 @@
                     "type": "in",
                     "value": "all",
                     "variable": "ports"
-                },{
-                    "type": "is_cidr",
-                    "description": "Check if source is a valid CIDR block",
-                    "value": true,
-                    "variable": "source"
                 }, {
                     "type": "is_private_cidr",
                     "description": "Check if source is not a private CIDR block - RFC 1918",
@@ -88,11 +78,6 @@
                     "type": "in",
                     "value": "all",
                     "variable": "ports"
-                },{
-                    "type": "is_cidr",
-                    "description": "Check if source is a valid CIDR block",
-                    "value": true,
-                    "variable": "source"
                 }, {
                     "type": "is_private_cidr",
                     "description": "Check if source is a private CIDR block - RFC 1918",
@@ -122,11 +107,6 @@
                     "value": "port_range",
                     "variable": "ports"
                 }, {
-                    "type": "is_cidr",
-                    "description": "Check if source is a valid CIDR block",
-                    "value": true,
-                    "variable": "source"
-                },{
                     "type": "is_private_cidr",
                     "description": "Check if source is a private CIDR block - RFC 1918",
                     "value": true,
