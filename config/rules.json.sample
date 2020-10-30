@@ -175,6 +175,30 @@
               "variable": "metadata"
             }
           ]
+        },
+        {
+          "message": "Deprecated mysql engine version",
+          "severity": "high",
+          "rules": [
+            {
+              "type": "engine_deprecated_version",
+              "description": "Check if mysql engine is not deprecated",
+              "value": "[\"mysql==5.1.0\"]",
+              "variable": "metadata"
+            }
+          ]
+        },
+        {
+          "message": "Deprecated postgres engine version",
+          "severity": "high",
+          "rules": [
+            {
+              "type": "engine_deprecated_version",
+              "description": "Check if postgres engine is not deprecated",
+              "value": "[\"postgres==10.20\", \"postgres==11.40\"]",
+              "variable": "metadata"
+            }
+          ]
         }
       ]
     }
