@@ -7,12 +7,14 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 """
-import json
-import re
-import logging
-import ipaddress
 
-VERSION = '2.3.0'
+from distutils.version import LooseVersion
+import ipaddress
+import json
+import logging
+import re
+
+VERSION = '2.4.0'
 
 class Patterns:
     """Get findings from patterns
@@ -211,6 +213,43 @@ class Patterns:
         if type_regex in self._types_regex:
             return self._types_regex[type_regex].match(ports) is not None
         return False
+
+    def _check_rule_engine_deprecated_version(self, metadata, list_min_version_allowed):
+        """Check if the engine version is not deprecated.
+        Compare the engine version if it's smaller than the minimum version allowed in list
+        If there is multiple versions,
+        it only checks the major version for the other listed versions
+        Check rule "engine_deprecated_version"
+
+        :param metadata: RDS metadata
+        :type metadata: dict
+        :param min_version_allowed: Minimum DBMS version allowed
+        :type list_min_version_allowed: string representation of list
+        :return: True if the engine version is deprecated
+        :rtype: bool
+        """
+        if 'Engine' not in metadata:
+            return False
+        if len(metadata['Engine'].split('==')) < 2:
+            self._logger.warning(f'Wrong format for {metadata["Engine"]}')
+            return False
+        current_version = LooseVersion(metadata['Engine'].split('==')[1])
+        min_version = LooseVersion('0.0.1')
+        versions = list()
+        for min_version_allowed in json.loads(list_min_version_allowed):
+            if len(min_version_allowed.split('==')) < 2:
+                self._logger.warning(f'Wrong format for {min_version_allowed}')
+                return False
+            version = LooseVersion(min_version_allowed.split('==')[1])
+            if version < min_version:
+                min_version = version
+            else:
+                versions.append(version)
+        # Compare only if major version match
+        for version in versions:
+            if str(version).split('.')[0] == str(current_version).split('.')[0]:
+                return current_version < version
+        return current_version < min_version
 
     def _generate_report_message(self, message, severity, **kwargs):
         """Generate a message for the report
