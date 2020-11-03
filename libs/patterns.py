@@ -29,9 +29,7 @@ class Patterns:
     :type max_severity: str
     """
     _patterns = list()
-    _types_regex = {
-        'port_range': re.compile(r'^(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])(?:-(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5]))?$')
-    }
+    _ports_range = re.compile(r'^(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])(?:-(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5]))?$')
     _severity_levels = dict()
     _min_severity = 0
     _max_severity = 0
@@ -164,7 +162,7 @@ class Patterns:
             return False
         return self._patterns['types'][type_name]['findings']
 
-    def _check_rule_in(self, variable, value):
+    def _check_rule_in(self, variables, values):
         """Check if value may be found in variable
         Check rule "in"
 
@@ -175,16 +173,16 @@ class Patterns:
         :return: True if we find it, else return False
         :rtype: bool
         """
-        if isinstance(variable, str):
-            return value.lower() in variable.lower()
-        if isinstance(variable, list):
-            for element in variable:
-                if value.lower() == element.lower():
+        if isinstance(variables['variable_in'], str):
+            return values['value_in'].lower() in variables['variable_in'].lower()
+        if isinstance(variables['variable_in'], list):
+            for element in variables['variable_in']:
+                if values['value_in'].lower() == element.lower():
                     return True
             return False
-        return value in variable
+        return values['value_in'] in variables['variable_in']
 
-    def _check_rule_not_in(self, variable, value):
+    def _check_rule_not_in(self, variables, values):
         """Check if value is not in variable
         Check rule "not_in"
 
@@ -195,9 +193,9 @@ class Patterns:
         :return: True if we don't find it, else return False
         :rtype: bool
         """
-        return not self._check_rule_in(variable, value)
+        return not self._check_rule_in(variables, values)
 
-    def _check_rule_is_cidr(self, source, is_cidr=True):
+    def _check_rule_is_cidr(self, variables, values):
         """Check if source is a valid CIDR (example: 10.0.0.0/8)
         Check rule "is_cidr"
         If is_cidr is False, then it will return True if source
@@ -210,18 +208,18 @@ class Patterns:
         :return: Return True if source and cidr are validated
         :rtype: bool
         """
-        self._logger.debug(f'Check rule is_cidr. Source: {source} | is_cidr: {is_cidr}')
+        self._logger.debug(f'Check rule is_cidr. Source: {variables["source"]} | is_cidr: {values["is_cidr"]}')
         try:
-            ipaddress.ip_network(source)
+            ipaddress.ip_network(variables["source"])
         except ValueError:
-            return not is_cidr
+            return not values["is_cidr"]
         except Exception as e:
-            self._logger.warning(f'Error in creating ip_network from {source}: {e}')
+            self._logger.warning(f'Error in creating ip_network from {variables["source"]}: {e}')
             return False
         else:
-            return is_cidr
+            return values["is_cidr"]
 
-    def _check_rule_is_private_cidr(self, source, is_private_cidr=True):
+    def _check_rule_is_private_cidr(self, variables, values):
         """Check if source is a private CIDR or not
         Check rule "is_private_cidr"
         If is_private_cidr is False, then it will return True if
@@ -234,23 +232,23 @@ class Patterns:
         :return: Return True if source and cidr are validated
         :rtype: bool
         """
-        self._logger.debug(f'Check rule is_private_cidr. Source: {source} | is_private_cidr: {is_private_cidr}')
+        self._logger.debug(f'Check rule is_private_cidr. Source: {variables["source"]} | is_private_cidr: {values["is_private_cidr"]}')
         try:
-            ip_network = ipaddress.ip_network(source)
+            ip_network = ipaddress.ip_network(variables["source"])
         except ValueError:
-            self._logger.warning(f'Unable to create ip_network from {source}: Bad format!')
+            self._logger.warning(f'Unable to create ip_network from {variables["source"]}: Bad format!')
             return False
         except Exception as e:
-            self._logger.warning(f'Error in creating ip_network from {source}: {e}')
+            self._logger.warning(f'Error in creating ip_network from {variables["source"]}: {e}')
             return False
         is_private = True
-        if source.startswith('0.0.0.0'):
+        if variables["source"].startswith('0.0.0.0'):
             is_private = False
         else:
             is_private = ip_network.is_private
-        return is_private ==  is_private_cidr
+        return is_private == values["is_private_cidr"]
 
-    def _check_rule_is_in_networks(self, source, networks):
+    def _check_rule_is_in_networks(self, variables, values):
         """Check if source is in one of the networks
         Check rule "is_in_specific_networks"
 
@@ -259,35 +257,35 @@ class Patterns:
         :param networks: List of networks we want to check check
         :type networks: list
         """
-        self._logger.debug(f'Check rule is_in_networks. Source: {source} | networks: {networks}')
-        if not isinstance(networks, list):
-            self._logger.warnig(f'Bad format for networks. Got {type(networks)} instead of list')
+        self._logger.debug(f'Check rule is_in_networks. Source: {variables["source"]} | networks: {values["networks"]}')
+        if not isinstance(values["networks"], list):
+            self._logger.warnig(f'Bad format for networks. Got {type(values["networks"])} instead of list')
             return False
         try:
-            ip_network = ipaddress.ip_network(source)
+            ip_network = ipaddress.ip_network(variables["source"])
         except ValueError:
-            self._logger.warning(f'Unable to create ip_network from {source}: Bad format!')
+            self._logger.warning(f'Unable to create ip_network from {variables["source"]}: Bad format!')
             return False
         except Exception as e:
-            self._logger.warning(f'Error in creating ip_network from {source}: {e}')
+            self._logger.warning(f'Error in creating ip_network from {variables["source"]}: {e}')
             return False
-        for network_str in networks:
+        for network_str in values["networks"]:
             try:
                 network = ipaddress.ip_network(network_str)
             except ValueError:
-                self._logger.warning(f'Unable to create ip_network from {source}: Bad format!')
+                self._logger.warning(f'Unable to create ip_network from {variables["source"]}: Bad format!')
                 continue
             except Exception as e:
-                self._logger.warning(f'Error in creating ip_network from {source}: {e}')
+                self._logger.warning(f'Error in creating ip_network from {variables["source"]}: {e}')
                 continue
             if network.supernet_of(ip_network):
                 return True
         return False
 
-    def _check_rule_type_regex(self, ports, type_regex):
-        """Check if ports if valid via regex
-        Check rule "type_regex"
-        It will check with self._types_regex
+    def _check_rule_is_ports(self, variables, values):
+        """Check if ports is valid via regex
+        Check rule "is_ports"
+        It will check with self._ports_range
 
         :param ports: Ports to validate (examples: '80', '9000-9001')
         :type ports: str
@@ -296,11 +294,11 @@ class Patterns:
         :return: True if we can find and validate the type of regex
         :rtype: bool
         """
-        if type_regex in self._types_regex:
-            return self._types_regex[type_regex].match(ports) is not None
+        if self._ports_range.match(variables['source']) is not None:
+            return values['is_ports']
         return False
 
-    def _check_rule_engine_deprecated_version(self, metadata, list_min_version_allowed):
+    def _check_rule_engine_deprecated_version(self, variables, values):
         """Check if the engine version is not deprecated.
         Compare the engine version if it's smaller than the minimum version allowed in list
         If there is multiple versions,
@@ -314,30 +312,28 @@ class Patterns:
         :return: True if the engine version is deprecated
         :rtype: bool
         """
-        if 'Engine' not in metadata:
+        if len(variables['engine'].split('==')) < 2:
+            self._logger.warning(f'Wrong format for {variables["engine"]}')
             return False
-        if len(metadata['Engine'].split('==')) < 2:
-            self._logger.warning(f'Wrong format for {metadata["Engine"]}')
+        engine_name, current_version = variables['engine'].split('==')
+        if values['engine_name'] != engine_name:
             return False
-        current_version = LooseVersion(metadata['Engine'].split('==')[1])
+        current_version = LooseVersion(current_version)
         min_version = LooseVersion('0.0.1')
         versions = list()
-        for min_version_allowed in json.loads(list_min_version_allowed):
-            if len(min_version_allowed.split('==')) < 2:
-                self._logger.warning(f'Wrong format for {min_version_allowed}')
-                return False
-            version = LooseVersion(min_version_allowed.split('==')[1])
+        for min_version_allowed in values['versions']:
+            version = LooseVersion(min_version_allowed)
             if version < min_version:
                 min_version = version
             else:
                 versions.append(version)
         # Compare only if major version match
         for version in versions:
-            if str(version).split('.')[0] == str(current_version).split('.')[0]:
+            if version.version[0] == current_version.version[0]:
                 return current_version < version
         return current_version < min_version
 
-    def _generate_report_message(self, message, severity, **kwargs):
+    def _generate_report_message(self, message, severity, kwargs):
         """Generate a message for the report
 
         :param message: Message data from the finding (may be a string or dictionary)
@@ -366,13 +362,13 @@ class Patterns:
                                 self._logger.error(f'Unable to find variable {value["key"]} in {list(kwargs[value["variable"]].keys())}')
                                 return False
                         else:
-                            self._logger.error(f'Unable to find variable {value["type"]} in {list(kwargs.keys())}')
+                            self._logger.error(f'Unable to find variable {value["type"]} in {", ".join(kwargs)}')
                             return False
                     elif value['type'] == 'var':
                         if value['variable'] in kwargs:
                             args[key] = kwargs[value['variable']]
                         else:
-                            self._logger.error(f'Unable to find variable {value["type"]} in {list(kwargs.keys())}')
+                            self._logger.error(f'Unable to find variable {value["type"]} in {", ".join(kwargs)}')
                             return False
             except Exception as e:
                 self._logger.error(f'Unable to prepare variables for the report message: {e}', exc_info=True)
@@ -412,15 +408,30 @@ class Patterns:
                     self._severity_levels[finding['severity']] <= self._max_severity):
                 finding_found = True
                 for rule in finding['rules']:
-                    if 'type' in rule and 'value' in rule and 'variable' in rule:
+                    if 'type' in rule and 'values' in rule and 'variables' in rule:
                         func_rule = f'_check_rule_{rule["type"]}'
-                        if hasattr(self, func_rule) and rule['variable'] in kwargs:
-                            if not getattr(self, func_rule)(kwargs[rule['variable']], rule['value']):
+                        if not self._check_definition(rule["type"], rule["variables"], rule["values"]):
+                            self._logger.error(f'Bad rule definition!')
+                            finding_found = False
+                            break
+                        if hasattr(self, func_rule):
+                            variables = self._prepare_arguments(rule['variables'], kwargs)
+                            if not variables:
+                                self._logger.error('Unable to prepare variables')
+                                finding_found = False
+                                break
+                            values = self._prepare_arguments(rule['values'], kwargs)
+                            if not values:
+                                self._logger.error('Unable to prepare values')
+                                finding_found = False
+                                break
+                            if not getattr(self, func_rule)(variables, values):
                                 finding_found = False
                                 break
                         else:
-                            self._logger.error(f'Uanble to find function {func_rule} or {rule["variable"]} in {kwargs}')
+                            self._logger.error(f'Uanble to find function {func_rule}')
                             finding_found = False
+                            break
                     else:
                         self._logger.error(f'Unable to find "type", "value" or "variable" in {rule}')
                         finding_found = False
@@ -429,7 +440,7 @@ class Patterns:
                 report_message = self._generate_report_message(
                     finding['message'],
                     finding['severity'],
-                    **kwargs
+                    kwargs
                 )
                 if report_message is not False:
                     report.append(report_message)
