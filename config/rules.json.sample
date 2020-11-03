@@ -196,19 +196,19 @@
           },
           "rules": [
             {
-              "type": "type_regex",
+              "type": "is_ports",
               "description": "Check if ports is a specific port (or range) (like 9000-9001)",
               "values": [
                 {
                   "type": "value",
-                  "name": "type_regex",
-                  "value": "port_range"
+                  "name": "is_ports",
+                  "value": true
                 }
               ],
               "variables": [
                 {
                   "type": "var",
-                  "name": "ports",
+                  "name": "source",
                   "value": "ports"
                 }
               ]
