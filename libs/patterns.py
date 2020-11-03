@@ -36,7 +36,7 @@ class Patterns:
     _min_severity = 0
     _max_severity = 0
 
-    def __init__(self, patterns_path, severity_levels, min_severity, max_severity):
+    def __init__(self, patterns_path, severity_levels={'info': 0, 'critical': 1}, min_severity='info', max_severity='critical'):
         """Constructor method
         Get patterns from the json file
         Set min_severity / max_severity to at least 0 if any issue
