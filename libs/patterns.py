@@ -488,3 +488,135 @@ class Patterns:
         report = list()
         report += self.extract_findings_from_security_groups(metadata)
         return report
+
+    def _check_arguments_definitions(self, arguments, name):
+        errors = {
+            'critical': list(),
+            'warning': list()
+        }
+        for argument in arguments:
+            if 'name' not in argument or 'type' in argument or 'value' in argument:
+                errors['critical'].append(f'{name} must have a "name", "type" and "value"')
+            else:
+                if argument['type'] not in ['dict',  'var', 'value']:
+                    errors['critical'].append(f'{name} type must be dict, var, value. Found {argument["type"]}')
+                else:
+                    if argument['type'] == 'dict' and 'key' not in argument:
+                        errors['critical'].append(f'{name} with type "dict" must have a "key"')
+        return errors
+
+    def _check_rules_definitions(self, rule):
+        errors = {
+            'critical': list(),
+            'warning': list(),
+        }
+        bad_format = False
+        if 'type' not in rule:
+            errors['critical'].append('No "type"')
+        else:
+            if rule['type'] not in self._rules_definitions:
+                errors['critical'].append(f'Rule type {rule["type"]} not found in rules definitions')
+        if 'description' not in rule:
+            errors['warning'].append('No "description"')
+        if 'values' not in rule:
+            errors['critical'].append('No "values')
+            bad_format = True
+        else:
+            if not isinstance(rule['values'], list):
+                errors['critical'].append(f'"values" must be list, found {type(rule["values"])}')
+                bad_format = True
+        if 'variables' not in rule:
+            errors['critical'].append('No "variables"')
+            bad_format = True
+        else:
+            if not isinstance(rule['variables'], list):
+                errors['critical'].append(f'"variables" must be list, found {type(rule["variables"])}')
+                bad_format = True
+        if not bad_format and rule['type'] in self._rules_definitions:
+            variables_errors = self._check_arguments_definitions(rule['variables'], 'Variable')
+            errors['critical'] += variables_errors['critical']
+            errors['warning'] += variables_errors['warning']
+            variables_name = [variable['name'] for variable in rule['variables']]
+            values_errors = self._check_arguments_definitions(rule['values'], 'Value')
+            errors['critical'] += values_errors['critical']
+            errors['warning'] += values_errors['warning']
+            values_name = [value['name'] for value in rule['values']]
+            for variable in self._rules_definitions[rule['type']]['variables']:
+                if not variable in variables_name:
+                    errors['critical'].append(f'Unable to find {variable} in {list(variables_name)}')
+            for value in self._rules_definitions[rule['type']]['values']:
+                if not value in values_name:
+                    errors['critical'].append(f'Unable to find {value} in {list(values_name)}')
+        return errors
+
+    def _check_finding_definitions(self, finding):
+        errors = {
+            'critical': list(),
+            'warning': list(),
+            'rules': list()
+        }
+        if not isinstance(finding, dict):
+            errors['critical'].append(f'Bad format for finding ({type(type_name)} instead of dict)')
+        else:
+            if 'message' not in finding:
+                error['critical'].append(f'No "message"')
+            else:
+                if isinstance(finding['message'], dict):
+                    if not 'text' in finding['message']:
+                        errors['critical'].append(f'No "text" in message (format dict)')
+                    if not 'args' in finding['message']:
+                        errors['critical'].append(f'No "args" in message (format dict)')
+                    else:
+                        if not isinstance(finding['message']['args'], dict):
+                            errors['critical'].append(f'Bad format for args ({type(finding["message"]["args"])})')
+                        else:
+                            for arg_key, arg_value in finding['message']['args'].items():
+                                if not 'type' in arg_value:
+                                    errors['critical'].append(f'No "type" in arg {arg_key}')
+                                else:
+                                    if arg_value not in ['var', 'dict']:
+                                        errors['critical'].append(f'Bad type ({arg_value}) ')
+                elif not isinstance(finding['message'], str):
+                    error['critical'].append(f'Bad format for message in finding [{index}] in {type_name}: {type(finding["message"])}')
+                if not 'rules' in finding:
+                    errors['critical'].append(f'No "rules"')
+                else:
+                    for rule in finding['rules']:
+                        errors['rules'].append(self._check_rules_definitions(rule))
+        return errors
+
+    def check_patterns_definitions(self):
+        errors = {
+            'general': {
+                'critical': list(),
+                'warning': list()
+            }
+        }
+        self._logger.info('Checking rules methods')
+        for rule_name in self._rules_definitions.keys():
+            func_rule = f'_check_rule_{rule_name}'
+            if not hasattr(self, func_rule):
+                errors['general']['critical'].append(f'Method {func_rule} not found')
+        self._logger.info('Checking rules definitions')
+        if 'version' in self._patterns:
+            self._logger.info(f'Rules version: {self._patterns["version"]}')
+        else:
+            errors['general']['warning'].append('No version found for rules')
+        for pattern_type_name, pattern_type_content in self._patterns['types'].items():
+            errors[pattern_type_name] = {
+                'critical': list(),
+                'warning': list(),
+                'findings': list()
+            }
+            self._logger.info(f'Checking rules for pattern type {pattern_type_name}')
+            if 'description' not in pattern_type_content:
+                errors[pattern_type_name]['warning'].append(f'No description found')
+            if 'findings' not in pattern_type_content:
+                errors[pattern_type_name]['critical'].append(f'No findings found')
+            else:
+                if not isinstance(pattern_type_content['findings'], list):
+                    errors[pattern_type_name]['critical'].append(f'findings value is {type(pattern_type_content["findings"])} instead of list')
+                else:
+                    for finding in pattern_type_content['findings']:
+                        errors[pattern_type_name]['findings'].append(self._check_finding_definitions(finding))
+        return errors
