@@ -24,16 +24,40 @@
           },
           "rules": [
             {
-              "type": "type_regex",
+              "type": "is_ports",
               "description": "Check if ports is a specific port (or range) (like 9000-9001)",
-              "value": "port_range",
-              "variable": "ports"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "is_ports",
+                  "value": true
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "source",
+                  "value": "ports"
+                }
+              ]
             },
             {
               "type": "is_private_cidr",
               "description": "Check if source is not a private CIDR block - RFC 1918",
-              "value": false,
-              "variable": "source"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "is_private_cidr",
+                  "value": false
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "source",
+                  "value": "source"
+                }
+              ]
             }
           ],
           "severity": "high"
@@ -59,14 +83,38 @@
           "rules": [
             {
               "type": "in",
-              "value": "all",
-              "variable": "ports"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "value_in",
+                  "value": "all"
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "variable_in",
+                  "value": "ports"
+                }
+              ]
             },
             {
               "type": "is_private_cidr",
               "description": "Check if source is not a private CIDR block - RFC 1918",
-              "value": false,
-              "variable": "source"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "is_private_cidr",
+                  "value": false
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "source",
+                  "value": "source"
+                }
+              ]
             }
           ],
           "severity": "high"
@@ -92,14 +140,38 @@
           "rules": [
             {
               "type": "in",
-              "value": "all",
-              "variable": "ports"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "value_in",
+                  "value": "all"
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "variable_in",
+                  "value": "ports"
+                }
+              ]
             },
             {
               "type": "is_private_cidr",
               "description": "Check if source is a private CIDR block - RFC 1918",
-              "value": true,
-              "variable": "source"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "is_private_cidr",
+                  "value": true
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "source",
+                  "value": "source"
+                }
+              ]
             }
           ],
           "severity": "medium"
@@ -126,14 +198,38 @@
             {
               "type": "type_regex",
               "description": "Check if ports is a specific port (or range) (like 9000-9001)",
-              "value": "port_range",
-              "variable": "ports"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "type_regex",
+                  "value": "port_range"
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "ports",
+                  "value": "ports"
+                }
+              ]
             },
             {
               "type": "is_private_cidr",
               "description": "Check if source is a private CIDR block - RFC 1918",
-              "value": true,
-              "variable": "source"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "is_private_cidr",
+                  "value": true
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "source",
+                  "value": "source"
+                }
+              ]
             }
           ],
           "severity": "low"
@@ -150,8 +246,20 @@
             {
               "type": "not_in",
               "description": "Check if SecurityGroups is not in metadata",
-              "value": "SecurityGroups",
-              "variable": "metadata"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "value_in",
+                  "value": "SecurityGroups"
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "variable_in",
+                  "value": "metadata"
+                }
+              ]
             }
           ]
         },
@@ -171,32 +279,117 @@
             {
               "type": "in",
               "description": "Check if DnsRecord is in metadata",
-              "value": "DnsRecord",
-              "variable": "metadata"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "value_in",
+                  "value": "DnsRecord"
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "variable_in",
+                  "value": "metadata"
+                }
+              ]
             }
           ]
         },
         {
-          "message": "Deprecated mysql engine version",
+          "message": {
+            "text": "Deprecated mysql engine version ({current_version})",
+            "current_version": {
+              "type": "dict",
+              "key": "Engine",
+              "variable": "metadata"
+            }
+          },
           "severity": "high",
           "rules": [
             {
+              "type": "in",
+              "description": "Check if Engine is in metadata",
+              "values": [
+                {
+                  "type": "value",
+                  "name": "value_in",
+                  "value": "Engine"
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "variable_in",
+                  "value": "metadata"
+                }
+              ]
+            },
+            {
               "type": "engine_deprecated_version",
               "description": "Check if mysql engine is not deprecated",
-              "value": "[\"mysql==5.1.0\"]",
-              "variable": "metadata"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "engine_name",
+                  "value": "mysql"
+                },
+                {
+                  "type": "value",
+                  "name": "versions",
+                  "value": [
+                    "5.1.0"
+                  ]
+                }
+              ],
+              "variables": [
+                {
+                  "type": "dict",
+                  "name": "engine",
+                  "value": "metadata",
+                  "key": "Engine"
+                }
+              ]
             }
           ]
         },
         {
-          "message": "Deprecated postgres engine version",
+          "message": {
+            "text": "Deprecated postgres engine version ({current_version})",
+            "current_version": {
+              "type": "dict",
+              "key": "Engine",
+              "variable": "metadata"
+            }
+          },
           "severity": "high",
           "rules": [
             {
               "type": "engine_deprecated_version",
               "description": "Check if postgres engine is not deprecated",
-              "value": "[\"postgres==10.20\", \"postgres==11.40\"]",
-              "variable": "metadata"
+              "values": [
+                {
+                  "type": "value",
+                  "name": "engine_name",
+                  "value": "postgres"
+                },
+                {
+                  "type": "value",
+                  "name": "versions",
+                  "value": [
+                    "10.20",
+                    "11.40"
+                  ]
+                }
+              ],
+              "variables": [
+                {
+                  "type": "dict",
+                  "name": "engine",
+                  "value": "metadata",
+                  "key": "Engine"
+                }
+              ]
             }
           ]
         }
