@@ -35,6 +35,30 @@ class Patterns:
     _severity_levels = dict()
     _min_severity = 0
     _max_severity = 0
+    _rules_definitions = {
+        'in': {
+            'variables': ['variable_in'],
+            'values': ['value_in']
+        }, 'not_in': {
+            'variables': ['variable_in'],
+            'values': ['value_in']
+        }, 'is_cidr': {
+            'variables': ['source'],
+            'values': ['is_cidr']
+        }, 'is_private_cidr': {
+            'variables': ['source'],
+            'values': ['is_private_cidr']
+        }, 'is_in_networks': {
+            'variables': ['source'],
+            'values': ['networks']
+        }, 'is_ports': {
+            'variables': ['source'],
+            'values': ['is_ports']
+        }, 'engine_deprecated_version': {
+            'variables': ['engine'],
+            'values': ['engine_name', 'versions']
+        }
+    }
 
     def __init__(self, patterns_path, severity_levels={'info': 0, 'critical': 1}, min_severity='info', max_severity='critical'):
         """Constructor method
@@ -64,6 +88,68 @@ class Patterns:
             self._max_severity = 0
         if self._max_severity < self._min_severity:
             raise Exception(f'Error: min severity ({min_severity}) higher than max severity ({max_severity})')
+
+    def _prepare_arguments(self, arguments, kwargs):
+        """Prepare arguments to use them in rule methods
+
+        :param arguments: arguments to prepare
+        :type arguments: list
+        :return: Arguments prepared or False if any error
+        :rtype: dict, bool
+        """
+        self._logger.debug(f'Preparing arguments: {arguments}')
+        prepared_arguments = dict()
+        for argument in arguments:
+            if argument['type'] == 'value':
+                prepared_arguments[argument['name']] = argument['value']
+            elif argument['type'] == 'var':
+                if argument['value'] in kwargs:
+                    prepared_arguments[argument['name']] = kwargs[argument['value']]
+                else:
+                    self._logger.error(f'Unable to find {argument["value"]} in {list(kwargs.keys())}')
+                    return False
+            elif argument['type'] == 'dict':
+                if argument['value'] in kwargs:
+                    if isinstance(kwargs[argument['value']], dict) and argument['key'] in kwargs[argument['value']]:
+                        prepared_arguments[argument['name']] = kwargs[argument['value']][argument['key']]
+                    else:
+                        self._logger.error(f'Unable to find {argument["key"]} in {kwargs[argument["value"]]}')
+                        return False
+                else:
+                    self._logger.error(f'Unable to find {argument["value"]} in {list(kwargs.keys())}')
+                    return False
+            else:
+                self._logger.error(f'Bad type ({argument["type"]} for {argument["value"]}')
+                return False
+        return prepared_arguments
+
+    def _check_definition(self, rule, variables, values):
+        """Check rule definition to use it
+
+        :param rule: Rule name, like "is_ports"
+        :type rule: str
+        :param variables: variables used to check
+        :type variables: dict
+        :param values: values used to check
+        :type values: dict
+        :return: True if all values / variables found
+        :rtype: bool
+        """
+        self._logger.debug(f'Checking definition of {rule}')
+        if not rule in self._rules_definitions:
+            self._logger.error(f'Unable to find definition for {rule}')
+            return False
+        variables_name = [variable['name'] for variable in variables]
+        values_name = [value['name'] for value in values]
+        for variable in self._rules_definitions[rule]['variables']:
+            if not variable in variables_name:
+                self._logger.error(f'Unable to find {variable} in {list(variables_name)}')
+                return False
+        for value in self._rules_definitions[rule]['values']:
+            if not value in values_name:
+                self._logger.error(f'Unable to find {value} in {list(values_name)}')
+                return False
+        return True
 
     def _get_findings_rules_from_type(self, type_name):
         """Get findings rules from _patterns
