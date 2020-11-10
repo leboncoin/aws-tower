@@ -9,9 +9,10 @@ $ cp config/rules.json.sample config/rules.json # if you want to use --security 
 
 ## Usage
 
-```
+```bash
 $ ./aws_tower_cli.py --help
-usage: aws_tower_cli.py [-h] [--version] [-a ACCOUNT] [--even-private] [-n] [--ec2] [--elbv2] [--rds] [--hide-sg] [-s] [--min_severity MIN_SEVERITY] [--max_severity MAX_SEVERITY]
+usage: aws_tower_cli.py [-h] [--version] [-a ACCOUNT] [--even-private] [-n] [-t TYPE] [--hide-sg] [-s] [--min_severity MIN_SEVERITY]
+                        [--max_severity MAX_SEVERITY]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -20,15 +21,15 @@ optional arguments:
                         Account Name (default: None)
   --even-private        Display public and private assets (default: False)
   -n, --names-only      Display only names (default: False)
-  --ec2                 Display EC2 (default: False)
-  --elbv2               Display ELBV2 (default: False)
-  --rds                 Display RDS (default: False)
+  -t TYPE, --type TYPE  Types to display (EC2, ELBV2, RDS) (default: display everything) (default: None)
   --hide-sg             Hide Security Groups (default: False)
   -s, --security        Check security issues on your services (default: False)
   --min_severity MIN_SEVERITY
-                        min severity level to report when security is enabled (['info', 'low', 'medium', 'high', 'critical']) (default: info)
+                        min severity level to report when security is enabled (['info', 'low', 'medium', 'high', 'critical'])
+                        (default: info)
   --max_severity MAX_SEVERITY
-                        max severity level to report when security is enabled (['info', 'low', 'medium', 'high', 'critical']) (default: critical)
+                        max severity level to report when security is enabled (['info', 'low', 'medium', 'high', 'critical'])
+                        (default: critical)
 ```
 
 ## Usage (lambda)
@@ -71,9 +72,22 @@ You need to add your findings in `config/rules.json` with the following format:
       }
   },
   "rules": [{
-      "type": "in" (not_in, is_cidr, is_private_cidr, type_regex),
-      "value": "all",
-      "variable": "ports"
+      "type": "in" (not_in, is_cidr, is_private_cidr, ...),
+      "description": "Check if variable_in is in value_in",
+      "values": [
+        {
+          "type": "value",
+          "name": "value_in",
+          "value": "all"
+        }
+      ],
+      "variables": [
+        {
+          "type": "var",
+          "name": "variable_in",
+          "value": "ports"
+        }
+      ]
   }, {
     ...
   }],
@@ -85,11 +99,13 @@ You need to add your findings in `config/rules.json` with the following format:
 
 Types already presents:
 
-- in: check if `value` is in `variable`
-- not_in: check if `value` is not in `variable`
+- in: check if `value_in` is in `variable_in`
+- not_in: check if `value_in` is not in `variable_in`
 - is_cidr: check if `source` is a CIDR (example: `0.0.0.0/0` is a valid cidr).
 - is_private_cidr: check if `source` is a private CIDR (rfc 1918)
-- type_regex: check if `ports` is a valid type (like `port_range`)
+- is_in_networks: check if `source` is one the networks in `networks`
+- is_ports: check if source is a port or range ports (example: 9000-90001 is valid)
+- engine_deprecated_version: check if `engine` version is higher than `versions`
 
 To add a new type, you must define it in `libs/patterns.py` with the following format:
 

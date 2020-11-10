@@ -227,16 +227,10 @@ def route53_scan(report, record_value, record):
 def aws_scan(
     boto_session,
     public_only=False,
-    enable_ec2=True,
-    enable_elbv2=True,
-    enable_rds=True):
+    meta_types=list()):
     """
     SCAN AWS
     """
-    if not enable_ec2 and not enable_elbv2 and not enable_rds:
-        enable_ec2 = True
-        enable_elbv2 = True
-        enable_rds = True
     ec2_client = boto_session.client('ec2')
     vpcs_raw = ec2_client.describe_vpcs()['Vpcs']
     subnets_raw = ec2_client.describe_subnets()['Subnets']
@@ -244,7 +238,7 @@ def aws_scan(
     ec2_raw = ec2_client.describe_instances()['Reservations']
     sg_raw = ec2_client.describe_security_groups()['SecurityGroups']
     elbv2_client = boto_session.client('elbv2')
-    load_balancers_raw = elbv2_client.describe_load_balancers()['LoadBalancers']
+    elbv2_raw = elbv2_client.describe_load_balancers()['LoadBalancers']
     rds_client = boto_session.client('rds')
     rds_raw = rds_client.describe_db_instances()['DBInstances']
     route53_client = boto_session.client('route53')
@@ -275,19 +269,18 @@ def aws_scan(
         for nacl_assoc in nacl['Associations']:
             report[nacl['VpcId']]['Subnets'][nacl_assoc['SubnetId']]['NetworkAcls'][nacl['NetworkAclId']] = nacl['Entries']
 
-    if enable_ec2:
+    if 'EC2' in meta_types:
         for ec2 in ec2_raw:
             for ec2_ in ec2['Instances']:
                 report = ec2_scan(report, ec2_, public_only, sg_raw)
 
-    if enable_elbv2:
-        for elbv2 in load_balancers_raw:
+    if 'ELBV2' in meta_types:
+        for elbv2 in elbv2_raw:
             report = elbv2_scan(report, elbv2, public_only, sg_raw)
 
-    if enable_rds:
+    if 'RDS' in meta_types:
         for rds in rds_raw:
             report = rds_scan(report, rds, public_only)
-
 
     for hosted_zone in route53_client.list_hosted_zones()['HostedZones']:
         for record in route53_client.list_resource_record_sets(HostedZoneId=hosted_zone['Id'])['ResourceRecordSets']:
