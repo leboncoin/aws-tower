@@ -21,7 +21,7 @@ from config import variables
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.7.1'
+VERSION = '1.7.2'
 
 def main(args):
     """
