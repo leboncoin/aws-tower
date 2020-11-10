@@ -83,6 +83,7 @@
           "rules": [
             {
               "type": "in",
+              "description": "Check if variable_in is in value_in",
               "values": [
                 {
                   "type": "value",
@@ -140,6 +141,7 @@
           "rules": [
             {
               "type": "in",
+              "description": "Check if variable_in is in value_in",
               "values": [
                 {
                   "type": "value",
@@ -364,6 +366,24 @@
           },
           "severity": "high",
           "rules": [
+            {
+              "type": "in",
+              "description": "Check if Engine is in metadata",
+              "values": [
+                {
+                  "type": "value",
+                  "name": "value_in",
+                  "value": "Engine"
+                }
+              ],
+              "variables": [
+                {
+                  "type": "var",
+                  "name": "variable_in",
+                  "value": "metadata"
+                }
+              ]
+            },
             {
               "type": "engine_deprecated_version",
               "description": "Check if postgres engine is not deprecated",
