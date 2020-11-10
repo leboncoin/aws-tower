@@ -21,7 +21,7 @@ from config import variables
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.7.1'
+VERSION = '1.7.2'
 
 def main(args):
     """
@@ -32,12 +32,22 @@ def main(args):
     except botocore.exceptions.ProfileNotFound:
         print('The profile "{}" can\'t be found...'.format(args.account))
         return False
+    meta_types = list()
+    if args.type is None:
+        meta_types = [key for key in variables.META_TYPES.keys()]
+    else:
+        for meta_type in args.type:
+            if meta_type.upper() not in variables.META_TYPES:
+                print(f'Unable to find meta type "{meta_type}" in {", ".join(variables.META_TYPES.keys())}')
+                return False
+            else:
+                if meta_type.upper() not in meta_types:
+                    meta_types.append(meta_type.upper())
     report = aws_scan(
         session,
         public_only=not args.even_private,
-        enable_ec2=args.ec2,
-        enable_elbv2=args.elbv2,
-        enable_rds=args.rds)
+        meta_types=meta_types
+    )
     security = None
     if args.security:
         min_severity = list(variables.SEVERITY_LEVELS.keys())[0]
@@ -72,12 +82,8 @@ if __name__ == '__main__':
                         help='Display public and private assets')
     PARSER.add_argument('-n', '--names-only', action='store_true',\
                         help='Display only names')
-    PARSER.add_argument('--ec2', action='store_true',\
-                        help='Display EC2')
-    PARSER.add_argument('--elbv2', action='store_true',\
-                        help='Display ELBV2')
-    PARSER.add_argument('--rds', action='store_true',\
-                        help='Display RDS')
+    PARSER.add_argument('-t', '--type', action='append',\
+                        help=f'Types to display ({", ".join(variables.META_TYPES.keys())}) (default: display everything)')
     PARSER.add_argument('--hide-sg', action='store_true',\
                         help='Hide Security Groups')
     PARSER.add_argument('-s', '--security', action='store_true',
