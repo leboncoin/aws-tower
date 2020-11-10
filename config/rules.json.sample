@@ -83,6 +83,7 @@
           "rules": [
             {
               "type": "in",
+              "description": "Check if variable_in is in value_in",
               "values": [
                 {
                   "type": "value",
@@ -140,6 +141,7 @@
           "rules": [
             {
               "type": "in",
+              "description": "Check if variable_in is in value_in",
               "values": [
                 {
                   "type": "value",
