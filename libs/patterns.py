@@ -214,7 +214,7 @@ class Patterns:
         except ValueError:
             return not values["is_cidr"]
         except Exception as e:
-            self._logger.warning(f'Error in creating ip_network from {variables["source"]}: {e}')
+            self._logger.debug(f'Error in creating ip_network from {variables["source"]}: {e}')
             return False
         else:
             return values["is_cidr"]
@@ -236,10 +236,10 @@ class Patterns:
         try:
             ip_network = ipaddress.ip_network(variables["source"])
         except ValueError:
-            self._logger.warning(f'Unable to create ip_network from {variables["source"]}: Bad format!')
+            self._logger.debug(f'Unable to create ip_network from {variables["source"]}: Bad format!')
             return False
         except Exception as e:
-            self._logger.warning(f'Error in creating ip_network from {variables["source"]}: {e}')
+            self._logger.debug(f'Error in creating ip_network from {variables["source"]}: {e}')
             return False
         is_private = True
         if variables["source"].startswith('0.0.0.0'):
@@ -264,19 +264,19 @@ class Patterns:
         try:
             ip_network = ipaddress.ip_network(variables["source"])
         except ValueError:
-            self._logger.warning(f'Unable to create ip_network from {variables["source"]}: Bad format!')
+            self._logger.debug(f'Unable to create ip_network from {variables["source"]}: Bad format!')
             return False
         except Exception as e:
-            self._logger.warning(f'Error in creating ip_network from {variables["source"]}: {e}')
+            self._logger.debug(f'Error in creating ip_network from {variables["source"]}: {e}')
             return False
         for network_str in values["networks"]:
             try:
                 network = ipaddress.ip_network(network_str)
             except ValueError:
-                self._logger.warning(f'Unable to create ip_network from {variables["source"]}: Bad format!')
+                self._logger.debug(f'Unable to create ip_network from {variables["source"]}: Bad format!')
                 continue
             except Exception as e:
-                self._logger.warning(f'Error in creating ip_network from {variables["source"]}: {e}')
+                self._logger.debug(f'Error in creating ip_network from {variables["source"]}: {e}')
                 continue
             if network.supernet_of(ip_network):
                 return True
@@ -313,7 +313,7 @@ class Patterns:
         :rtype: bool
         """
         if len(variables['engine'].split('==')) < 2:
-            self._logger.warning(f'Wrong format for {variables["engine"]}')
+            self._logger.debug(f'Wrong format for {variables["engine"]}')
             return False
         engine_name, current_version = variables['engine'].split('==')
         if values['engine_name'] != engine_name:
@@ -398,7 +398,7 @@ class Patterns:
         self._logger.debug(f'Kwargs in check_findings_by_type: {kwargs}')
         findings_rules = self._get_findings_rules_from_type(findings_type)
         if findings_rules is False:
-            self._logger.warning(f'Unable to find findings rules for {findings_type}')
+            self._logger.debug(f'Unable to find findings rules for {findings_type}')
             return False
         report = list()
         for finding in findings_rules:
