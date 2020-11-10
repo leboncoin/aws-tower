@@ -41,7 +41,8 @@ def main(args):
                 print(f'Unable to find meta type "{meta_type}" in {", ".join(variables.META_TYPES.keys())}')
                 return False
             else:
-                meta_types.append(meta_type.upper())
+                if meta_type.upper() not in meta_types:
+                    meta_types.append(meta_type.upper())
     report = aws_scan(
         session,
         public_only=not args.even_private,
