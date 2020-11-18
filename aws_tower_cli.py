@@ -10,6 +10,7 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 
 # Standard library imports
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+import logging
 import sys
 
 # Third party library imports
@@ -22,6 +23,7 @@ from config import variables
 # Debug
 # from pdb import set_trace as st
 
+LOGGER = logging.getLogger('aws-tower')
 VERSION = '2.0.0'
 
 def main(verb, args):
@@ -31,7 +33,7 @@ def main(verb, args):
     try:
         session = boto3.Session(profile_name=args.account)
     except botocore.exceptions.ProfileNotFound:
-        print(f'The profile "{args.account}" can\'t be found...')
+        LOGGER.critical(f'The profile "{args.account}" can\'t be found...')
         sys.exit(1)
     meta_types = list()
     if args.type is None:
@@ -39,7 +41,7 @@ def main(verb, args):
     else:
         for meta_type in args.type:
             if meta_type.upper() not in variables.META_TYPES:
-                print(f'Unable to find meta type "{meta_type}" in {variables.META_TYPES.keys()}')
+                LOGGER.critical(f'Unable to find meta type "{meta_type}" in {variables.META_TYPES.keys()}')
                 sys.exit(1)
             if meta_type.upper() not in meta_types:
                 meta_types.append(meta_type.upper())
