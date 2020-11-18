@@ -80,8 +80,7 @@ def parse_report(report, meta_types):
 
     for vpc in report:
         for subnet in report[vpc]['Subnets']:
-            mini_name = report[vpc]['Subnets'][subnet]['Name'].split('-{}'.format(
-                report[vpc]['Subnets'][subnet]['AvailabilityZone']))[0]
+            mini_name = report[vpc]['Subnets'][subnet]['Name'].split(f'-{report[vpc]["Subnets"][subnet]["AvailabilityZone"]}')[0]
             for asset_type in report[vpc]['Subnets'][subnet]:
                 if asset_type not in meta_types:
                     continue
@@ -125,8 +124,7 @@ def print_subnet(report, meta_types, brief=False, verbose=False, security=None):
     for vpc in report:
         new_report[vpc] = dict()
         for subnet in report[vpc]['Subnets']:
-            mini_name = report[vpc]['Subnets'][subnet]['Name'].split('-{}'.format(
-                report[vpc]['Subnets'][subnet]['AvailabilityZone']))[0]
+            mini_name = report[vpc]['Subnets'][subnet]['Name'].split(f'-{report[vpc]["Subnets"][subnet]["AvailabilityZone"]}')[0]
             if not mini_name in new_report[vpc]:
                 new_report[vpc][mini_name] = list()
 
@@ -202,7 +200,7 @@ def rds_scan(report, rds, public_only):
     report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Type'] = 'RDS'
     report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Name'] = rds['DBInstanceIdentifier']
     report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Address'] = rds['Endpoint']['Address']
-    report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Engine'] = '{}=={}'.format(rds['Engine'], rds['EngineVersion'])
+    report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Engine'] = f'{rds["Engine"]}=={rds["EngineVersion"]}'
     return report
 
 def route53_scan(report, record_value, record):

@@ -31,7 +31,7 @@ def main(verb, args):
     try:
         session = boto3.Session(profile_name=args.account)
     except botocore.exceptions.ProfileNotFound:
-        print('The profile "{}" can\'t be found...'.format(args.account))
+        print(f'The profile "{args.account}" can\'t be found...')
         sys.exit(1)
     meta_types = list()
     if args.type is None:
