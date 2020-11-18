@@ -109,15 +109,15 @@ if __name__ == '__main__':
         choices=variables.META_TYPES,
         help='Types to display (default: display everything)')
     DISCOVER_PARSER.add_argument(
-        '--public-only',
+        '-p', '--public-only',
         action='store_true',
         help='Display public assets only')
     DISCOVER_PARSER.add_argument(
-        '--verbose',
+        '-v', '--verbose',
         action='store_true',
         help='Verbose output of the account assets')
     DISCOVER_PARSER.add_argument(
-        '--brief',
+        '-b', '--brief',
         action='store_true',
         help='Brief output of the account assets')
 
@@ -135,21 +135,21 @@ if __name__ == '__main__':
         choices=variables.META_TYPES,
         help='Types to display (default: display everything)')
     SCAN_PARSER.add_argument(
-        '--min-severity',
+        '-m', '--min-severity',
         default='low',
         choices=variables.SEVERITY_LEVELS,
         help='min severity level to report when security is enabled (default: low)')
     SCAN_PARSER.add_argument(
-        '--max-severity',
+        '-M', '--max-severity',
         default='high',
         choices=variables.SEVERITY_LEVELS,
         help='max severity level to report when security is enabled (default: high)')
     SCAN_PARSER.add_argument(
-        '--verbose',
+        '-v', '--verbose',
         action='store_true',
         help='Verbose output of the account assets')
     SCAN_PARSER.add_argument(
-        '--brief',
+        '-b', '--brief',
         action='store_true',
         help='Brief output of the account assets')
 

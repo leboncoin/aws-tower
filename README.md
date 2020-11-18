@@ -25,7 +25,7 @@ optional arguments:
 
 ```bash
 $ ./aws_tower_cli.py discover --help
-usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS}] [--public-only] [--verbose] [--brief] account
+usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS}] [-p] [-v] [-b] account
 
 positional arguments:
   account               Account Name
@@ -34,14 +34,14 @@ optional arguments:
   -h, --help            show this help message and exit
   -t {EC2,ELBV2,RDS}, --type {EC2,ELBV2,RDS}
                         Types to display (default: display everything)
-  --public-only         Display public assets only
-  --verbose             Verbose output of the account assets
-  --brief               Brief output of the account assets
+  -p, --public-only     Display public assets only
+  -v, --verbose         Verbose output of the account assets
+  -b, --brief           Brief output of the account assets
 ```
 
 ```bash
 $ ./aws_tower_cli.py scan --help
-usage: aws_tower_cli.py scan [-h] [-t {EC2,ELBV2,RDS}] [--min-severity {info,low,medium,high,critical}] [--max-severity {info,low,medium,high,critical}] [--verbose] [--brief]
+usage: aws_tower_cli.py scan [-h] [-t {EC2,ELBV2,RDS}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-v] [-b]
                              account
 
 positional arguments:
@@ -51,12 +51,12 @@ optional arguments:
   -h, --help            show this help message and exit
   -t {EC2,ELBV2,RDS}, --type {EC2,ELBV2,RDS}
                         Types to display (default: display everything)
-  --min-severity {info,low,medium,high,critical}
+  -m {info,low,medium,high,critical}, --min-severity {info,low,medium,high,critical}
                         min severity level to report when security is enabled (default: low)
-  --max-severity {info,low,medium,high,critical}
+  -M {info,low,medium,high,critical}, --max-severity {info,low,medium,high,critical}
                         max severity level to report when security is enabled (default: high)
-  --verbose             Verbose output of the account assets
-  --brief               Brief output of the account assets
+  -v, --verbose         Verbose output of the account assets
+  -b, --brief           Brief output of the account assets
 ```
 
 ## Usage (lambda)
