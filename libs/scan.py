@@ -14,11 +14,10 @@ import logging
 
 from .patterns import Patterns
 
-
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.8.2'
+VERSION = '1.9.0'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -107,7 +106,7 @@ def remove_key_from_report(report, del_key, is_startswith=False):
         del report[key]
     return report
 
-def print_subnet(report, meta_types, names_only=False, hide_sg=False, security=None):
+def print_subnet(report, meta_types, brief=False, verbose=False, security=None):
     """
     Print subnets
     """
@@ -136,10 +135,10 @@ def print_subnet(report, meta_types, names_only=False, hide_sg=False, security=N
                     continue
                 for asset in report[vpc]['Subnets'][subnet][asset_type]:
                     asset_report = report[vpc]['Subnets'][subnet][asset_type][asset]
-                    if names_only:
+                    if brief:
                         asset_report = f'{asset_type}: {asset_report[meta_types[asset_type]["Name"]]}'
                     else:
-                        if hide_sg:
+                        if not verbose:
                             if 'SecurityGroups' in asset_report:
                                 del asset_report['SecurityGroups']
                         if security:

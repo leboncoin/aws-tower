@@ -53,8 +53,8 @@ def main(verb, args):
         print_subnet(
             report,
             variables.META_TYPES,
-            names_only=args.brief,
-            hide_sg=not args.verbose,
+            brief=args.brief,
+            verbose=args.verbose,
             security=None
         )
     elif verb == 'scan':
@@ -78,8 +78,8 @@ def main(verb, args):
         print_subnet(
             report,
             variables.META_TYPES,
-            names_only=False,
-            hide_sg=False,
+            brief=False,
+            verbose=True,
             security=security
         )
     else:
