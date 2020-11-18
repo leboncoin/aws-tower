@@ -301,10 +301,12 @@
         {
           "message": {
             "text": "Deprecated mysql engine version ({current_version})",
-            "current_version": {
-              "type": "dict",
-              "key": "Engine",
-              "variable": "metadata"
+            "args": {
+              "current_version": {
+                "type": "dict",
+                "key": "Engine",
+                "variable": "metadata"
+              }
             }
           },
           "severity": "high",
@@ -358,10 +360,12 @@
         {
           "message": {
             "text": "Deprecated postgres engine version ({current_version})",
-            "current_version": {
-              "type": "dict",
-              "key": "Engine",
-              "variable": "metadata"
+            "args": {
+              "current_version": {
+                "type": "dict",
+                "key": "Engine",
+                "variable": "metadata"
+              }
             }
           },
           "severity": "high",
