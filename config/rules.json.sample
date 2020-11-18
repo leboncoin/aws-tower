@@ -9,15 +9,15 @@
             "text": "[{name}] Allow connection to specific port (or range) from public network ({source}=>{ports})",
             "args": {
               "name": {
-                "type": "var",
+                "type": "variable",
                 "variable": "sg_name"
               },
               "source": {
-                "type": "var",
+                "type": "variable",
                 "variable": "source"
               },
               "ports": {
-                "type": "var",
+                "type": "variable",
                 "variable": "ports"
               }
             }
@@ -26,16 +26,16 @@
             {
               "type": "is_ports",
               "description": "Check if ports is a specific port (or range) (like 9000-9001)",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
+                  "type": "constant",
                   "name": "is_ports",
                   "value": true
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
+                  "type": "variable",
                   "name": "source",
                   "value": "ports"
                 }
@@ -44,16 +44,16 @@
             {
               "type": "is_private_cidr",
               "description": "Check if source is not a private CIDR block - RFC 1918",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
+                  "type": "constant",
                   "name": "is_private_cidr",
                   "value": false
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
+                  "type": "variable",
                   "name": "source",
                   "value": "source"
                 }
@@ -67,15 +67,15 @@
             "text": "[{name}] Allow connection to all port from public network ({source}=>{ports})",
             "args": {
               "name": {
-                "type": "var",
+                "type": "variable",
                 "variable": "sg_name"
               },
               "source": {
-                "type": "var",
+                "type": "variable",
                 "variable": "source"
               },
               "ports": {
-                "type": "var",
+                "type": "variable",
                 "variable": "ports"
               }
             }
@@ -84,17 +84,17 @@
             {
               "type": "in",
               "description": "Check if variable_in is in value_in",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
-                  "name": "value_in",
+                  "type": "constant",
+                  "type": "data_element",
                   "value": "all"
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
-                  "name": "variable_in",
+                  "type": "variable",
+                  "type": "data_list",
                   "value": "ports"
                 }
               ]
@@ -102,16 +102,16 @@
             {
               "type": "is_private_cidr",
               "description": "Check if source is not a private CIDR block - RFC 1918",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
+                  "type": "constant",
                   "name": "is_private_cidr",
                   "value": false
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
+                  "type": "variable",
                   "name": "source",
                   "value": "source"
                 }
@@ -125,15 +125,15 @@
             "text": "[{name}] Allow connection to all port from private network ({source}=>{ports})",
             "args": {
               "name": {
-                "type": "var",
+                "type": "variable",
                 "variable": "sg_name"
               },
               "source": {
-                "type": "var",
+                "type": "variable",
                 "variable": "source"
               },
               "ports": {
-                "type": "var",
+                "type": "variable",
                 "variable": "ports"
               }
             }
@@ -142,17 +142,17 @@
             {
               "type": "in",
               "description": "Check if variable_in is in value_in",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
-                  "name": "value_in",
+                  "type": "constant",
+                  "type": "data_element",
                   "value": "all"
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
-                  "name": "variable_in",
+                  "type": "variable",
+                  "type": "data_list",
                   "value": "ports"
                 }
               ]
@@ -160,16 +160,16 @@
             {
               "type": "is_private_cidr",
               "description": "Check if source is a private CIDR block - RFC 1918",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
+                  "type": "constant",
                   "name": "is_private_cidr",
                   "value": true
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
+                  "type": "variable",
                   "name": "source",
                   "value": "source"
                 }
@@ -183,15 +183,15 @@
             "text": "[{name}] Allow connection to specific port (or range) from private network ({source}=>{ports})",
             "args": {
               "name": {
-                "type": "var",
+                "type": "variable",
                 "variable": "sg_name"
               },
               "source": {
-                "type": "var",
+                "type": "variable",
                 "variable": "source"
               },
               "ports": {
-                "type": "var",
+                "type": "variable",
                 "variable": "ports"
               }
             }
@@ -200,16 +200,16 @@
             {
               "type": "is_ports",
               "description": "Check if ports is a specific port (or range) (like 9000-9001)",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
+                  "type": "constant",
                   "name": "is_ports",
                   "value": true
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
+                  "type": "variable",
                   "name": "source",
                   "value": "ports"
                 }
@@ -218,16 +218,16 @@
             {
               "type": "is_private_cidr",
               "description": "Check if source is a private CIDR block - RFC 1918",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
+                  "type": "constant",
                   "name": "is_private_cidr",
                   "value": true
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
+                  "type": "variable",
                   "name": "source",
                   "value": "source"
                 }
@@ -248,17 +248,17 @@
             {
               "type": "not_in",
               "description": "Check if SecurityGroups is not in metadata",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
-                  "name": "value_in",
+                  "type": "constant",
+                  "type": "data_element",
                   "value": "SecurityGroups"
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
-                  "name": "variable_in",
+                  "type": "variable",
+                  "type": "data_list",
                   "value": "metadata"
                 }
               ]
@@ -281,17 +281,17 @@
             {
               "type": "in",
               "description": "Check if DnsRecord is in metadata",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
-                  "name": "value_in",
+                  "type": "constant",
+                  "type": "data_element",
                   "value": "DnsRecord"
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
-                  "name": "variable_in",
+                  "type": "variable",
+                  "type": "data_list",
                   "value": "metadata"
                 }
               ]
@@ -314,17 +314,17 @@
             {
               "type": "in",
               "description": "Check if Engine is in metadata",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
-                  "name": "value_in",
+                  "type": "constant",
+                  "type": "data_element",
                   "value": "Engine"
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
-                  "name": "variable_in",
+                  "type": "variable",
+                  "type": "data_list",
                   "value": "metadata"
                 }
               ]
@@ -332,21 +332,21 @@
             {
               "type": "engine_deprecated_version",
               "description": "Check if mysql engine is not deprecated",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
+                  "type": "constant",
                   "name": "engine_name",
                   "value": "mysql"
                 },
                 {
-                  "type": "value",
+                  "type": "constant",
                   "name": "versions",
                   "value": [
                     "5.1.0"
                   ]
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
                   "type": "dict",
                   "name": "engine",
@@ -373,17 +373,17 @@
             {
               "type": "in",
               "description": "Check if Engine is in metadata",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
-                  "name": "value_in",
+                  "type": "constant",
+                  "name": "data_element",
                   "value": "Engine"
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
-                  "type": "var",
-                  "name": "variable_in",
+                  "type": "variable",
+                  "name": "data_list",
                   "value": "metadata"
                 }
               ]
@@ -391,14 +391,14 @@
             {
               "type": "engine_deprecated_version",
               "description": "Check if postgres engine is not deprecated",
-              "values": [
+              "conditions": [
                 {
-                  "type": "value",
+                  "type": "constant",
                   "name": "engine_name",
                   "value": "postgres"
                 },
                 {
-                  "type": "value",
+                  "type": "constant",
                   "name": "versions",
                   "value": [
                     "10.20",
@@ -406,7 +406,7 @@
                   ]
                 }
               ],
-              "variables": [
+              "data_sources": [
                 {
                   "type": "dict",
                   "name": "engine",

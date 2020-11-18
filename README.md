@@ -90,10 +90,10 @@ You need to add your findings in `config/rules.json` with the following format:
               "key": "key_in_dict",
               "variable": "dict"
           }, "arg2": {
-              "type": "var",
+              "type": "variable",
               "variable": "my_variable"
           }, "arg3": {
-              "type": "var",
+              "type": "variable",
               "variable": "my_variable"
           }
       }
@@ -101,17 +101,17 @@ You need to add your findings in `config/rules.json` with the following format:
   "rules": [{
       "type": "in" (not_in, is_cidr, is_private_cidr, ...),
       "description": "Check if variable_in is in value_in",
-      "values": [
+      "conditions": [
         {
-          "type": "value",
-          "name": "value_in",
+          "type": "constant",
+          "name": "data_element",
           "value": "all"
         }
       ],
-      "variables": [
+      "data_sources": [
         {
-          "type": "var",
-          "name": "variable_in",
+          "type": "variable",
+          "name": "data_list",
           "value": "ports"
         }
       ]
@@ -126,8 +126,8 @@ You need to add your findings in `config/rules.json` with the following format:
 
 Types already presents:
 
-- in: check if `value_in` is in `variable_in`
-- not_in: check if `value_in` is not in `variable_in`
+- in: check if `data_element` is in `data_list`
+- not_in: check if `data_element` is not in `data_list`
 - is_cidr: check if `source` is a CIDR (example: `0.0.0.0/0` is a valid cidr).
 - is_private_cidr: check if `source` is a private CIDR (rfc 1918)
 - is_in_networks: check if `source` is one the networks in `networks`
@@ -139,7 +139,7 @@ To add a new type, you must define it in `libs/patterns.py` with the following f
 - The method name must be: `_check_rule_{type}` where **type** is the name you want (like `is_cidr`, `type_regex`, ...)
 - Use 2 arguments for your method (will be changed in next update)
 
-## Documentation
+## Developers documentation
 
 To generate the documentation:
 ```bash

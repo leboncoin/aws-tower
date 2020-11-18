@@ -14,7 +14,7 @@ import json
 import logging
 import re
 
-VERSION = '2.4.0'
+VERSION = '2.5.0'
 
 class Patterns:
     """Get findings from patterns
@@ -35,26 +35,26 @@ class Patterns:
     _max_severity = 0
     _rules_definitions = {
         'in': {
-            'variables': ['variable_in'],
-            'values': ['value_in']
+            'data_sources': ['data_list'],
+            'conditions': ['data_element']
         }, 'not_in': {
-            'variables': ['variable_in'],
-            'values': ['value_in']
+            'data_sources': ['data_list'],
+            'conditions': ['data_element']
         }, 'is_cidr': {
-            'variables': ['source'],
-            'values': ['is_cidr']
+            'data_sources': ['source'],
+            'conditions': ['is_cidr']
         }, 'is_private_cidr': {
-            'variables': ['source'],
-            'values': ['is_private_cidr']
+            'data_sources': ['source'],
+            'conditions': ['is_private_cidr']
         }, 'is_in_networks': {
-            'variables': ['source'],
-            'values': ['networks']
+            'data_sources': ['source'],
+            'conditions': ['networks']
         }, 'is_ports': {
-            'variables': ['source'],
-            'values': ['is_ports']
+            'data_sources': ['source'],
+            'conditions': ['is_ports']
         }, 'engine_deprecated_version': {
-            'variables': ['engine'],
-            'values': ['engine_name', 'versions']
+            'data_sources': ['engine'],
+            'conditions': ['engine_name', 'versions']
         }
     }
 
@@ -64,6 +64,7 @@ class Patterns:
         Set min_severity / max_severity to at least 0 if any issue
         """
         self._logger = logging.getLogger('aws-tower_patterns')
+        # self._logger.setLevel(logging.DEBUG)
         try:
             patterns = patterns_path.read_text()
         except Exception as e:
@@ -98,9 +99,9 @@ class Patterns:
         self._logger.debug(f'Preparing arguments: {arguments}')
         prepared_arguments = dict()
         for argument in arguments:
-            if argument['type'] == 'value':
+            if argument['type'] == 'constant':
                 prepared_arguments[argument['name']] = argument['value']
-            elif argument['type'] == 'var':
+            elif argument['type'] == 'variable':
                 if argument['value'] in kwargs:
                     prepared_arguments[argument['name']] = kwargs[argument['value']]
                 else:
@@ -121,31 +122,31 @@ class Patterns:
                 return False
         return prepared_arguments
 
-    def _check_definition(self, rule, variables, values):
+    def _check_definition(self, rule, data_sources, conditions):
         """Check rule definition to use it
 
         :param rule: Rule name, like "is_ports"
         :type rule: str
-        :param variables: variables used to check
-        :type variables: dict
-        :param values: values used to check
-        :type values: dict
-        :return: True if all values / variables found
+        :param data_sources: data_sources used to check
+        :type data_sources: dict
+        :param conditions: conditions used to check
+        :type conditions: dict
+        :return: True if all conditions / data_sources found
         :rtype: bool
         """
         self._logger.debug(f'Checking definition of {rule}')
         if not rule in self._rules_definitions:
             self._logger.error(f'Unable to find definition for {rule}')
             return False
-        variables_name = [variable['name'] for variable in variables]
-        values_name = [value['name'] for value in values]
-        for variable in self._rules_definitions[rule]['variables']:
-            if not variable in variables_name:
-                self._logger.error(f'Unable to find {variable} in {list(variables_name)}')
+        data_sources_name = [variable['name'] for variable in data_sources]
+        conditions_name = [value['name'] for value in conditions]
+        for variable in self._rules_definitions[rule]['data_sources']:
+            if not variable in data_sources_name:
+                self._logger.error(f'Unable to find {variable} in {list(data_sources_name)}')
                 return False
-        for value in self._rules_definitions[rule]['values']:
-            if not value in values_name:
-                self._logger.error(f'Unable to find {value} in {list(values_name)}')
+        for value in self._rules_definitions[rule]['conditions']:
+            if not value in conditions_name:
+                self._logger.error(f'Unable to find {value} in {list(conditions_name)}')
                 return False
         return True
 
@@ -162,40 +163,40 @@ class Patterns:
             return False
         return self._patterns['types'][type_name]['findings']
 
-    def _check_rule_in(self, variables, values):
-        """Check if value may be found in variable
+    def _check_rule_in(self, data_sources, conditions):
+        """Check if conditions['data_element'] may be found in data_sources['data_list']
         Check rule "in"
 
-        :param variable: Variable where we want to find the value
-        :type variable: mixed
-        :param value: Value to find in variable
-        :type value: str
+        :param data_sources: Where we want to find the conditions
+        :type data_sources: mixed
+        :param conditions: Value to find in data_sources
+        :type conditions: str
         :return: True if we find it, else return False
         :rtype: bool
         """
-        if isinstance(variables['variable_in'], str):
-            return values['value_in'].lower() in variables['variable_in'].lower()
-        if isinstance(variables['variable_in'], list):
-            for element in variables['variable_in']:
-                if values['value_in'].lower() == element.lower():
+        if isinstance(data_sources['data_list'], str):
+            return conditions['data_element'].lower() in data_sources['data_list'].lower()
+        if isinstance(data_sources['data_list'], list):
+            for element in data_sources['data_list']:
+                if conditions['data_element'].lower() == element.lower():
                     return True
             return False
-        return values['value_in'] in variables['variable_in']
+        return conditions['data_element'] in data_sources['data_list']
 
-    def _check_rule_not_in(self, variables, values):
-        """Check if value is not in variable
+    def _check_rule_not_in(self, data_sources, conditions):
+        """Check if conditions['data_element'] is not in data_sources['data_list']
         Check rule "not_in"
 
-        :param variable: variable where we want to find the value
-        :type variable: mixed
-        :param value: value to find in variable
-        :type value: str
-        :return: True if we don't find it, else return False
+        :param data_sources: Where we want to find the conditions
+        :type data_sources: mixed
+        :param conditions: Value to find in data_sources
+        :type conditions: str
+        :return: True if we find it, else return False
         :rtype: bool
         """
-        return not self._check_rule_in(variables, values)
+        return not self._check_rule_in(data_sources, conditions)
 
-    def _check_rule_is_cidr(self, variables, values):
+    def _check_rule_is_cidr(self, data_sources, conditions):
         """Check if source is a valid CIDR (example: 10.0.0.0/8)
         Check rule "is_cidr"
         If is_cidr is False, then it will return True if source
@@ -208,18 +209,18 @@ class Patterns:
         :return: Return True if source and cidr are validated
         :rtype: bool
         """
-        self._logger.debug(f'Check rule is_cidr. Source: {variables["source"]} | is_cidr: {values["is_cidr"]}')
+        self._logger.debug(f'Check rule is_cidr. Source: {data_sources["source"]} | is_cidr: {conditions["is_cidr"]}')
         try:
-            ipaddress.ip_network(variables["source"])
+            ipaddress.ip_network(data_sources["source"])
         except ValueError:
-            return not values["is_cidr"]
+            return not conditions["is_cidr"]
         except Exception as e:
-            self._logger.debug(f'Error in creating ip_network from {variables["source"]}: {e}')
+            self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {e}')
             return False
         else:
-            return values["is_cidr"]
+            return conditions["is_cidr"]
 
-    def _check_rule_is_private_cidr(self, variables, values):
+    def _check_rule_is_private_cidr(self, data_sources, conditions):
         """Check if source is a private CIDR or not
         Check rule "is_private_cidr"
         If is_private_cidr is False, then it will return True if
@@ -232,23 +233,23 @@ class Patterns:
         :return: Return True if source and cidr are validated
         :rtype: bool
         """
-        self._logger.debug(f'Check rule is_private_cidr. Source: {variables["source"]} | is_private_cidr: {values["is_private_cidr"]}')
+        self._logger.debug(f'Check rule is_private_cidr. Source: {data_sources["source"]} | is_private_cidr: {conditions["is_private_cidr"]}')
         try:
-            ip_network = ipaddress.ip_network(variables["source"])
+            ip_network = ipaddress.ip_network(data_sources["source"])
         except ValueError:
-            self._logger.debug(f'Unable to create ip_network from {variables["source"]}: Bad format!')
+            self._logger.debug(f'Unable to create ip_network from {data_sources["source"]}: Bad format!')
             return False
         except Exception as e:
-            self._logger.debug(f'Error in creating ip_network from {variables["source"]}: {e}')
+            self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {e}')
             return False
         is_private = True
-        if variables["source"].startswith('0.0.0.0'):
+        if data_sources["source"].startswith('0.0.0.0'):
             is_private = False
         else:
             is_private = ip_network.is_private
-        return is_private == values["is_private_cidr"]
+        return is_private == conditions["is_private_cidr"]
 
-    def _check_rule_is_in_networks(self, variables, values):
+    def _check_rule_is_in_networks(self, data_sources, conditions):
         """Check if source is in one of the networks
         Check rule "is_in_specific_networks"
 
@@ -257,32 +258,32 @@ class Patterns:
         :param networks: List of networks we want to check check
         :type networks: list
         """
-        self._logger.debug(f'Check rule is_in_networks. Source: {variables["source"]} | networks: {values["networks"]}')
-        if not isinstance(values["networks"], list):
-            self._logger.warnig(f'Bad format for networks. Got {type(values["networks"])} instead of list')
+        self._logger.debug(f'Check rule is_in_networks. Source: {data_sources["source"]} | networks: {conditions["networks"]}')
+        if not isinstance(conditions["networks"], list):
+            self._logger.warnig(f'Bad format for networks. Got {type(conditions["networks"])} instead of list')
             return False
         try:
-            ip_network = ipaddress.ip_network(variables["source"])
+            ip_network = ipaddress.ip_network(data_sources["source"])
         except ValueError:
-            self._logger.debug(f'Unable to create ip_network from {variables["source"]}: Bad format!')
+            self._logger.debug(f'Unable to create ip_network from {data_sources["source"]}: Bad format!')
             return False
         except Exception as e:
-            self._logger.debug(f'Error in creating ip_network from {variables["source"]}: {e}')
+            self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {e}')
             return False
-        for network_str in values["networks"]:
+        for network_str in conditions["networks"]:
             try:
                 network = ipaddress.ip_network(network_str)
             except ValueError:
-                self._logger.debug(f'Unable to create ip_network from {variables["source"]}: Bad format!')
+                self._logger.debug(f'Unable to create ip_network from {data_sources["source"]}: Bad format!')
                 continue
             except Exception as e:
-                self._logger.debug(f'Error in creating ip_network from {variables["source"]}: {e}')
+                self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {e}')
                 continue
             if network.supernet_of(ip_network):
                 return True
         return False
 
-    def _check_rule_is_ports(self, variables, values):
+    def _check_rule_is_ports(self, data_sources, conditions):
         """Check if ports is valid via regex
         Check rule "is_ports"
         It will check with self._ports_range
@@ -294,11 +295,11 @@ class Patterns:
         :return: True if we can find and validate the type of regex
         :rtype: bool
         """
-        if self._ports_range.match(variables['source']) is not None:
-            return values['is_ports']
+        if self._ports_range.match(data_sources['source']) is not None:
+            return conditions['is_ports']
         return False
 
-    def _check_rule_engine_deprecated_version(self, variables, values):
+    def _check_rule_engine_deprecated_version(self, data_sources, conditions):
         """Check if the engine version is not deprecated.
         Compare the engine version if it's smaller than the minimum version allowed in list
         If there is multiple versions,
@@ -312,16 +313,16 @@ class Patterns:
         :return: True if the engine version is deprecated
         :rtype: bool
         """
-        if len(variables['engine'].split('==')) < 2:
-            self._logger.debug(f'Wrong format for {variables["engine"]}')
+        if len(data_sources['engine'].split('==')) < 2:
+            self._logger.debug(f'Wrong format for {data_sources["engine"]}')
             return False
-        engine_name, current_version = variables['engine'].split('==')
-        if values['engine_name'] != engine_name:
+        engine_name, current_version = data_sources['engine'].split('==')
+        if conditions['engine_name'] != engine_name:
             return False
         current_version = LooseVersion(current_version)
         min_version = LooseVersion('0.0.1')
         versions = list()
-        for min_version_allowed in values['versions']:
+        for min_version_allowed in conditions['versions']:
             version = LooseVersion(min_version_allowed)
             if version < min_version:
                 min_version = version
@@ -340,7 +341,7 @@ class Patterns:
         :type message: mixed
         :param severity: Severity of the message (examples: 'info', 'high', ..)
         :type severity: str
-        :param kwargs: Variables we may need to generate the message (like metadata, name, source, ...)
+        :param kwargs: data_sources we may need to generate the message (like metadata, name, source, ...)
         :return: Message generated
         :rtype: dict
         """
@@ -364,14 +365,14 @@ class Patterns:
                         else:
                             self._logger.error(f'Unable to find variable {value["type"]} in {", ".join(kwargs)}')
                             return False
-                    elif value['type'] == 'var':
+                    elif value['type'] == 'variable':
                         if value['variable'] in kwargs:
                             args[key] = kwargs[value['variable']]
                         else:
                             self._logger.error(f'Unable to find variable {value["type"]} in {", ".join(kwargs)}')
                             return False
             except Exception as e:
-                self._logger.error(f'Unable to prepare variables for the report message: {e}', exc_info=True)
+                self._logger.error(f'Unable to prepare data_sources for the report message: {e}', exc_info=True)
                 return False
             else:
                 try:
@@ -408,24 +409,24 @@ class Patterns:
                     self._severity_levels[finding['severity']] <= self._max_severity):
                 finding_found = True
                 for rule in finding['rules']:
-                    if 'type' in rule and 'values' in rule and 'variables' in rule:
+                    if 'type' in rule and 'conditions' in rule and 'data_sources' in rule:
                         func_rule = f'_check_rule_{rule["type"]}'
-                        if not self._check_definition(rule["type"], rule["variables"], rule["values"]):
+                        if not self._check_definition(rule["type"], rule["data_sources"], rule["conditions"]):
                             self._logger.error(f'Bad rule definition!')
                             finding_found = False
                             break
                         if hasattr(self, func_rule):
-                            variables = self._prepare_arguments(rule['variables'], kwargs)
-                            if not variables:
-                                self._logger.error('Unable to prepare variables')
+                            data_sources = self._prepare_arguments(rule['data_sources'], kwargs)
+                            if not data_sources:
+                                self._logger.error('Unable to prepare data_sources')
                                 finding_found = False
                                 break
-                            values = self._prepare_arguments(rule['values'], kwargs)
-                            if not values:
-                                self._logger.error('Unable to prepare values')
+                            conditions = self._prepare_arguments(rule['conditions'], kwargs)
+                            if not conditions:
+                                self._logger.error('Unable to prepare conditions')
                                 finding_found = False
                                 break
-                            if not getattr(self, func_rule)(variables, values):
+                            if not getattr(self, func_rule)(data_sources, conditions):
                                 finding_found = False
                                 break
                         else:
@@ -518,35 +519,35 @@ class Patterns:
                 errors['critical'].append(f'Rule type {rule["type"]} not found in rules definitions')
         if 'description' not in rule:
             errors['warning'].append('No "description"')
-        if 'values' not in rule:
-            errors['critical'].append('No "values')
+        if 'conditions' not in rule:
+            errors['critical'].append('No "conditions')
             bad_format = True
         else:
-            if not isinstance(rule['values'], list):
-                errors['critical'].append(f'"values" must be list, found {type(rule["values"])}')
+            if not isinstance(rule['conditions'], list):
+                errors['critical'].append(f'"conditions" must be list, found {type(rule["conditions"])}')
                 bad_format = True
-        if 'variables' not in rule:
-            errors['critical'].append('No "variables"')
+        if 'data_sources' not in rule:
+            errors['critical'].append('No "data_sources"')
             bad_format = True
         else:
-            if not isinstance(rule['variables'], list):
-                errors['critical'].append(f'"variables" must be list, found {type(rule["variables"])}')
+            if not isinstance(rule['data_sources'], list):
+                errors['critical'].append(f'"data_sources" must be list, found {type(rule["data_sources"])}')
                 bad_format = True
         if not bad_format and rule['type'] in self._rules_definitions:
-            variables_errors = self._check_arguments_definitions(rule['variables'], 'Variable')
-            errors['critical'] += variables_errors['critical']
-            errors['warning'] += variables_errors['warning']
-            variables_name = [variable['name'] for variable in rule['variables']]
-            values_errors = self._check_arguments_definitions(rule['values'], 'Value')
-            errors['critical'] += values_errors['critical']
-            errors['warning'] += values_errors['warning']
-            values_name = [value['name'] for value in rule['values']]
-            for variable in self._rules_definitions[rule['type']]['variables']:
-                if not variable in variables_name:
-                    errors['critical'].append(f'Unable to find {variable} in {list(variables_name)}')
-            for value in self._rules_definitions[rule['type']]['values']:
-                if not value in values_name:
-                    errors['critical'].append(f'Unable to find {value} in {list(values_name)}')
+            data_sources_errors = self._check_arguments_definitions(rule['data_sources'], 'Variable')
+            errors['critical'] += data_sources_errors['critical']
+            errors['warning'] += data_sources_errors['warning']
+            data_sources_name = [variable['name'] for variable in rule['data_sources']]
+            conditions_errors = self._check_arguments_definitions(rule['conditions'], 'Value')
+            errors['critical'] += conditions_errors['critical']
+            errors['warning'] += conditions_errors['warning']
+            conditions_name = [value['name'] for value in rule['conditions']]
+            for variable in self._rules_definitions[rule['type']]['data_sources']:
+                if not variable in data_sources_name:
+                    errors['critical'].append(f'Unable to find {variable} in {list(data_sources_name)}')
+            for value in self._rules_definitions[rule['type']]['conditions']:
+                if not value in conditions_name:
+                    errors['critical'].append(f'Unable to find {value} in {list(conditions_name)}')
         return errors
 
     def _check_finding_definitions(self, finding):
