@@ -154,6 +154,10 @@ def print_subnet(report, meta_types, brief=False, verbose=False, security=None):
                         if 'SecurityGroups' in asset_report:
                             del asset_report['SecurityGroups']
                     new_report[vpc][mini_name].append(asset_report)
+            if brief and not new_report[vpc][mini_name]:
+                del new_report[vpc][mini_name]
+        if brief and not new_report[vpc]:
+            del new_report[vpc]
 
     LOGGER.warning(json.dumps(new_report, sort_keys=True, indent=4))
     return True
@@ -210,8 +214,9 @@ def rds_scan(report, rds, public_only):
     report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']] = dict()
     report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Type'] = 'RDS'
     report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Name'] = rds['DBInstanceIdentifier']
-    report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Address'] = rds['Endpoint']['Address']
     report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Engine'] = f'{rds["Engine"]}=={rds["EngineVersion"]}'
+    if 'Endpoint' in rds and 'Address' in rds['Endpoint']:
+        report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Address'] = rds['Endpoint']['Address']
     return report
 
 def route53_scan(report, record_value, record):
@@ -259,7 +264,7 @@ def aws_scan(
         report[vpc['VpcId']]['NetworkAcls'] = dict()
 
     for subnet in subnets_raw:
-        subnet_name = 'Unknown'
+        subnet_name = subnet['SubnetId']
         if 'Tags' in subnet:
             subnet_name = get_tag(subnet['Tags'], 'Name')
         report[subnet['VpcId']]['Subnets'][subnet['SubnetId']] = {

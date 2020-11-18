@@ -14,6 +14,9 @@ import json
 import logging
 import re
 
+# Debug
+# from pdb import set_trace as st
+
 VERSION = '2.5.0'
 
 class Patterns:
@@ -320,11 +323,13 @@ class Patterns:
         if conditions['engine_name'] != engine_name:
             return False
         current_version = LooseVersion(current_version)
-        min_version = LooseVersion('0.0.1')
+        min_version = None
         versions = list()
         for min_version_allowed in conditions['versions']:
             version = LooseVersion(min_version_allowed)
-            if version < min_version:
+            if min_version is None:
+                min_version = version
+            elif version < min_version:
                 min_version = version
             else:
                 versions.append(version)
