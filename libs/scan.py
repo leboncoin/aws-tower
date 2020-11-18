@@ -17,7 +17,7 @@ from .patterns import Patterns
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '1.9.0'
+VERSION = '2.0.0'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -133,17 +133,28 @@ def print_subnet(report, meta_types, brief=False, verbose=False, security=None):
                     continue
                 for asset in report[vpc]['Subnets'][subnet][asset_type]:
                     asset_report = report[vpc]['Subnets'][subnet][asset_type][asset]
-                    if brief:
-                        asset_report = f'{asset_type}: {asset_report[meta_types[asset_type]["Name"]]}'
+                    if security:
+                        security_issues = patterns.extract_findings(
+                            report[vpc]['Subnets'][subnet][asset_type][asset]
+                        )
+                        if not security_issues:
+                            asset_report = []
+                            continue
+                        asset_report['SecurityIssues'] = security_issues
+                        if brief:
+                            asset_name = asset_report[meta_types[asset_type]['Name']]
+                            asset_report = dict()
+                            asset_report[f'{asset_type}: {asset_name}'] = \
+                                [f['severity']+": "+f['title'] for f in security_issues]
                     else:
-                        if not verbose:
-                            if 'SecurityGroups' in asset_report:
-                                del asset_report['SecurityGroups']
-                        if security:
-                            asset_report['SecurityIssues'] = patterns.extract_findings(
-                                report[vpc]['Subnets'][subnet][asset_type][asset]
-                            )
+                        if brief:
+                            asset_name = asset_report[meta_types[asset_type]['Name']]
+                            asset_report = f'{asset_type}: {asset_name}'
+                    if not verbose:
+                        if 'SecurityGroups' in asset_report:
+                            del asset_report['SecurityGroups']
                     new_report[vpc][mini_name].append(asset_report)
+
     LOGGER.warning(json.dumps(new_report, sort_keys=True, indent=4))
     return True
 

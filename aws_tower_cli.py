@@ -78,8 +78,8 @@ def main(verb, args):
         print_subnet(
             report,
             variables.META_TYPES,
-            brief=False,
-            verbose=True,
+            brief=args.brief,
+            verbose=args.verbose,
             security=security
         )
     else:
@@ -135,15 +135,23 @@ if __name__ == '__main__':
         choices=variables.META_TYPES,
         help='Types to display (default: display everything)')
     SCAN_PARSER.add_argument(
-        '--min_severity',
+        '--min-severity',
         default='low',
         choices=variables.SEVERITY_LEVELS,
         help='min severity level to report when security is enabled (default: low)')
     SCAN_PARSER.add_argument(
-        '--max_severity',
+        '--max-severity',
         default='high',
         choices=variables.SEVERITY_LEVELS,
         help='max severity level to report when security is enabled (default: high)')
+    SCAN_PARSER.add_argument(
+        '--verbose',
+        action='store_true',
+        help='Verbose output of the account assets')
+    SCAN_PARSER.add_argument(
+        '--brief',
+        action='store_true',
+        help='Brief output of the account assets')
 
     ARGS = PARSER.parse_args()
     main(sys.argv[1], ARGS)

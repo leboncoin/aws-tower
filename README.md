@@ -41,7 +41,8 @@ optional arguments:
 
 ```bash
 $ ./aws_tower_cli.py scan --help
-usage: aws_tower_cli.py scan [-h] [-t {EC2,ELBV2,RDS}] [--min_severity {info,low,medium,high,critical}] [--max_severity {info,low,medium,high,critical}] account
+usage: aws_tower_cli.py scan [-h] [-t {EC2,ELBV2,RDS}] [--min-severity {info,low,medium,high,critical}] [--max-severity {info,low,medium,high,critical}] [--verbose] [--brief]
+                             account
 
 positional arguments:
   account               Account Name
@@ -50,10 +51,12 @@ optional arguments:
   -h, --help            show this help message and exit
   -t {EC2,ELBV2,RDS}, --type {EC2,ELBV2,RDS}
                         Types to display (default: display everything)
-  --min_severity {info,low,medium,high,critical}
+  --min-severity {info,low,medium,high,critical}
                         min severity level to report when security is enabled (default: low)
-  --max_severity {info,low,medium,high,critical}
+  --max-severity {info,low,medium,high,critical}
                         max severity level to report when security is enabled (default: high)
+  --verbose             Verbose output of the account assets
+  --brief               Brief output of the account assets
 ```
 
 ## Usage (lambda)
