@@ -11,25 +11,49 @@ $ cp config/rules.json.sample config/rules.json # if you want to use --security 
 
 ```bash
 $ ./aws_tower_cli.py --help
-usage: aws_tower_cli.py [-h] [--version] [-a ACCOUNT] [--even-private] [-n] [-t TYPE] [--hide-sg] [-s] [--min_severity MIN_SEVERITY]
-                        [--max_severity MAX_SEVERITY]
+usage: aws_tower_cli.py [-h] [--version] {discover,scan} ...
+
+positional arguments:
+  {discover,scan}  commands
+    discover       Discover assets in an AWS account
+    scan           Scan AWS account to find security issues
+
+optional arguments:
+  -h, --help       show this help message and exit
+  --version        show program's version number and exit
+```
+
+```bash
+$ ./aws_tower_cli.py discover --help
+usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS}] [--even-private] [--hide-sg] [-n] account
+
+positional arguments:
+  account               Account Name
 
 optional arguments:
   -h, --help            show this help message and exit
-  --version             show program's version number and exit
-  -a ACCOUNT, --account ACCOUNT
-                        Account Name (default: None)
-  --even-private        Display public and private assets (default: False)
-  -n, --names-only      Display only names (default: False)
-  -t TYPE, --type TYPE  Types to display (EC2, ELBV2, RDS) (default: display everything) (default: None)
-  --hide-sg             Hide Security Groups (default: False)
-  -s, --security        Check security issues on your services (default: False)
-  --min_severity MIN_SEVERITY
-                        min severity level to report when security is enabled (['info', 'low', 'medium', 'high', 'critical'])
-                        (default: info)
-  --max_severity MAX_SEVERITY
-                        max severity level to report when security is enabled (['info', 'low', 'medium', 'high', 'critical'])
-                        (default: critical)
+  -t {EC2,ELBV2,RDS}, --type {EC2,ELBV2,RDS}
+                        Types to display (default: display everything)
+  --even-private        Display public and private assets
+  --hide-sg             Hide Security Groups
+  -n, --names-only      Display only names
+```
+
+```bash
+$ ./aws_tower_cli.py scan --help
+usage: aws_tower_cli.py scan [-h] [-t {EC2,ELBV2,RDS}] [--min_severity {info,low,medium,high,critical}] [--max_severity {info,low,medium,high,critical}] account
+
+positional arguments:
+  account               Account Name
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t {EC2,ELBV2,RDS}, --type {EC2,ELBV2,RDS}
+                        Types to display (default: display everything)
+  --min_severity {info,low,medium,high,critical}
+                        min severity level to report when security is enabled (default: low)
+  --max_severity {info,low,medium,high,critical}
+                        max severity level to report when security is enabled (default: high)
 ```
 
 ## Usage (lambda)
