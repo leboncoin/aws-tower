@@ -47,14 +47,14 @@ def main(verb, args):
     if verb == 'discover':
         report = aws_scan(
             session,
-            public_only=not args.even_private,
+            public_only=args.public_only,
             meta_types=meta_types
         )
         print_subnet(
             report,
             variables.META_TYPES,
-            names_only=args.names_only,
-            hide_sg=args.hide_sg,
+            names_only=args.brief,
+            hide_sg=not args.verbose,
             security=None
         )
     elif verb == 'scan':
@@ -63,20 +63,18 @@ def main(verb, args):
             public_only=False,
             meta_types=meta_types
         )
-        security = None
-        if args.security:
-            min_severity = list(variables.SEVERITY_LEVELS.keys())[0]
-            max_severity = list(variables.SEVERITY_LEVELS.keys())[-1]
-            if args.min_severity in variables.SEVERITY_LEVELS:
-                min_severity = args.min_severity
-            if args.max_severity in variables.SEVERITY_LEVELS:
-                max_severity = args.max_severity
-            security = {
-                'findings_rules_path': variables.FINDING_RULES_PATH,
-                'severity_levels': variables.SEVERITY_LEVELS,
-                'min_severity': min_severity,
-                'max_severity': max_severity
-            }
+        min_severity = list(variables.SEVERITY_LEVELS.keys())[0]
+        max_severity = list(variables.SEVERITY_LEVELS.keys())[-1]
+        if args.min_severity in variables.SEVERITY_LEVELS:
+            min_severity = args.min_severity
+        if args.max_severity in variables.SEVERITY_LEVELS:
+            max_severity = args.max_severity
+        security = {
+            'findings_rules_path': variables.FINDING_RULES_PATH,
+            'severity_levels': variables.SEVERITY_LEVELS,
+            'min_severity': min_severity,
+            'max_severity': max_severity
+        }
         print_subnet(
             report,
             variables.META_TYPES,
@@ -111,17 +109,17 @@ if __name__ == '__main__':
         choices=variables.META_TYPES,
         help='Types to display (default: display everything)')
     DISCOVER_PARSER.add_argument(
-        '--even-private',
+        '--public-only',
         action='store_true',
-        help='Display public and private assets')
+        help='Display public assets only')
     DISCOVER_PARSER.add_argument(
-        '--hide-sg',
+        '--verbose',
         action='store_true',
-        help='Hide Security Groups')
+        help='Verbose output of the account assets')
     DISCOVER_PARSER.add_argument(
-        '-n', '--names-only',
+        '--brief',
         action='store_true',
-        help='Display only names')
+        help='Brief output of the account assets')
 
     # SCAN Arguments
     SCAN_PARSER = SUBPARSERS.add_parser(

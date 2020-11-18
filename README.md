@@ -25,7 +25,7 @@ optional arguments:
 
 ```bash
 $ ./aws_tower_cli.py discover --help
-usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS}] [--even-private] [--hide-sg] [-n] account
+usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS}] [--public-only] [--verbose] [--brief] account
 
 positional arguments:
   account               Account Name
@@ -34,9 +34,9 @@ optional arguments:
   -h, --help            show this help message and exit
   -t {EC2,ELBV2,RDS}, --type {EC2,ELBV2,RDS}
                         Types to display (default: display everything)
-  --even-private        Display public and private assets
-  --hide-sg             Hide Security Groups
-  -n, --names-only      Display only names
+  --public-only         Display public assets only
+  --verbose             Verbose output of the account assets
+  --brief               Brief output of the account assets
 ```
 
 ```bash
