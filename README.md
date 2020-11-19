@@ -25,10 +25,10 @@ optional arguments:
 
 ```bash
 $ ./aws_tower_cli.py discover --help
-usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS}] [-p] [-v] [-b] account
+usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS}] [-p] [-v] [-b] profile
 
 positional arguments:
-  account               Account Name
+  profile               A valid profile name configured in the ~/.aws/config file
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -42,10 +42,10 @@ optional arguments:
 ```bash
 $ ./aws_tower_cli.py scan --help
 usage: aws_tower_cli.py scan [-h] [-t {EC2,ELBV2,RDS}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-v] [-b]
-                             account
+                             profile
 
 positional arguments:
-  account               Account Name
+  profile               A valid profile name configured in the ~/.aws/config file
 
 optional arguments:
   -h, --help            show this help message and exit

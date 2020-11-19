@@ -34,6 +34,7 @@ def main(verb, args):
         session = boto3.Session(profile_name=args.account)
     except botocore.exceptions.ProfileNotFound:
         LOGGER.critical(f'The profile "{args.account}" can\'t be found...')
+        LOGGER.critical('Take a look at the ~/.aws/config file.')
         sys.exit(1)
     meta_types = list()
     if args.type is None:
@@ -102,9 +103,9 @@ if __name__ == '__main__':
         'discover',
         help='Discover assets in an AWS account')
     DISCOVER_PARSER.add_argument(
-        'account',
+        'profile',
         action='store',
-        help='Account Name')
+        help='A valid profile name configured in the ~/.aws/config file')
     DISCOVER_PARSER.add_argument(
         '-t', '--type',
         action='append',
@@ -128,9 +129,9 @@ if __name__ == '__main__':
         'scan',
         help='Scan AWS account to find security issues')
     SCAN_PARSER.add_argument(
-        'account',
+        'profile',
         action='store',\
-        help='Account Name')
+        help='A valid profile name configured in the ~/.aws/config file')
     SCAN_PARSER.add_argument(
         '-t', '--type',
         action='append',
