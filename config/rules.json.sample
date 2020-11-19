@@ -87,14 +87,14 @@
               "conditions": [
                 {
                   "type": "constant",
-                  "type": "data_element",
+                  "name": "data_element",
                   "value": "all"
                 }
               ],
               "data_sources": [
                 {
                   "type": "variable",
-                  "type": "data_list",
+                  "name": "data_list",
                   "value": "ports"
                 }
               ]
@@ -145,14 +145,14 @@
               "conditions": [
                 {
                   "type": "constant",
-                  "type": "data_element",
+                  "name": "data_element",
                   "value": "all"
                 }
               ],
               "data_sources": [
                 {
                   "type": "variable",
-                  "type": "data_list",
+                  "name": "data_list",
                   "value": "ports"
                 }
               ]
@@ -251,14 +251,14 @@
               "conditions": [
                 {
                   "type": "constant",
-                  "type": "data_element",
+                  "name": "data_element",
                   "value": "SecurityGroups"
                 }
               ],
               "data_sources": [
                 {
                   "type": "variable",
-                  "type": "data_list",
+                  "name": "data_list",
                   "value": "metadata"
                 }
               ]
@@ -284,14 +284,14 @@
               "conditions": [
                 {
                   "type": "constant",
-                  "type": "data_element",
+                  "name": "data_element",
                   "value": "DnsRecord"
                 }
               ],
               "data_sources": [
                 {
                   "type": "variable",
-                  "type": "data_list",
+                  "name": "data_list",
                   "value": "metadata"
                 }
               ]
@@ -317,14 +317,14 @@
               "conditions": [
                 {
                   "type": "constant",
-                  "type": "data_element",
+                  "name": "data_element",
                   "value": "Engine"
                 }
               ],
               "data_sources": [
                 {
                   "type": "variable",
-                  "type": "data_list",
+                  "name": "data_list",
                   "value": "metadata"
                 }
               ]
@@ -342,7 +342,7 @@
                   "type": "constant",
                   "name": "versions",
                   "value": [
-                    "5.1.0"
+                    "5.2.0"
                   ]
                 }
               ],
@@ -401,8 +401,8 @@
                   "type": "constant",
                   "name": "versions",
                   "value": [
-                    "10.20",
-                    "11.40"
+                    "10.10",
+                    "11.4"
                   ]
                 }
               ],
