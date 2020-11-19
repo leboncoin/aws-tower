@@ -17,7 +17,7 @@ import re
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.5.0'
+VERSION = '2.6.0'
 
 class Patterns:
     """Get findings from patterns
