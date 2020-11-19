@@ -105,7 +105,7 @@ def remove_key_from_report(report, del_key, is_startswith=False):
         del report[key]
     return report
 
-def scan_mode(asset_report, asset_data, asset_name, asset_type, security, brief=False):
+def scan_mode(asset_report, asset_data, asset_name, security, brief=False):
     """
     This functions is returning an asset_report with security findings,
     it handles the brief mode output
@@ -125,20 +125,26 @@ def scan_mode(asset_report, asset_data, asset_name, asset_type, security, brief=
         return []
     asset_report['SecurityIssues'] = security_issues
     if brief:
+        is_public = ''
+        if 'PubliclyAccessible' in asset_report and asset_report['PubliclyAccessible']:
+            is_public = '[Public] '
         asset_report = dict()
-        asset_report[f'{asset_type}: {asset_name}'] = \
+        asset_report[f'{is_public}{asset_data["Type"]}: {asset_name}'] = \
             [f['severity']+": "+f['title'] for f in security_issues]
     return asset_report
 
-def discover_mode(asset_report, asset_name, asset_type, brief=False):
+def discover_mode(asset_report, asset_name, brief=False):
     """
     This functions handles the brief mode output for discovery mode
     """
     if brief:
-        return f'{asset_type}: {asset_name}'
+        is_public = ''
+        if 'PubliclyAccessible' in asset_report and asset_report['PubliclyAccessible']:
+            is_public = '[Public] '
+        return f'{is_public}{asset_report["Type"]}: {asset_name}'
     return asset_report
 
-def update_report(report, asset_report, asset_type, brief=False, verbose=False):
+def update_report(report, asset_report, brief=False, verbose=False):
     """
     This functions updates the current report by the given asset_report,
     it handles the brief and verbose output
@@ -150,6 +156,7 @@ def update_report(report, asset_report, asset_type, brief=False, verbose=False):
         report.append(asset_report)
     else:
         # Put the asset_type between Subnet and Asset
+        asset_type = asset_report['Type']
         if asset_type not in report:
             report[asset_type] = list()
         if 'Type' in asset_report:
@@ -184,7 +191,6 @@ def print_subnet(report, meta_types, brief=False, verbose=False, security=None):
                             asset_report,
                             report[vpc]['Subnets'][subnet][asset_type][asset],
                             asset_report[meta_types[asset_type]['Name']],
-                            asset_type,
                             security,
                             brief=brief)
                         if not asset_report:
@@ -193,14 +199,12 @@ def print_subnet(report, meta_types, brief=False, verbose=False, security=None):
                         asset_report = discover_mode(
                             asset_report,
                             asset_report[meta_types[asset_type]['Name']],
-                            asset_type,
                             brief=brief)
 
                     # Update the new report
                     new_report[vpc][mini_name] = update_report(
                         new_report[vpc][mini_name],
                         asset_report,
-                        asset_type,
                         brief=brief,
                         verbose=verbose)
 
@@ -231,6 +235,8 @@ def ec2_scan(report, ec2, public_only, sg_raw):
             report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['PrivateIpAddress'] = ec2['PrivateIpAddress']
         if 'PublicIpAddress' in ec2:
             report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['PublicIpAddress'] = ec2['PublicIpAddress']
+        if not public_only:
+            report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['PubliclyAccessible'] = 'PublicIpAddress' in ec2
         if 'SecurityGroups' in ec2:
             report[ec2['VpcId']]['Subnets'][ec2['SubnetId']]['EC2'][ec2['InstanceId']]['SecurityGroups'] = dict()
             for security_group in ec2['SecurityGroups']:
@@ -249,8 +255,10 @@ def elbv2_scan(report, elbv2, public_only, sg_raw):
         return report
     report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']] = dict()
     report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['Type'] = 'ELBV2'
-    report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['Scheme'] = elbv2['Scheme']
+    # report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['Scheme'] = elbv2['Scheme']
     report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['DNSName'] = elbv2['DNSName']
+    if not public_only:
+        report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['PubliclyAccessible'] = elbv2['Scheme'] != 'internal'
     if 'SecurityGroups' in elbv2:
         report[elbv2['VpcId']]['Subnets'][elbv2['AvailabilityZones'][0]['SubnetId']]['ELBV2'][elbv2['LoadBalancerName']]['SecurityGroups'] = dict()
         for security_group in elbv2['SecurityGroups']:
@@ -267,6 +275,8 @@ def rds_scan(report, rds, public_only):
     report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Type'] = 'RDS'
     report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Name'] = rds['DBInstanceIdentifier']
     report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Engine'] = f'{rds["Engine"]}=={rds["EngineVersion"]}'
+    if not public_only:
+        report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['PubliclyAccessible'] = rds['PubliclyAccessible']
     if 'Endpoint' in rds and 'Address' in rds['Endpoint']:
         report[rds['DBSubnetGroup']['VpcId']]['Subnets'][rds['DBSubnetGroup']['Subnets'][0]['SubnetIdentifier']]['RDS'][rds['DBInstanceIdentifier']]['Address'] = rds['Endpoint']['Address']
     return report
@@ -283,11 +293,11 @@ def route53_scan(report, record_value, record):
                 if ('PrivateIpAddress' in value and record_value == value['PrivateIpAddress']) or \
                     ('Name' in value and record_value == value['Name']) or \
                     ('PublicIpAddress' in value and record_value == value['PublicIpAddress']):
-                    report[vpc]['Subnets'][subnet]['EC2'][ec2]['DnsRecord'] = record['Name']
+                    report[vpc]['Subnets'][subnet]['EC2'][ec2]['DnsRecord'] = record['Name'].replace('\\052', '*')
             for elbv2 in report[vpc]['Subnets'][subnet]['ELBV2']:
                 value = report[vpc]['Subnets'][subnet]['ELBV2'][elbv2]
                 if ('DNSName' in value and record_value == f'{value["DNSName"]}.'):
-                    report[vpc]['Subnets'][subnet]['ELBV2'][elbv2]['DnsRecord'] = record['Name']
+                    report[vpc]['Subnets'][subnet]['ELBV2'][elbv2]['DnsRecord'] = record['Name'].replace('\\052', '*')
 
 def aws_scan(
     boto_session,
