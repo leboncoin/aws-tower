@@ -152,7 +152,8 @@ def update_report(report, asset_report, asset_type, brief=False, verbose=False):
         # Put the asset_type between Subnet and Asset
         if asset_type not in report:
             report[asset_type] = list()
-        del asset_report['Type']
+        if 'Type' in asset_report:
+            del asset_report['Type']
         report[asset_type].append(asset_report)
     return report
 
@@ -186,6 +187,8 @@ def print_subnet(report, meta_types, brief=False, verbose=False, security=None):
                             asset_type,
                             security,
                             brief=brief)
+                        if not asset_report:
+                            continue
                     else:
                         asset_report = discover_mode(
                             asset_report,
