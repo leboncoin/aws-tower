@@ -31,9 +31,9 @@ def main(verb, args):
     Main function
     """
     try:
-        session = boto3.Session(profile_name=args.account)
+        session = boto3.Session(profile_name=args.profile)
     except botocore.exceptions.ProfileNotFound:
-        LOGGER.critical(f'The profile "{args.account}" can\'t be found...')
+        LOGGER.critical(f'The profile "{args.profile}" can\'t be found...')
         LOGGER.critical('Take a look at the ~/.aws/config file.')
         sys.exit(1)
     meta_types = list()
