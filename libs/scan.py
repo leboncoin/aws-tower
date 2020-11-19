@@ -105,57 +105,106 @@ def remove_key_from_report(report, del_key, is_startswith=False):
         del report[key]
     return report
 
+def scan_mode(asset_report, asset_data, asset_name, asset_type, security, brief=False):
+    """
+    This functions is returning an asset_report with security findings,
+    it handles the brief mode output
+    """
+    try:
+        patterns = Patterns(
+            security['findings_rules_path'],
+            security['severity_levels'],
+            security['min_severity'],
+            security['max_severity']
+        )
+    except Exception as err_msg:
+        LOGGER.critical(err_msg)
+        return []
+    security_issues = patterns.extract_findings(asset_data)
+    if not security_issues:
+        return []
+    asset_report['SecurityIssues'] = security_issues
+    if brief:
+        asset_report = dict()
+        asset_report[f'{asset_type}: {asset_name}'] = \
+            [f['severity']+": "+f['title'] for f in security_issues]
+    return asset_report
+
+def discover_mode(asset_report, asset_name, asset_type, brief=False):
+    """
+    This functions handles the brief mode output for discovery mode
+    """
+    if brief:
+        return f'{asset_type}: {asset_name}'
+    return asset_report
+
+def update_report(report, asset_report, asset_type, brief=False, verbose=False):
+    """
+    This functions updates the current report by the given asset_report,
+    it handles the brief and verbose output
+    """
+    # Keep SecurityGroups only in verbose mode
+    if not verbose and 'SecurityGroups' in asset_report:
+        del asset_report['SecurityGroups']
+    if brief:
+        report.append(asset_report)
+    else:
+        # Put the asset_type between Subnet and Asset
+        if asset_type not in report:
+            report[asset_type] = list()
+        del asset_report['Type']
+        report[asset_type].append(asset_report)
+    return report
+
 def print_subnet(report, meta_types, brief=False, verbose=False, security=None):
     """
     Print subnets
     """
     new_report = dict()
-    if security:
-        try:
-            patterns = Patterns(
-                security['findings_rules_path'],
-                security['severity_levels'],
-                security['min_severity'],
-                security['max_severity']
-            )
-        except Exception as err_msg:
-            LOGGER.critical(err_msg)
-            return False
     for vpc in report:
         new_report[vpc] = dict()
         for subnet in report[vpc]['Subnets']:
-            mini_name = report[vpc]['Subnets'][subnet]['Name'].split(f'-{report[vpc]["Subnets"][subnet]["AvailabilityZone"]}')[0]
+            mini_name = report[vpc]['Subnets'][subnet]['Name'].split(
+                f'-{report[vpc]["Subnets"][subnet]["AvailabilityZone"]}')[0]
             if not mini_name in new_report[vpc]:
-                new_report[vpc][mini_name] = list()
+                if brief:
+                    new_report[vpc][mini_name] = list()
+                else:
+                    new_report[vpc][mini_name] = dict()
 
             for asset_type in report[vpc]['Subnets'][subnet]:
                 if asset_type not in meta_types:
                     continue
                 for asset in report[vpc]['Subnets'][subnet][asset_type]:
                     asset_report = report[vpc]['Subnets'][subnet][asset_type][asset]
+
                     if security:
-                        security_issues = patterns.extract_findings(
-                            report[vpc]['Subnets'][subnet][asset_type][asset]
-                        )
-                        if not security_issues:
-                            asset_report = []
-                            continue
-                        asset_report['SecurityIssues'] = security_issues
-                        if brief:
-                            asset_name = asset_report[meta_types[asset_type]['Name']]
-                            asset_report = dict()
-                            asset_report[f'{asset_type}: {asset_name}'] = \
-                                [f['severity']+": "+f['title'] for f in security_issues]
+                        asset_report = scan_mode(
+                            asset_report,
+                            report[vpc]['Subnets'][subnet][asset_type][asset],
+                            asset_report[meta_types[asset_type]['Name']],
+                            asset_type,
+                            security,
+                            brief=brief)
                     else:
-                        if brief:
-                            asset_name = asset_report[meta_types[asset_type]['Name']]
-                            asset_report = f'{asset_type}: {asset_name}'
-                    if not verbose:
-                        if 'SecurityGroups' in asset_report:
-                            del asset_report['SecurityGroups']
-                    new_report[vpc][mini_name].append(asset_report)
+                        asset_report = discover_mode(
+                            asset_report,
+                            asset_report[meta_types[asset_type]['Name']],
+                            asset_type,
+                            brief=brief)
+
+                    # Update the new report
+                    new_report[vpc][mini_name] = update_report(
+                        new_report[vpc][mini_name],
+                        asset_report,
+                        asset_type,
+                        brief=brief,
+                        verbose=verbose)
+
+            # Remove empty Subnet if brief mode
             if brief and not new_report[vpc][mini_name]:
                 del new_report[vpc][mini_name]
+        # Remove empty VPC if brief mode
         if brief and not new_report[vpc]:
             del new_report[vpc]
 
