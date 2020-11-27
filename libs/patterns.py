@@ -12,12 +12,13 @@ from distutils.version import LooseVersion
 import ipaddress
 import json
 import logging
+from pathlib import Path
 import re
 
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.6.0'
+VERSION = '2.7.0'
 
 class Patterns:
     """Get findings from patterns
@@ -61,7 +62,12 @@ class Patterns:
         }
     }
 
-    def __init__(self, patterns_path, severity_levels={'info': 0, 'critical': 1}, min_severity='info', max_severity='critical'):
+    def __init__(
+        self,
+        patterns_path,
+        severity_levels={'info': 0, 'critical': 1},
+        min_severity='info',
+        max_severity='critical'):
         """Constructor method
         Get patterns from the json file
         Set min_severity / max_severity to at least 0 if any issue
@@ -90,6 +96,16 @@ class Patterns:
             self._max_severity = 0
         if self._max_severity < self._min_severity:
             raise Exception(f'Error: min severity ({min_severity}) higher than max severity ({max_severity})')
+        self.subnet_allow_list = list()
+        allow_list_path = Path('config/subnet_allow_list.txt')
+        if allow_list_path.exists():
+            with allow_list_path.open() as allow_list:
+                for line in allow_list.readlines():
+                    cidr = line.split('\n')[0].split(':')[0]
+                    try:
+                        self.subnet_allow_list.append(ipaddress.ip_network(cidr))
+                    except ValueError:
+                        pass
 
     def _prepare_arguments(self, arguments, kwargs):
         """Prepare arguments to use them in rule methods
@@ -250,7 +266,13 @@ class Patterns:
             is_private = False
         else:
             is_private = ip_network.is_private
-        return is_private == conditions["is_private_cidr"]
+        in_allow_list = False
+        for subnet in self.subnet_allow_list:
+            if in_allow_list:
+                continue
+            in_allow_list = ipaddress.ip_network(data_sources["source"]).subnet_of(subnet)
+
+        return (is_private or in_allow_list) == conditions["is_private_cidr"]
 
     def _check_rule_is_in_networks(self, data_sources, conditions):
         """Check if source is in one of the networks
@@ -553,76 +575,4 @@ class Patterns:
             for value in self._rules_definitions[rule['type']]['conditions']:
                 if not value in conditions_name:
                     errors['critical'].append(f'Unable to find {value} in {list(conditions_name)}')
-        return errors
-
-    def _check_finding_definitions(self, finding):
-        errors = {
-            'critical': list(),
-            'warning': list(),
-            'rules': list()
-        }
-        if not isinstance(finding, dict):
-            errors['critical'].append(f'Bad format for finding ({type(type_name)} instead of dict)')
-        else:
-            if 'message' not in finding:
-                error['critical'].append(f'No "message"')
-            else:
-                if isinstance(finding['message'], dict):
-                    if not 'text' in finding['message']:
-                        errors['critical'].append(f'No "text" in message (format dict)')
-                    if not 'args' in finding['message']:
-                        errors['critical'].append(f'No "args" in message (format dict)')
-                    else:
-                        if not isinstance(finding['message']['args'], dict):
-                            errors['critical'].append(f'Bad format for args ({type(finding["message"]["args"])})')
-                        else:
-                            for arg_key, arg_value in finding['message']['args'].items():
-                                if not 'type' in arg_value:
-                                    errors['critical'].append(f'No "type" in arg {arg_key}')
-                                else:
-                                    if arg_value not in ['var', 'dict']:
-                                        errors['critical'].append(f'Bad type ({arg_value}) ')
-                elif not isinstance(finding['message'], str):
-                    error['critical'].append(f'Bad format for message in finding [{index}] in {type_name}: {type(finding["message"])}')
-                if not 'rules' in finding:
-                    errors['critical'].append(f'No "rules"')
-                else:
-                    for rule in finding['rules']:
-                        errors['rules'].append(self._check_rules_definitions(rule))
-        return errors
-
-    def check_patterns_definitions(self):
-        errors = {
-            'general': {
-                'critical': list(),
-                'warning': list()
-            }
-        }
-        self._logger.info('Checking rules methods')
-        for rule_name in self._rules_definitions.keys():
-            func_rule = f'_check_rule_{rule_name}'
-            if not hasattr(self, func_rule):
-                errors['general']['critical'].append(f'Method {func_rule} not found')
-        self._logger.info('Checking rules definitions')
-        if 'version' in self._patterns:
-            self._logger.info(f'Rules version: {self._patterns["version"]}')
-        else:
-            errors['general']['warning'].append('No version found for rules')
-        for pattern_type_name, pattern_type_content in self._patterns['types'].items():
-            errors[pattern_type_name] = {
-                'critical': list(),
-                'warning': list(),
-                'findings': list()
-            }
-            self._logger.info(f'Checking rules for pattern type {pattern_type_name}')
-            if 'description' not in pattern_type_content:
-                errors[pattern_type_name]['warning'].append(f'No description found')
-            if 'findings' not in pattern_type_content:
-                errors[pattern_type_name]['critical'].append(f'No findings found')
-            else:
-                if not isinstance(pattern_type_content['findings'], list):
-                    errors[pattern_type_name]['critical'].append(f'findings value is {type(pattern_type_content["findings"])} instead of list')
-                else:
-                    for finding in pattern_type_content['findings']:
-                        errors[pattern_type_name]['findings'].append(self._check_finding_definitions(finding))
         return errors

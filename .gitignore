@@ -7,6 +7,7 @@ package
 # Config
 config/rules.json
 config/lambda.config
+config/subnet_allow_list.txt
 
 # Documentation
 

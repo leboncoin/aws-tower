@@ -5,6 +5,7 @@
 ```bash
 $ pip install -r requirements.txt
 $ cp config/rules.json.sample config/rules.json # if you want to use --security feature
+$ cp config/subnet_allow_list.txt.sample config/subnet_allow_list.txt # if you want to use an allow list
 ```
 
 ## Usage
