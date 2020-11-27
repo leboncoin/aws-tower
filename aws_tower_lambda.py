@@ -32,7 +32,7 @@ from config import variables
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.6.1'
+VERSION = '2.6.2'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -80,7 +80,12 @@ def main():
                 LOGGER.critical(err_msg)
                 continue
             try:
-                report = parse_report(aws_scan(session, public_only=True), variables.META_TYPES)
+                report = parse_report(
+                    aws_scan(
+                        session,
+                        public_only=True,
+                        meta_types=variables.META_TYPES),
+                    variables.META_TYPES)
             except Exception as err_msg:
                 LOGGER.critical(err_msg)
                 continue
