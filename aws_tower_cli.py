@@ -24,7 +24,7 @@ from config import variables
 # from pdb import set_trace as st
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '2.0.0'
+VERSION = '2.0.1'
 
 def main(verb, args):
     """
@@ -157,4 +157,6 @@ if __name__ == '__main__':
         help='Brief output of the account assets')
 
     ARGS = PARSER.parse_args()
+    if len(sys.argv) == 1:
+        PARSER.print_help()
     main(sys.argv[1], ARGS)
