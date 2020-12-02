@@ -11,7 +11,7 @@ Jinja2==2.11.2
 jmespath==0.10.0
 MarkupSafe==1.1.1
 packaging==20.4
-Patrowl4py==1.1.0
+Patrowl4py==1.1.1
 Pygments==2.7.1
 pyparsing==2.4.7
 python-dateutil==2.8.1
