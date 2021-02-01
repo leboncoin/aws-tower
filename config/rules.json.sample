@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "types": {
     "security_group": {
       "description": "Check each rule on each security group and on each source",
@@ -286,6 +286,138 @@
                   "type": "constant",
                   "name": "data_element",
                   "value": "DnsRecord"
+                }
+              ],
+              "data_sources": [
+                {
+                  "type": "variable",
+                  "name": "data_list",
+                  "value": "metadata"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "message": {
+            "text": "ACL BlockPublicAcls not enabled for {s3_type}",
+            "args": {
+              "s3_type": {
+                "type": "dict",
+                "key": "Type",
+                "variable": "metadata"
+              }
+            }
+          },
+          "severity": "medium",
+          "rules": [
+            {
+              "type": "not_in",
+              "description": "Check if BlockPublicAcls is not in metadata",
+              "conditions": [
+                {
+                  "type": "constant",
+                  "name": "data_element",
+                  "value": "ACL: BlockPublicAcls"
+                }
+              ],
+              "data_sources": [
+                {
+                  "type": "variable",
+                  "name": "data_list",
+                  "value": "metadata"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "message": {
+            "text": "ACL BlockPublicPolicy not enabled for {s3_type}",
+            "args": {
+              "s3_type": {
+                "type": "dict",
+                "key": "Type",
+                "variable": "metadata"
+              }
+            }
+          },
+          "severity": "medium",
+          "rules": [
+            {
+              "type": "not_in",
+              "description": "Check if BlockPublicPolicy is not in metadata",
+              "conditions": [
+                {
+                  "type": "constant",
+                  "name": "data_element",
+                  "value": "ACL: BlockPublicPolicy"
+                }
+              ],
+              "data_sources": [
+                {
+                  "type": "variable",
+                  "name": "data_list",
+                  "value": "metadata"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "message": {
+            "text": "ACL IgnorePublicAcls not enabled for {s3_type}",
+            "args": {
+              "s3_type": {
+                "type": "dict",
+                "key": "Type",
+                "variable": "metadata"
+              }
+            }
+          },
+          "severity": "high",
+          "rules": [
+            {
+              "type": "not_in",
+              "description": "Check if IgnorePublicAcls is not in metadata",
+              "conditions": [
+                {
+                  "type": "constant",
+                  "name": "data_element",
+                  "value": "ACL: IgnorePublicAcls"
+                }
+              ],
+              "data_sources": [
+                {
+                  "type": "variable",
+                  "name": "data_list",
+                  "value": "metadata"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "message": {
+            "text": "ACL RestrictPublicBuckets not enabled for {s3_type}",
+            "args": {
+              "s3_type": {
+                "type": "dict",
+                "key": "Type",
+                "variable": "metadata"
+              }
+            }
+          },
+          "severity": "medium",
+          "rules": [
+            {
+              "type": "not_in",
+              "description": "Check if RestrictPublicBuckets is not in metadata",
+              "conditions": [
+                {
+                  "type": "constant",
+                  "name": "data_element",
+                  "value": "ACL: RestrictPublicBuckets"
                 }
               ],
               "data_sources": [
