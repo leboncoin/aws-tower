@@ -7,7 +7,7 @@ Written by Fabien Martinez <fabien.martinez+github@adevinta.com>
 '''
 from pathlib import Path
 
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 
 SEVERITY_LEVELS = {
     'info': 0,
@@ -32,6 +32,9 @@ META_TYPES = {
         'Name': 'DNSName'
     },
     'RDS': {
+        'Name': 'Name'
+    },
+    'S3': {
         'Name': 'Name'
     }
 }
