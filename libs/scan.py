@@ -382,7 +382,14 @@ def s3_scan(report, s_three, configuration, location, public_only):
     report[location]['S3'][s_three] = dict()
     report[location]['S3'][s_three]['Type'] = 'S3'
     report[location]['S3'][s_three]['Name'] = s_three
-    report[location]['S3'][s_three]['PubliclyAccessible'] = not is_private
+    if configuration is not None and configuration['BlockPublicAcls']:
+        report[location]['S3'][s_three]['ACL: BlockPublicAcls'] = True
+    if configuration is not None and configuration['IgnorePublicAcls']:
+        report[location]['S3'][s_three]['ACL: IgnorePublicAcls'] = True
+    if configuration is not None and configuration['BlockPublicPolicy']:
+        report[location]['S3'][s_three]['ACL: BlockPublicPolicy'] = True
+    if configuration is not None and configuration['RestrictPublicBuckets']:
+        report[location]['S3'][s_three]['ACL: RestrictPublicBuckets'] = True
     return report
 
 def aws_scan(
