@@ -26,14 +26,14 @@ optional arguments:
 
 ```bash
 $ ./aws_tower_cli.py discover --help
-usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS}] [-p] [-v] [-b] profile
+usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS,S3}] [-p] [-v] [-b] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 optional arguments:
   -h, --help            show this help message and exit
-  -t {EC2,ELBV2,RDS}, --type {EC2,ELBV2,RDS}
+  -t {EC2,ELBV2,RDS,S3}, --type {EC2,ELBV2,RDS,S3}
                         Types to display (default: display everything)
   -p, --public-only     Display public assets only
   -v, --verbose         Verbose output of the account assets
@@ -42,7 +42,7 @@ optional arguments:
 
 ```bash
 $ ./aws_tower_cli.py scan --help
-usage: aws_tower_cli.py scan [-h] [-t {EC2,ELBV2,RDS}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-v] [-b]
+usage: aws_tower_cli.py scan [-h] [-t {EC2,ELBV2,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-v] [-b]
                              profile
 
 positional arguments:
@@ -50,7 +50,7 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -t {EC2,ELBV2,RDS}, --type {EC2,ELBV2,RDS}
+  -t {EC2,ELBV2,RDS,S3}, --type {EC2,ELBV2,RDS,S3}
                         Types to display (default: display everything)
   -m {info,low,medium,high,critical}, --min-severity {info,low,medium,high,critical}
                         min severity level to report when security is enabled (default: low)
