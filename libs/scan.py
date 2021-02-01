@@ -188,7 +188,7 @@ def update_asset_type_report(new_report, report, context):
                     asset_report,
                     context)
                 if not asset_report:
-                    return new_report
+                    continue
             else:
                 asset_report = discover_mode(
                     asset_report,
@@ -210,7 +210,7 @@ def update_asset_type_report(new_report, report, context):
                     asset_report,
                     context)
                 if not asset_report:
-                    return new_report
+                    continue
             else:
                 asset_report = discover_mode(
                     asset_report,
