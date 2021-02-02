@@ -32,7 +32,7 @@ from config import variables
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.6.2'
+VERSION = '2.7.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -63,7 +63,7 @@ def main():
             list(variables.SEVERITY_LEVELS.keys())[-1]
         )
     except Exception as err_msg:
-        LOGGER.critical(err_msg)
+        LOGGER.critical(f"Can't get patterns: {err_msg}")
     else:
         for profile in config.sections():
             if not profile.startswith('profile '):
@@ -77,7 +77,7 @@ def main():
             try:
                 session = get_session(config[profile]['role_arn'])
             except Exception as err_msg:
-                LOGGER.critical(err_msg)
+                LOGGER.critical(f"Can't get session: {err_msg}")
                 continue
             try:
                 report = parse_report(
@@ -87,7 +87,7 @@ def main():
                         meta_types=variables.META_TYPES),
                     variables.META_TYPES)
             except Exception as err_msg:
-                LOGGER.critical(err_msg)
+                LOGGER.critical(f"Can't parse report: {err_msg}")
                 continue
             assets = get_assets(PATROWL_API, PATROWL['assetgroup'])
             for report_type in report:

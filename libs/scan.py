@@ -12,12 +12,15 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 import json
 import logging
 
+# Third party library imports
+import botocore
+
 from .patterns import Patterns
 
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.0.0'
+VERSION = '2.1.0'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -79,15 +82,24 @@ def parse_report(report, meta_types):
         new_report[asset_type] = list()
 
     for vpc in report:
-        for subnet in report[vpc]['Subnets']:
-            mini_name = report[vpc]['Subnets'][subnet]['Name'].split(f'-{report[vpc]["Subnets"][subnet]["AvailabilityZone"]}')[0]
-            for asset_type in report[vpc]['Subnets'][subnet]:
+        if 'Subnets' not in report[vpc]:
+            for asset_type in report[vpc]:
                 if asset_type not in meta_types:
                     continue
-                for asset in report[vpc]['Subnets'][subnet][asset_type]:
-                    report[vpc]['Subnets'][subnet][asset_type][asset].update(
-                        {'Subnet Name': mini_name})
-                    new_report[asset_type].append(report[vpc]['Subnets'][subnet][asset_type][asset])
+                for asset in report[vpc][asset_type]:
+                    report[vpc][asset_type][asset].update(
+                        {'Region Name': vpc})
+                    new_report[asset_type].append(report[vpc][asset_type][asset])
+        else:
+            for subnet in report[vpc]['Subnets']:
+                mini_name = report[vpc]['Subnets'][subnet]['Name'].split(f'-{report[vpc]["Subnets"][subnet]["AvailabilityZone"]}')[0]
+                for asset_type in report[vpc]['Subnets'][subnet]:
+                    if asset_type not in meta_types:
+                        continue
+                    for asset in report[vpc]['Subnets'][subnet][asset_type]:
+                        report[vpc]['Subnets'][subnet][asset_type][asset].update(
+                            {'Subnet Name': mini_name})
+                        new_report[asset_type].append(report[vpc]['Subnets'][subnet][asset_type][asset])
 
     return new_report
 
@@ -174,27 +186,50 @@ def update_asset_type_report(new_report, report, context):
     subnet_slug = context['subnet_slug']
     asset_type = context['asset_type']
     meta_types = context['meta_types']
-    for asset in report[vpc]['Subnets'][subnet][asset_type]:
-        asset_report = report[vpc]['Subnets'][subnet][asset_type][asset]
-        context['asset'] = asset
-        context['asset_name'] = asset_report[meta_types[asset_type]['Name']]
+    if context['subnet'] is None:
+        for asset in report[vpc][asset_type]:
+            asset_report = report[vpc][asset_type][asset]
+            context['asset'] = asset
+            context['asset_name'] = asset_report[meta_types[asset_type]['Name']]
 
-        if context['security']:
-            asset_report = scan_mode(
+            if context['security']:
+                asset_report = scan_mode(
+                    asset_report,
+                    context)
+                if not asset_report:
+                    continue
+            else:
+                asset_report = discover_mode(
+                    asset_report,
+                    context)
+
+            # Update the new report
+            new_report[vpc] = update_asset_report(
+                new_report[vpc],
                 asset_report,
                 context)
-            if not asset_report:
-                return new_report
-        else:
-            asset_report = discover_mode(
+    else:
+        for asset in report[vpc]['Subnets'][subnet][asset_type]:
+            asset_report = report[vpc]['Subnets'][subnet][asset_type][asset]
+            context['asset'] = asset
+            context['asset_name'] = asset_report[meta_types[asset_type]['Name']]
+
+            if context['security']:
+                asset_report = scan_mode(
+                    asset_report,
+                    context)
+                if not asset_report:
+                    continue
+            else:
+                asset_report = discover_mode(
+                    asset_report,
+                    context)
+
+            # Update the new report
+            new_report[vpc][subnet_slug] = update_asset_report(
+                new_report[vpc][subnet_slug],
                 asset_report,
                 context)
-
-        # Update the new report
-        new_report[vpc][subnet_slug] = update_asset_report(
-            new_report[vpc][subnet_slug],
-            asset_report,
-            context)
     return new_report
 
 def print_subnet(report, meta_types, brief=False, verbose=False, security=None):
@@ -216,24 +251,37 @@ def print_subnet(report, meta_types, brief=False, verbose=False, security=None):
     for vpc in report:
         context['vpc'] = vpc
         new_report[vpc] = dict()
-        for subnet in report[vpc]['Subnets']:
-            context['subnet'] = subnet
-            context['subnet_slug'] = report[vpc]['Subnets'][subnet]['Name'].split(
-                f'-{report[vpc]["Subnets"][subnet]["AvailabilityZone"]}')[0]
-            if not context['subnet_slug'] in new_report[vpc]:
-                if brief:
-                    new_report[vpc][context['subnet_slug']] = list()
-                else:
-                    new_report[vpc][context['subnet_slug']] = dict()
-            for asset_type in report[vpc]['Subnets'][subnet]:
+        # In case of a region, not a VPC
+        if 'Subnets' not in report[vpc]:
+            if brief:
+                new_report[vpc] = list()
+            context['subnet'] = None
+            context['subnet_slug'] = None
+            for asset_type in report[vpc]:
                 context['asset_type'] = asset_type
                 new_report = update_asset_type_report(
                     new_report,
                     report,
                     context)
-            # Remove empty Subnet if brief mode
-            if brief and not new_report[vpc][context['subnet_slug']]:
-                del new_report[vpc][context['subnet_slug']]
+        else:
+            for subnet in report[vpc]['Subnets']:
+                context['subnet'] = subnet
+                context['subnet_slug'] = report[vpc]['Subnets'][subnet]['Name'].split(
+                    f'-{report[vpc]["Subnets"][subnet]["AvailabilityZone"]}')[0]
+                if not context['subnet_slug'] in new_report[vpc]:
+                    if brief:
+                        new_report[vpc][context['subnet_slug']] = list()
+                    else:
+                        new_report[vpc][context['subnet_slug']] = dict()
+                for asset_type in report[vpc]['Subnets'][subnet]:
+                    context['asset_type'] = asset_type
+                    new_report = update_asset_type_report(
+                        new_report,
+                        report,
+                        context)
+                # Remove empty Subnet if brief mode
+                if brief and not new_report[vpc][context['subnet_slug']]:
+                    del new_report[vpc][context['subnet_slug']]
         # Remove empty VPC if brief mode
         if brief and not new_report[vpc]:
             del new_report[vpc]
@@ -310,6 +358,9 @@ def route53_scan(report, record_value, record):
     """
     # Look into report
     for vpc in report:
+        # In case of a region, not a VPC
+        if not 'Subnets' in report[vpc]:
+            continue
         for subnet in report[vpc]['Subnets']:
             for ec2 in report[vpc]['Subnets'][subnet]['EC2']:
                 value = report[vpc]['Subnets'][subnet]['EC2'][ec2]
@@ -321,6 +372,72 @@ def route53_scan(report, record_value, record):
                 value = report[vpc]['Subnets'][subnet]['ELBV2'][elbv2]
                 if ('DNSName' in value and record_value == f'{value["DNSName"]}.'):
                     report[vpc]['Subnets'][subnet]['ELBV2'][elbv2]['DnsRecord'] = record['Name'].replace('\\052', '*')
+
+def s3_scan_concat_permissions(s3_report, acls, permission, right, override=False):
+    """
+    Scan ACLS for S3 Buckets and appends the right
+    """
+    map_users_uri = {
+        'http://acs.amazonaws.com/groups/global/AllUsers': 'ACL: All Users',
+        'http://acs.amazonaws.com/groups/global/AuthenticatedUsers': 'ACL: Any Authenticated Users',
+        'http://acs.amazonaws.com/groups/s3/LogDelivery': 'ACL: S3 Log Delivery'
+    }
+    for grant in acls:
+        if isinstance(permission, list) and grant['Permission'] not in permission:
+            continue
+        if isinstance(permission, str) and grant['Permission'] != permission:
+            continue
+        if 'URI' in grant['Grantee'] and grant['Grantee']['URI'] in map_users_uri:
+            if override or map_users_uri[grant['Grantee']['URI']] not in s3_report:
+                s3_report[map_users_uri[grant['Grantee']['URI']]] = right
+            else:
+                s3_report[map_users_uri[grant['Grantee']['URI']]] = f'{s3_report[map_users_uri[grant["Grantee"]["URI"]]]},{right}'
+    return s3_report
+
+def s3_scan_acls(s3_report, acls):
+    """
+    Scan ACLS for S3 Buckets
+    """
+    s3_report = s3_scan_concat_permissions(s3_report, acls, 'READ', 'LIST')
+    s3_report = s3_scan_concat_permissions(s3_report, acls, 'READ_ACP', 'READ')
+    s3_report = s3_scan_concat_permissions(s3_report, acls, ['WRITE', 'WRITE_ACP'], 'WRITE')
+    s3_report = s3_scan_concat_permissions(
+        s3_report,
+        acls,
+        'FULL_CONTROL',
+        'LIST,READ,WRITE',
+        override=True)
+    return s3_report
+
+def s3_scan(report, s_three, configuration, location, acls, public_only):
+    """
+    Scan S3 Buckets
+    """
+    is_private = False
+    if configuration is not None:
+        is_private = configuration['BlockPublicAcls'] and \
+            configuration['IgnorePublicAcls'] and \
+            configuration['BlockPublicPolicy'] and \
+            configuration['RestrictPublicBuckets']
+    if public_only and is_private:
+        return report
+    if location not in report:
+        report[location] = dict()
+        report[location]['S3'] = dict()
+    report[location]['S3'][s_three] = dict()
+    report[location]['S3'][s_three]['Type'] = 'S3'
+    report[location]['S3'][s_three]['Name'] = f's3://{s_three}'
+    report[location]['S3'][s_three]['URL'] = f'https://{s_three}.s3.{location}.amazonaws.com/'
+    if configuration is None or not configuration['BlockPublicAcls']:
+        report[location]['S3'][s_three]['ACL: BlockPublicAcls'] = False
+    if configuration is None or not configuration['IgnorePublicAcls']:
+        report[location]['S3'][s_three]['ACL: IgnorePublicAcls'] = False
+    if configuration is None or not configuration['BlockPublicPolicy']:
+        report[location]['S3'][s_three]['ACL: BlockPublicPolicy'] = False
+    if configuration is None or not configuration['RestrictPublicBuckets']:
+        report[location]['S3'][s_three]['ACL: RestrictPublicBuckets'] = False
+    report[location]['S3'][s_three] = s3_scan_acls(report[location]['S3'][s_three], acls)
+    return report
 
 def aws_scan(
     boto_session,
@@ -335,10 +452,6 @@ def aws_scan(
     nacls_raw = ec2_client.describe_network_acls()['NetworkAcls']
     ec2_raw = ec2_client.describe_instances()['Reservations']
     sg_raw = ec2_client.describe_security_groups()['SecurityGroups']
-    elbv2_client = boto_session.client('elbv2')
-    elbv2_raw = elbv2_client.describe_load_balancers()['LoadBalancers']
-    rds_client = boto_session.client('rds')
-    rds_raw = rds_client.describe_db_instances()['DBInstances']
     route53_client = boto_session.client('route53')
 
     report = dict()
@@ -373,12 +486,35 @@ def aws_scan(
                 report = ec2_scan(report, ec2_, public_only, sg_raw)
 
     if 'ELBV2' in meta_types:
+        elbv2_client = boto_session.client('elbv2')
+        elbv2_raw = elbv2_client.describe_load_balancers()['LoadBalancers']
         for elbv2 in elbv2_raw:
             report = elbv2_scan(report, elbv2, public_only, sg_raw)
 
     if 'RDS' in meta_types:
+        rds_client = boto_session.client('rds')
+        rds_raw = rds_client.describe_db_instances()['DBInstances']
         for rds in rds_raw:
             report = rds_scan(report, rds, public_only)
+
+    if 'S3' in meta_types:
+        s3_client = boto_session.client('s3')
+        s3_list_buckets = s3_client.list_buckets()['Buckets']
+        for s_three in s3_list_buckets:
+            try:
+                public_access_block_configuration = s3_client.get_public_access_block(
+                    Bucket=s_three['Name'])['PublicAccessBlockConfiguration']
+            except botocore.exceptions.ClientError:
+                public_access_block_configuration = None
+            location = s3_client.get_bucket_location(Bucket=s_three['Name'])['LocationConstraint']
+            acls = s3_client.get_bucket_acl(Bucket=s_three['Name'])['Grants']
+            report = s3_scan(
+                report,
+                s_three['Name'],
+                public_access_block_configuration,
+                location,
+                acls,
+                public_only)
 
     for hosted_zone in route53_client.list_hosted_zones()['HostedZones']:
         for record in route53_client.list_resource_record_sets(HostedZoneId=hosted_zone['Id'])['ResourceRecordSets']:
