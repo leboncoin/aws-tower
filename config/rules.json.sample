@@ -312,8 +312,8 @@
           "severity": "low",
           "rules": [
             {
-              "type": "not_in",
-              "description": "Check if BlockPublicAcls is not in metadata",
+              "type": "in",
+              "description": "Check if BlockPublicAcls is in metadata",
               "conditions": [
                 {
                   "type": "constant",
@@ -345,8 +345,8 @@
           "severity": "low",
           "rules": [
             {
-              "type": "not_in",
-              "description": "Check if BlockPublicPolicy is not in metadata",
+              "type": "in",
+              "description": "Check if BlockPublicPolicy is in metadata",
               "conditions": [
                 {
                   "type": "constant",
@@ -378,8 +378,8 @@
           "severity": "medium",
           "rules": [
             {
-              "type": "not_in",
-              "description": "Check if IgnorePublicAcls is not in metadata",
+              "type": "in",
+              "description": "Check if IgnorePublicAcls is in metadata",
               "conditions": [
                 {
                   "type": "constant",
@@ -411,8 +411,8 @@
           "severity": "low",
           "rules": [
             {
-              "type": "not_in",
-              "description": "Check if RestrictPublicBuckets is not in metadata",
+              "type": "in",
+              "description": "Check if RestrictPublicBuckets is in metadata",
               "conditions": [
                 {
                   "type": "constant",
@@ -465,11 +465,11 @@
         },
         {
           "message": {
-            "text": "ACL: Authenticated Users: {rights}",
+            "text": "ACL: Any Authenticated Users: {rights}",
             "args": {
               "rights": {
                 "type": "dict",
-                "key": "ACL: Authenticated Users",
+                "key": "ACL: Any Authenticated Users",
                 "variable": "metadata"
               }
             }
@@ -478,12 +478,12 @@
           "rules": [
             {
               "type": "in",
-              "description": "Check if ACL: Authenticated Users is in metadata",
+              "description": "Check if ACL: Any Authenticated Users is in metadata",
               "conditions": [
                 {
                   "type": "constant",
                   "name": "data_element",
-                  "value": "ACL: Authenticated Users"
+                  "value": "ACL: Any Authenticated Users"
                 }
               ],
               "data_sources": [

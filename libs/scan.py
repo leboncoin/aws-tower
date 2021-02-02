@@ -370,7 +370,7 @@ def s3_scan_concat_permissions(s3_report, acls, permission, right, override=Fals
     """
     map_users_uri = {
         'http://acs.amazonaws.com/groups/global/AllUsers': 'ACL: All Users',
-        'http://acs.amazonaws.com/groups/global/AuthenticatedUsers': 'ACL: Authenticated Users',
+        'http://acs.amazonaws.com/groups/global/AuthenticatedUsers': 'ACL: Any Authenticated Users',
         'http://acs.amazonaws.com/groups/s3/LogDelivery': 'ACL: S3 Log Delivery'
     }
     for grant in acls:
@@ -419,14 +419,14 @@ def s3_scan(report, s_three, configuration, location, acls, public_only):
     report[location]['S3'][s_three]['Type'] = 'S3'
     report[location]['S3'][s_three]['Name'] = f's3://{s_three}'
     report[location]['S3'][s_three]['URL'] = f'https://{s_three}.s3.{location}.amazonaws.com/'
-    if configuration is not None and configuration['BlockPublicAcls']:
-        report[location]['S3'][s_three]['ACL: BlockPublicAcls'] = True
-    if configuration is not None and configuration['IgnorePublicAcls']:
-        report[location]['S3'][s_three]['ACL: IgnorePublicAcls'] = True
-    if configuration is not None and configuration['BlockPublicPolicy']:
-        report[location]['S3'][s_three]['ACL: BlockPublicPolicy'] = True
-    if configuration is not None and configuration['RestrictPublicBuckets']:
-        report[location]['S3'][s_three]['ACL: RestrictPublicBuckets'] = True
+    if configuration is None or not configuration['BlockPublicAcls']:
+        report[location]['S3'][s_three]['ACL: BlockPublicAcls'] = False
+    if configuration is None or not configuration['IgnorePublicAcls']:
+        report[location]['S3'][s_three]['ACL: IgnorePublicAcls'] = False
+    if configuration is None or not configuration['BlockPublicPolicy']:
+        report[location]['S3'][s_three]['ACL: BlockPublicPolicy'] = False
+    if configuration is None or not configuration['RestrictPublicBuckets']:
+        report[location]['S3'][s_three]['ACL: RestrictPublicBuckets'] = False
     report[location]['S3'][s_three] = s3_scan_acls(report[location]['S3'][s_three], acls)
     return report
 
