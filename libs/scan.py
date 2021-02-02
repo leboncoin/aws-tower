@@ -364,7 +364,43 @@ def route53_scan(report, record_value, record):
                 if ('DNSName' in value and record_value == f'{value["DNSName"]}.'):
                     report[vpc]['Subnets'][subnet]['ELBV2'][elbv2]['DnsRecord'] = record['Name'].replace('\\052', '*')
 
-def s3_scan(report, s_three, configuration, location, public_only):
+def s3_scan_concat_permissions(s3_report, acls, permission, right, override=False):
+    """
+    Scan ACLS for S3 Buckets and appends the right
+    """
+    map_users_uri = {
+        'http://acs.amazonaws.com/groups/global/AllUsers': 'ACL: All Users',
+        'http://acs.amazonaws.com/groups/global/AuthenticatedUsers': 'ACL: Authenticated Users',
+        'http://acs.amazonaws.com/groups/s3/LogDelivery': 'ACL: S3 Log Delivery'
+    }
+    for grant in acls:
+        if isinstance(permission, list) and grant['Permission'] not in permission:
+            continue
+        if isinstance(permission, str) and grant['Permission'] != permission:
+            continue
+        if 'URI' in grant['Grantee'] and grant['Grantee']['URI'] in map_users_uri:
+            if override or map_users_uri[grant['Grantee']['URI']] not in s3_report:
+                s3_report[map_users_uri[grant['Grantee']['URI']]] = right
+            else:
+                s3_report[map_users_uri[grant['Grantee']['URI']]] = f'{s3_report[map_users_uri[grant["Grantee"]["URI"]]]},{right}'
+    return s3_report
+
+def s3_scan_acls(s3_report, acls):
+    """
+    Scan ACLS for S3 Buckets
+    """
+    s3_report = s3_scan_concat_permissions(s3_report, acls, 'READ', 'LIST')
+    s3_report = s3_scan_concat_permissions(s3_report, acls, 'READ_ACP', 'READ')
+    s3_report = s3_scan_concat_permissions(s3_report, acls, ['WRITE', 'WRITE_ACP'], 'WRITE')
+    s3_report = s3_scan_concat_permissions(
+        s3_report,
+        acls,
+        'FULL_CONTROL',
+        'LIST,READ,WRITE',
+        override=True)
+    return s3_report
+
+def s3_scan(report, s_three, configuration, location, acls, public_only):
     """
     Scan S3 Buckets
     """
@@ -381,7 +417,8 @@ def s3_scan(report, s_three, configuration, location, public_only):
         report[location]['S3'] = dict()
     report[location]['S3'][s_three] = dict()
     report[location]['S3'][s_three]['Type'] = 'S3'
-    report[location]['S3'][s_three]['Name'] = s_three
+    report[location]['S3'][s_three]['Name'] = f's3://{s_three}'
+    report[location]['S3'][s_three]['URL'] = f'https://{s_three}.s3.{location}.amazonaws.com/'
     if configuration is not None and configuration['BlockPublicAcls']:
         report[location]['S3'][s_three]['ACL: BlockPublicAcls'] = True
     if configuration is not None and configuration['IgnorePublicAcls']:
@@ -390,6 +427,7 @@ def s3_scan(report, s_three, configuration, location, public_only):
         report[location]['S3'][s_three]['ACL: BlockPublicPolicy'] = True
     if configuration is not None and configuration['RestrictPublicBuckets']:
         report[location]['S3'][s_three]['ACL: RestrictPublicBuckets'] = True
+    report[location]['S3'][s_three] = s3_scan_acls(report[location]['S3'][s_three], acls)
     return report
 
 def aws_scan(
@@ -460,7 +498,14 @@ def aws_scan(
             except botocore.exceptions.ClientError:
                 public_access_block_configuration = None
             location = s3_client.get_bucket_location(Bucket=s_three['Name'])['LocationConstraint']
-            report = s3_scan(report, s_three['Name'], public_access_block_configuration, location, public_only)
+            acls = s3_client.get_bucket_acl(Bucket=s_three['Name'])['Grants']
+            report = s3_scan(
+                report,
+                s_three['Name'],
+                public_access_block_configuration,
+                location,
+                acls,
+                public_only)
 
     for hosted_zone in route53_client.list_hosted_zones()['HostedZones']:
         for record in route53_client.list_resource_record_sets(HostedZoneId=hosted_zone['Id'])['ResourceRecordSets']:
