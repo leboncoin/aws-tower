@@ -82,15 +82,24 @@ def parse_report(report, meta_types):
         new_report[asset_type] = list()
 
     for vpc in report:
-        for subnet in report[vpc]['Subnets']:
-            mini_name = report[vpc]['Subnets'][subnet]['Name'].split(f'-{report[vpc]["Subnets"][subnet]["AvailabilityZone"]}')[0]
-            for asset_type in report[vpc]['Subnets'][subnet]:
+        if 'Subnets' not in report[vpc]:
+            for asset_type in report[vpc]:
                 if asset_type not in meta_types:
                     continue
-                for asset in report[vpc]['Subnets'][subnet][asset_type]:
-                    report[vpc]['Subnets'][subnet][asset_type][asset].update(
-                        {'Subnet Name': mini_name})
-                    new_report[asset_type].append(report[vpc]['Subnets'][subnet][asset_type][asset])
+                for asset in report[vpc][asset_type]:
+                    report[vpc][asset_type][asset].update(
+                        {'Region Name': vpc})
+                    new_report[asset_type].append(report[vpc][asset_type][asset])
+        else:
+            for subnet in report[vpc]['Subnets']:
+                mini_name = report[vpc]['Subnets'][subnet]['Name'].split(f'-{report[vpc]["Subnets"][subnet]["AvailabilityZone"]}')[0]
+                for asset_type in report[vpc]['Subnets'][subnet]:
+                    if asset_type not in meta_types:
+                        continue
+                    for asset in report[vpc]['Subnets'][subnet][asset_type]:
+                        report[vpc]['Subnets'][subnet][asset_type][asset].update(
+                            {'Subnet Name': mini_name})
+                        new_report[asset_type].append(report[vpc]['Subnets'][subnet][asset_type][asset])
 
     return new_report
 
