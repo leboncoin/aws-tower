@@ -309,7 +309,7 @@
               }
             }
           },
-          "severity": "medium",
+          "severity": "low",
           "rules": [
             {
               "type": "not_in",
@@ -342,7 +342,7 @@
               }
             }
           },
-          "severity": "medium",
+          "severity": "low",
           "rules": [
             {
               "type": "not_in",
@@ -375,7 +375,7 @@
               }
             }
           },
-          "severity": "high",
+          "severity": "medium",
           "rules": [
             {
               "type": "not_in",
@@ -408,7 +408,7 @@
               }
             }
           },
-          "severity": "medium",
+          "severity": "low",
           "rules": [
             {
               "type": "not_in",
@@ -418,6 +418,72 @@
                   "type": "constant",
                   "name": "data_element",
                   "value": "ACL: RestrictPublicBuckets"
+                }
+              ],
+              "data_sources": [
+                {
+                  "type": "variable",
+                  "name": "data_list",
+                  "value": "metadata"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "message": {
+            "text": "ACL: All Users: {rights}",
+            "args": {
+              "rights": {
+                "type": "dict",
+                "key": "ACL: All Users",
+                "variable": "metadata"
+              }
+            }
+          },
+          "severity": "high",
+          "rules": [
+            {
+              "type": "in",
+              "description": "Check if ACL: All Users is in metadata",
+              "conditions": [
+                {
+                  "type": "constant",
+                  "name": "data_element",
+                  "value": "ACL: All Users"
+                }
+              ],
+              "data_sources": [
+                {
+                  "type": "variable",
+                  "name": "data_list",
+                  "value": "metadata"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "message": {
+            "text": "ACL: Authenticated Users: {rights}",
+            "args": {
+              "rights": {
+                "type": "dict",
+                "key": "ACL: Authenticated Users",
+                "variable": "metadata"
+              }
+            }
+          },
+          "severity": "high",
+          "rules": [
+            {
+              "type": "in",
+              "description": "Check if ACL: Authenticated Users is in metadata",
+              "conditions": [
+                {
+                  "type": "constant",
+                  "name": "data_element",
+                  "value": "ACL: Authenticated Users"
                 }
               ],
               "data_sources": [
