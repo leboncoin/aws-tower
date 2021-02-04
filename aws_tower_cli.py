@@ -24,7 +24,7 @@ from config import variables
 # from pdb import set_trace as st
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '2.1.0'
+VERSION = '2.2.0'
 
 def main(verb, args):
     """
@@ -57,6 +57,7 @@ def main(verb, args):
             report,
             variables.META_TYPES,
             brief=args.brief,
+            summary=args.summary,
             verbose=args.verbose,
             security=None
         )
@@ -82,6 +83,7 @@ def main(verb, args):
             report,
             variables.META_TYPES,
             brief=args.brief,
+            summary=args.summary,
             verbose=args.verbose,
             security=security
         )
@@ -123,6 +125,10 @@ if __name__ == '__main__':
         '-b', '--brief',
         action='store_true',
         help='Brief output of the account assets')
+    DISCOVER_PARSER.add_argument(
+        '-s', '--summary',
+        action='store_true',
+        help='Summary of the account assets')
 
     # SCAN Arguments
     SCAN_PARSER = SUBPARSERS.add_parser(
@@ -155,6 +161,10 @@ if __name__ == '__main__':
         '-b', '--brief',
         action='store_true',
         help='Brief output of the account assets')
+    SCAN_PARSER.add_argument(
+        '-s', '--summary',
+        action='store_true',
+        help='Summary of the account assets')
 
     ARGS = PARSER.parse_args()
     if len(sys.argv) == 1:

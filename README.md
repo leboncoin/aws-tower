@@ -26,7 +26,7 @@ optional arguments:
 
 ```bash
 $ ./aws_tower_cli.py discover --help
-usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS,S3}] [-p] [-v] [-b] profile
+usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS,S3}] [-p] [-v] [-b] [-s] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
@@ -38,12 +38,12 @@ optional arguments:
   -p, --public-only     Display public assets only
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
+  -s, --summary         Summary of the account assets
 ```
 
 ```bash
 $ ./aws_tower_cli.py scan --help
-usage: aws_tower_cli.py scan [-h] [-t {EC2,ELBV2,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-v] [-b]
-                             profile
+usage: aws_tower_cli.py scan [-h] [-t {EC2,ELBV2,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-v] [-b] [-s] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
@@ -58,6 +58,7 @@ optional arguments:
                         max severity level to report when security is enabled (default: high)
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
+  -s, --summary         Summary of the account assets
 ```
 
 ## Usage (lambda)

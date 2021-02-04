@@ -20,7 +20,7 @@ from .patterns import Patterns
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.1.0'
+VERSION = '2.2.0'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -232,10 +232,73 @@ def update_asset_type_report(new_report, report, context):
                 context)
     return new_report
 
-def print_subnet(report, meta_types, brief=False, verbose=False, security=None):
+def gen_init_report(security):
+    """
+    Generate an empty asset report summary
+    """
+    report = {
+        'count': 0,
+        'public': 0,
+    }
+    if security:
+        report = {**report, **{
+            'critical': 0,
+            'high': 0,
+            'medium': 0,
+            'low': 0,
+            'info': 0
+        }}
+    return report
+
+def update_severity(report, security):
+    """
+    Updates the severity in report for summary
+    """
+    if not security or 'severity_levels' not in security:
+        return report
+    for severity in security['severity_levels']:
+        report[severity] += security['severity_levels'][severity]
+    return report
+
+def print_summary(report, meta_types, security):
+    """
+    Print summary
+    """
+    new_report = dict()
+    for vpc in report:
+        if 'Subnets' not in report[vpc]:
+            for asset_type in report[vpc]:
+                if asset_type not in meta_types:
+                    continue
+                if asset_type not in new_report:
+                    new_report[asset_type] = gen_init_report(security)
+                for asset in report[vpc][asset_type]:
+                    new_report[asset_type]['count'] += 1
+                    if report[vpc][asset_type][asset]['PubliclyAccessible']:
+                        new_report[asset_type]['public'] += 1
+                    new_report[asset_type] = update_severity(new_report[asset_type], security)
+        else:
+            for subnet in report[vpc]['Subnets']:
+                for asset_type in report[vpc]['Subnets'][subnet]:
+                    if asset_type not in meta_types:
+                        continue
+                    if asset_type not in new_report:
+                        new_report[asset_type] = gen_init_report(security)
+                    for asset in report[vpc]['Subnets'][subnet][asset_type]:
+                        new_report[asset_type]['count'] += 1
+                        if report[vpc]['Subnets'][subnet][asset_type][asset]['PubliclyAccessible']:
+                            new_report[asset_type]['public'] += 1
+                        new_report[asset_type] = update_severity(new_report[asset_type], security)
+    LOGGER.warning(json.dumps(new_report, sort_keys=False, indent=4))
+
+def print_subnet(report, meta_types, brief=False, summary=False, verbose=False, security=None):
     """
     Print subnets
     """
+    if summary:
+        print_summary(report, meta_types, security)
+        return True
+
     new_report = dict()
     context = {
         'vpc': None,
@@ -392,6 +455,8 @@ def s3_scan_concat_permissions(s3_report, acls, permission, right, override=Fals
                 s3_report[map_users_uri[grant['Grantee']['URI']]] = right
             else:
                 s3_report[map_users_uri[grant['Grantee']['URI']]] = f'{s3_report[map_users_uri[grant["Grantee"]["URI"]]]},{right}'
+            if map_users_uri[grant['Grantee']['URI']] in ['ACL: All Users', 'ACL: Any Authenticated Users']:
+                s3_report['PubliclyAccessible'] = True
     return s3_report
 
 def s3_scan_acls(s3_report, acls):
@@ -428,6 +493,8 @@ def s3_scan(report, s_three, configuration, location, acls, public_only):
     report[location]['S3'][s_three]['Type'] = 'S3'
     report[location]['S3'][s_three]['Name'] = f's3://{s_three}'
     report[location]['S3'][s_three]['URL'] = f'https://{s_three}.s3.{location}.amazonaws.com/'
+    # Can be erased in 's3_scan_concat_permissions' function
+    report[location]['S3'][s_three]['PubliclyAccessible'] = False
     if configuration is None or not configuration['BlockPublicAcls']:
         report[location]['S3'][s_three]['ACL: BlockPublicAcls'] = False
     if configuration is None or not configuration['IgnorePublicAcls']:
