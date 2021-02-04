@@ -17,14 +17,15 @@ import sys
 import boto3
 import botocore
 
-from libs.scan import aws_scan, print_subnet
+from libs.display import print_subnet, print_summary
+from libs.scan import aws_scan, compute_report
 from config import variables
 
 # Debug
 # from pdb import set_trace as st
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '2.2.0'
+VERSION = '2.2.1'
 
 def main(verb, args):
     """
@@ -53,14 +54,21 @@ def main(verb, args):
             public_only=args.public_only,
             meta_types=meta_types
         )
-        print_subnet(
-            report,
-            variables.META_TYPES,
-            brief=args.brief,
-            summary=args.summary,
-            verbose=args.verbose,
-            security=None
-        )
+        report = compute_report(report)
+        if args.summary:
+            print_summary(
+                report,
+                variables.META_TYPES,
+                None
+            )
+        else:
+            print_subnet(
+                report,
+                variables.META_TYPES,
+                brief=args.brief,
+                verbose=args.verbose,
+                security=None
+            )
     elif verb == 'scan':
         report = aws_scan(
             session,
@@ -79,14 +87,21 @@ def main(verb, args):
             'min_severity': min_severity,
             'max_severity': max_severity
         }
-        print_subnet(
-            report,
-            variables.META_TYPES,
-            brief=args.brief,
-            summary=args.summary,
-            verbose=args.verbose,
-            security=security
-        )
+        report = compute_report(report)
+        if args.summary:
+            print_summary(
+                report,
+                variables.META_TYPES,
+                security
+            )
+        else:
+            print_subnet(
+                report,
+                variables.META_TYPES,
+                brief=args.brief,
+                verbose=args.verbose,
+                security=security
+            )
     else:
         sys.exit(1)
     sys.exit(0)
