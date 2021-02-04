@@ -2,7 +2,7 @@
 """
 Session library
 
-Copyright 2020 Leboncoin
+Copyright 2020-2021 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
