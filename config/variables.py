@@ -1,7 +1,7 @@
 '''
 AWS Tower variables
 
-Copyright 2020 Leboncoin
+Copyright 2020-2021 Leboncoin
 Licensed under the Apache License
 Written by Fabien Martinez <fabien.martinez+github@adevinta.com>
 '''

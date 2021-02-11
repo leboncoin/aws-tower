@@ -2,7 +2,7 @@
 """
 AWS Tower Lambda
 
-Copyright 2020 Leboncoin
+Copyright 2020-2021 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
@@ -23,16 +23,17 @@ from patrowl4py.api import PatrowlManagerApi
 from requests import Session
 
 # Own library and config files
+from libs.display import parse_report
 from libs.patrowl import add_asset, add_in_assetgroup, add_finding, get_assets, get_findings
 from libs.patterns import Patterns
-from libs.scan import aws_scan, parse_report
+from libs.scan import aws_scan, compute_report
 from libs.session import get_session
 from config import variables
 
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.7.0'
+VERSION = '2.7.2'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -79,6 +80,7 @@ def main():
             except Exception as err_msg:
                 LOGGER.critical(f"Can't get session: {err_msg}")
                 continue
+            report = compute_report(report)
             try:
                 report = parse_report(
                     aws_scan(
