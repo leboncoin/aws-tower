@@ -33,7 +33,7 @@ from config import variables
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.7.1'
+VERSION = '2.7.2'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']

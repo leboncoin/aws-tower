@@ -17,7 +17,7 @@ from .patterns import Patterns
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.2.1'
+VERSION = '2.2.2'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -152,6 +152,9 @@ def update_asset_type_report(new_report, report, context):
                 asset_report = discover_mode(
                     asset_report,
                     context)
+
+            if asset_type not in new_report[region]:
+                new_report[region][asset_type] = dict()
 
             # Update the new report
             new_report[region][asset_type] = update_asset_report(

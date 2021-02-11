@@ -17,7 +17,7 @@ import botocore
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.2.1'
+VERSION = '2.2.2'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -320,7 +320,7 @@ def compute_report(report):
     """
     new_report = dict()
     for vpc in report:
-        if not vpc.startswith('vpc-') or 'Subnets' not in report[vpc]:
+        if not isinstance(vpc, str) or not vpc.startswith('vpc-') or 'Subnets' not in report[vpc]:
             # vpc IS a region in that case
             if vpc not in new_report:
                 new_report[vpc] = report[vpc]

@@ -25,7 +25,7 @@ from config import variables
 # from pdb import set_trace as st
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '2.2.1'
+VERSION = '2.2.2'
 
 def main(verb, args):
     """
