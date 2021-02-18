@@ -5,10 +5,14 @@ package
 .env
 
 # Config
-config/rules.json
+config/rules.yaml
 config/lambda.config
 config/subnet_allow_list.txt
 
 # Documentation
 
 docs/build/*
+
+# DEPRECATED
+config/rules.json
+

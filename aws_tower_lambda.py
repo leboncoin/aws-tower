@@ -10,7 +10,6 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 
 # Standard library imports
 from configparser import ConfigParser
-import json
 import logging
 import os
 import sys
@@ -23,17 +22,18 @@ from patrowl4py.api import PatrowlManagerApi
 from requests import Session
 
 # Own library and config files
-from libs.display import parse_report
 from libs.patrowl import add_asset, add_in_assetgroup, add_finding, get_assets, get_findings
 from libs.patterns import Patterns
-from libs.scan import aws_scan, compute_report
+from libs.scan import aws_scan
 from libs.session import get_session
 from config import variables
 
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.7.2'
+# pylint: disable=logging-fstring-interpolation
+
+VERSION = '3.0.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -57,22 +57,22 @@ def main():
     config = ConfigParser()
     config.read('config/lambda.config')
     try:
-        patterns = Patterns(
+        security_config = Patterns(
             variables.FINDING_RULES_PATH,
             variables.SEVERITY_LEVELS,
             list(variables.SEVERITY_LEVELS.keys())[0],
             list(variables.SEVERITY_LEVELS.keys())[-1]
         )
     except Exception as err_msg:
-        LOGGER.critical(f"Can't get patterns: {err_msg}")
+        LOGGER.critical(f"Can't get security config: {err_msg}")
     else:
         for profile in config.sections():
             if not profile.startswith('profile '):
-                LOGGER.critical('Profile %s is malformed...', profile)
+                LOGGER.critical(f'Profile {profile} is malformed...')
                 continue
             aws_account_name = profile.split()[1]
             if 'role_arn' not in config[profile]:
-                LOGGER.critical('No role_arn in %s', profile)
+                LOGGER.critical(f'No role_arn in {profile}')
                 continue
             LOGGER.warning(aws_account_name)
             try:
@@ -80,69 +80,64 @@ def main():
             except Exception as err_msg:
                 LOGGER.critical(f"Can't get session: {err_msg}")
                 continue
-            report = compute_report(report)
             try:
-                report = parse_report(
-                    aws_scan(
-                        session,
-                        public_only=True,
-                        meta_types=variables.META_TYPES),
-                    variables.META_TYPES)
+                assets = aws_scan(
+                    session,
+                    public_only=False,
+                    meta_types=variables.META_TYPES
+                )
             except Exception as err_msg:
                 LOGGER.critical(f"Can't parse report: {err_msg}")
                 continue
-            assets = get_assets(PATROWL_API, PATROWL['assetgroup'])
-            for report_type in report:
-                for aws_asset in report[report_type]:
-                    new_asset = True
-                    asset_id = None
-                    asset_patrowl_name = f'[{aws_account_name}] {aws_asset[variables.META_TYPES[report_type]["Name"]]}'
-                    for asset in assets:
-                        if asset['name'] == asset_patrowl_name:
-                            new_asset = False
-                            asset_id = asset['id']
-                            continue
-                    if new_asset:
-                        LOGGER.warning('Add a new asset: %s', asset_patrowl_name)
-                        created_asset = add_asset(
-                            PATROWL_API,
-                            asset_patrowl_name,
-                            asset_patrowl_name)
-                        if not created_asset:
-                            LOGGER.critical('Error during asset %s creation...', asset_patrowl_name)
-                            continue
-                        asset_id = created_asset['id']
-                        add_in_assetgroup(
-                            PATROWL_API,
-                            PATROWL['assetgroup'],
-                            asset_id)
+            patrowl_assets = get_assets(PATROWL_API, PATROWL['assetgroup'])
+            for asset in assets:
+                asset.audit(security_config)
+                new_asset = True
+                asset_id = None
+                asset_patrowl_name = f'[{aws_account_name}] {asset.name}'
+                for patrowl_asset in patrowl_assets:
+                    if patrowl_asset['name'] == asset_patrowl_name:
+                        new_asset = False
+                        asset_id = patrowl_asset['id']
+                        continue
+                if new_asset:
+                    LOGGER.warning(f'Add a new asset: {asset_patrowl_name}')
+                    created_asset = add_asset(
+                        PATROWL_API,
+                        asset_patrowl_name,
+                        asset_patrowl_name)
+                    if not created_asset or 'id' not in created_asset:
+                        LOGGER.critical(f'Error during asset {asset_patrowl_name} creation...')
+                        continue
+                    asset_id = created_asset['id']
+                    add_in_assetgroup(
+                        PATROWL_API,
+                        PATROWL['assetgroup'],
+                        asset_id)
+                    add_finding(
+                        PATROWL_API,
+                        asset_id,
+                        f'Public {asset.get_type()} has been found in {aws_account_name}',
+                        asset.report_brief(),
+                        'info')
+                findings = get_findings(PATROWL_API, asset_id)
+                for pattern in security_config.extract_findings(asset):
+                    new_finding = True
+                    for finding in findings:
+                        if finding['title'] == pattern['title'] and \
+                            finding['severity'] == pattern['severity']:
+                            new_finding = False
+                    if new_finding:
+                        LOGGER.warning(f"Add a {pattern['severity']} finding: {pattern['title']} for asset {asset_patrowl_name}")
                         add_finding(
                             PATROWL_API,
                             asset_id,
-                            f'Public {report_type} has been found in {aws_account_name}',
-                            json.dumps(aws_asset, indent=4, sort_keys=True),
-                            'info')
-                    findings = get_findings(PATROWL_API, asset_id)
-                    for pattern in patterns.extract_findings(aws_asset):
-                        new_finding = True
-                        for finding in findings:
-                            if finding['title'] == pattern['title'] and \
-                                finding['severity'] == pattern['severity']:
-                                new_finding = False
-                        if new_finding:
-                            LOGGER.warning('Add a %s finding: %s for asset %s',
-                                pattern['severity'],
-                                pattern['title'],
-                                asset_patrowl_name)
-                            add_finding(
-                                PATROWL_API,
-                                asset_id,
-                                pattern['title'],
-                                json.dumps(aws_asset, indent=4, sort_keys=True),
-                                pattern['severity'])
+                            pattern['title'],
+                            asset.report_brief(),
+                            pattern['severity'])
 
 def handler(event, context):
     """
-    Sepecific entrypoint for lambda
+    Specific entrypoint for lambda
     """
     main()

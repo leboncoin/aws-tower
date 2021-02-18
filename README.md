@@ -4,7 +4,7 @@
 
 ```bash
 $ pip install -r requirements.txt
-$ cp config/rules.json.sample config/rules.json # if you want to use --security feature
+$ cp config/rules.yaml.sample config/rules.yaml # if you want to use "audit"
 $ cp config/subnet_allow_list.txt.sample config/subnet_allow_list.txt # if you want to use an allow list
 ```
 
@@ -12,16 +12,16 @@ $ cp config/subnet_allow_list.txt.sample config/subnet_allow_list.txt # if you w
 
 ```bash
 $ ./aws_tower_cli.py --help
-usage: aws_tower_cli.py [-h] [--version] {discover,scan} ...
+usage: aws_tower_cli.py [-h] [--version] {discover,audit} ...
 
 positional arguments:
-  {discover,scan}  commands
-    discover       Discover assets in an AWS account
-    scan           Scan AWS account to find security issues
+  {discover,audit}  commands
+    discover        Discover assets in an AWS account
+    audit           Audit AWS account to find security issues
 
 optional arguments:
-  -h, --help       show this help message and exit
-  --version        show program's version number and exit
+  -h, --help        show this help message and exit
+  --version         show program's version number and exit
 ```
 
 ```bash
@@ -42,8 +42,8 @@ optional arguments:
 ```
 
 ```bash
-$ ./aws_tower_cli.py scan --help
-usage: aws_tower_cli.py scan [-h] [-t {EC2,ELBV2,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-v] [-b] [-s] profile
+$ ./aws_tower_cli.py audit --help
+usage: aws_tower_cli.py audit [-h] [-t {EC2,ELBV2,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-v] [-b] [-s] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
@@ -53,7 +53,7 @@ optional arguments:
   -t {EC2,ELBV2,RDS,S3}, --type {EC2,ELBV2,RDS,S3}
                         Types to display (default: display everything)
   -m {info,low,medium,high,critical}, --min-severity {info,low,medium,high,critical}
-                        min severity level to report when security is enabled (default: low)
+                        min severity level to report when security is enabled (default: medium)
   -M {info,low,medium,high,critical}, --max-severity {info,low,medium,high,critical}
                         max severity level to report when security is enabled (default: high)
   -v, --verbose         Verbose output of the account assets
@@ -77,51 +77,37 @@ $ python -c 'import aws_tower_lambda; aws_tower_lambda.main()'
 
 ## Findings
 
-Some rules already exists in `config/rules.json.sample`, but you can add your own too.
+Some rules already exists in `config/rules.yaml.sample`, but you can add your own too.
 
 ### Define finding
 
-You need to add your findings in `config/rules.json` with the following format:
-```json
-{
-  "message": {
-      "text": "{arg1}: Your text ({arg2}, {arg3}), your text",
-      "args": {
-          "arg1": {
-              "type": "dict",
-              "key": "key_in_dict",
-              "variable": "dict"
-          }, "arg2": {
-              "type": "variable",
-              "variable": "my_variable"
-          }, "arg3": {
-              "type": "variable",
-              "variable": "my_variable"
-          }
-      }
-  },
-  "rules": [{
-      "type": "in" (not_in, is_cidr, is_private_cidr, ...),
-      "description": "Check if variable_in is in value_in",
-      "conditions": [
-        {
-          "type": "constant",
-          "name": "data_element",
-          "value": "all"
-        }
-      ],
-      "data_sources": [
-        {
-          "type": "variable",
-          "name": "data_list",
-          "value": "ports"
-        }
-      ]
-  }, {
-    ...
-  }],
-  "severity": "high" (info, medium, high, critical)
-}
+You need to add your findings in `config/rules.yaml` with the following format:
+```yaml
+- message:
+    text: '{arg1}: Your text ({arg2}, {arg3}), your text'
+    args:
+      arg1:
+        type: dict
+        key: key_in_dict
+        variable: dict
+      arg2:
+        type: variable
+        variable: my_variable
+      arg3:
+        type: variable
+        variable: my_other_variable
+  rules:
+    - type: in # not_in, is_cidr, is_private_cidr, ...
+      description: Check if 'all' is 'IN' 'ports'
+      conditions:
+        - type: constant
+          name: data_element
+          value: all
+      data_sources:
+        - type: variable
+          name: data_list
+          value: ports
+  severity: medium # info, medium, high, critical
 ```
 
 ### Types
@@ -130,6 +116,10 @@ Types already presents:
 
 - in: check if `data_element` is in `data_list`
 - not_in: check if `data_element` is not in `data_list`
+- has_attribute: check if `data_sources['asset']` has the attribute `conditions['attribute']`
+- has_not_attribute: check if `data_sources['asset']` hasn't the attribute `conditions['attribute']`
+- has_attribute_equal: check if `data_sources['attribute_value']` has the attribute equal to `conditions['attribute_value']`
+- has_attribute_equal: check if `data_sources['attribute_value']` has the attribute not equal to `conditions['attribute_value']`
 - is_cidr: check if `source` is a CIDR (example: `0.0.0.0/0` is a valid cidr).
 - is_private_cidr: check if `source` is a private CIDR (rfc 1918)
 - is_in_networks: check if `source` is one the networks in `networks`

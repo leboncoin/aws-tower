@@ -8,6 +8,8 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 """
 
+from collections.abc import Mapping, Sequence
+from collections import OrderedDict
 from distutils.version import LooseVersion
 import ipaddress
 import json
@@ -15,10 +17,36 @@ import logging
 from pathlib import Path
 import re
 
+# ThirdParty
+import ruamel.yaml
+from ruamel.yaml.error import YAMLError
+
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '2.7.0'
+# pylint: disable=logging-fstring-interpolation,no-self-use
+
+yaml = ruamel.yaml.YAML()
+
+class OrderlyJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, Mapping):
+            return OrderedDict(o)
+        if isinstance(o, Sequence):
+            return list(o)
+        return json.JSONEncoder.default(self, o)
+
+
+def yaml_2_json(patterns_content):
+    """
+    Transform a Yaml into JSON
+    """
+    try:
+        datamap = yaml.load(patterns_content)
+    except YAMLError:
+        return None
+    return OrderlyJSONEncoder(indent=2).encode(datamap)
+
 
 class Patterns:
     """Get findings from patterns
@@ -41,22 +69,44 @@ class Patterns:
         'in': {
             'data_sources': ['data_list'],
             'conditions': ['data_element']
-        }, 'not_in': {
+        },
+        'not_in': {
             'data_sources': ['data_list'],
             'conditions': ['data_element']
-        }, 'is_cidr': {
+        },
+        'has_attribute': {
+            'data_sources': ['asset'],
+            'conditions': ['attribute']
+        },
+        'has_not_attribute': {
+            'data_sources': ['asset'],
+            'conditions': ['attribute']
+        },
+        'has_attribute_equal': {
+            'data_sources': ['attribute_value'],
+            'conditions': ['attribute_value']
+        },
+        'has_attribute_not_equal': {
+            'data_sources': ['attribute_value'],
+            'conditions': ['attribute_value']
+        },
+        'is_cidr': {
             'data_sources': ['source'],
             'conditions': ['is_cidr']
-        }, 'is_private_cidr': {
+        },
+        'is_private_cidr': {
             'data_sources': ['source'],
             'conditions': ['is_private_cidr']
-        }, 'is_in_networks': {
+        },
+        'is_in_networks': {
             'data_sources': ['source'],
             'conditions': ['networks']
-        }, 'is_ports': {
+        },
+        'is_ports': {
             'data_sources': ['source'],
             'conditions': ['is_ports']
-        }, 'engine_deprecated_version': {
+        },
+        'engine_deprecated_version': {
             'data_sources': ['engine'],
             'conditions': ['engine_name', 'versions']
         }
@@ -76,13 +126,13 @@ class Patterns:
         # self._logger.setLevel(logging.DEBUG)
         try:
             patterns = patterns_path.read_text()
-        except Exception as e:
-            raise Exception(f'Unable to read patterns from file {patterns_path.absolute()}: {e}')
+        except Exception as err_msg:
+            raise Exception(f'Unable to read patterns from file {patterns_path.absolute()}: {err_msg}')
         else:
             try:
-                self._patterns = json.loads(patterns)
-            except Exception as e:
-                raise Exception(f'Unable to load json data: {e}')
+                self._patterns = json.loads(yaml_2_json(patterns))
+            except Exception as err_msg:
+                raise Exception(f'Unable to load yaml data: {err_msg}')
         self._severity_levels = severity_levels
         if min_severity not in self._severity_levels:
             raise Exception(f'Unable to found severity {min_severity} in {list(self._severity_levels.keys())}')
@@ -136,6 +186,21 @@ class Patterns:
                 else:
                     self._logger.error(f'Unable to find {argument["value"]} in {list(kwargs.keys())}')
                     return False
+            elif argument['type'] == 'attribute':
+                try:
+                    if hasattr(kwargs['asset'], argument['value']):
+                        prepared_arguments[argument['name']] = getattr(kwargs['asset'], argument['value'])
+                    elif '.' in argument['value']:
+                        # Allow "asset.subasset.value"
+                        prepared_arguments[argument['name']] = getattr(
+                            getattr(kwargs['asset'], argument['value'].split('.')[0]),
+                            argument['value'].split('.')[1])
+                    else:
+                        self._logger.error(f'Unable to find {argument["value"]} in {kwargs["asset"].name}')
+                        return False
+                except Exception as err_msg:
+                    self._logger.error(f'Unable to find {argument["value"]} in {kwargs["asset"].name} [{err_msg}]')
+                    return False
             else:
                 self._logger.error(f'Bad type ({argument["type"]} for {argument["value"]}')
                 return False
@@ -181,6 +246,60 @@ class Patterns:
             'findings' not in self._patterns['types'][type_name]:
             return False
         return self._patterns['types'][type_name]['findings']
+
+
+    def _check_rule_has_attribute(self, data_sources, conditions):
+        """Check if data_sources['asset'] has the attribute conditions['attribute']
+        Check rule "has_attribute"
+
+        :param data_sources: Where we want to find the conditions
+        :type data_sources: {"asset": AssetType}
+        :param conditions: Attribute to find in the asset
+        :type conditions: {"attribute": str}
+        :return: True if we find it, else return False
+        :rtype: bool
+        """
+        return hasattr(data_sources['asset'], conditions['attribute']) and \
+            getattr(data_sources['asset'], conditions['attribute']) is not None
+
+    def _check_rule_has_not_attribute(self, data_sources, conditions):
+        """Check if data_sources['asset'] hasn't the attribute conditions['attribute']
+        Check rule "has_not_attribute"
+
+        :param data_sources: Where we want to find the conditions
+        :type data_sources: {"asset": AssetType}
+        :param conditions: Attribute not to find in the asset
+        :type conditions: {"attribute": str}
+        :return: False if we find it, else return True
+        :rtype: bool
+        """
+        return not self._check_rule_has_attribute(data_sources, conditions)
+
+    def _check_rule_has_attribute_equal(self, data_sources, conditions):
+        """Check if data_sources['attribute_value'] has the attribute equal to conditions['attribute_value']
+        Check rule "has_attribute_equal"
+
+        :param data_sources: Where we want to find the conditions
+        :type data_sources: {"attribute_value": mixed}
+        :param conditions: Attribute value to be equal
+        :type conditions: {"attribute_value": mixed}
+        :return: True if it's equal
+        :rtype: bool
+        """
+        return data_sources['attribute_value'] == conditions['attribute_value']
+
+    def _check_rule_has_attribute_not_equal(self, data_sources, conditions):
+        """Check if data_sources['attribute_value'] has the attribute not equal to conditions['attribute_value']
+        Check rule "has_attribute_not_equal"
+
+        :param data_sources: Where we want to find the conditions
+        :type data_sources: {"attribute_value": mixed}
+        :param conditions: Attribute value to be not equal
+        :type conditions: {"attribute_value": mixed}
+        :return: False if it's equal
+        :rtype: bool
+        """
+        return not self._check_rule_has_attribute_equal(data_sources, conditions)
 
     def _check_rule_in(self, data_sources, conditions):
         """Check if conditions['data_element'] may be found in data_sources['data_list']
@@ -233,8 +352,8 @@ class Patterns:
             ipaddress.ip_network(data_sources["source"])
         except ValueError:
             return not conditions["is_cidr"]
-        except Exception as e:
-            self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {e}')
+        except Exception as err_msg:
+            self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {err_msg}')
             return False
         else:
             return conditions["is_cidr"]
@@ -258,8 +377,8 @@ class Patterns:
         except ValueError:
             self._logger.debug(f'Unable to create ip_network from {data_sources["source"]}: Bad format!')
             return False
-        except Exception as e:
-            self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {e}')
+        except Exception as err_msg:
+            self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {err_msg}')
             return False
         is_private = True
         if data_sources["source"].startswith('0.0.0.0'):
@@ -292,8 +411,8 @@ class Patterns:
         except ValueError:
             self._logger.debug(f'Unable to create ip_network from {data_sources["source"]}: Bad format!')
             return False
-        except Exception as e:
-            self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {e}')
+        except Exception as err_msg:
+            self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {err_msg}')
             return False
         for network_str in conditions["networks"]:
             try:
@@ -301,8 +420,8 @@ class Patterns:
             except ValueError:
                 self._logger.debug(f'Unable to create ip_network from {data_sources["source"]}: Bad format!')
                 continue
-            except Exception as e:
-                self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {e}')
+            except Exception as err_msg:
+                self._logger.debug(f'Error in creating ip_network from {data_sources["source"]}: {err_msg}')
                 continue
             if network.supernet_of(ip_network):
                 return True
@@ -368,7 +487,7 @@ class Patterns:
         :type message: mixed
         :param severity: Severity of the message (examples: 'info', 'high', ..)
         :type severity: str
-        :param kwargs: data_sources we may need to generate the message (like metadata, name, source, ...)
+        :param kwargs: data_sources we may need to generate the message (like attributes, name, source, ...)
         :return: Message generated
         :rtype: dict
         """
@@ -378,45 +497,56 @@ class Patterns:
                 'title': f'{message}',
                 'severity': f'{severity}'
             }
+            return report_message
+        try:
+            args = dict()
+            for key, value in message['args'].items():
+                if value['type'] == 'dict':
+                    if value['variable'] in kwargs:
+                        if value['key'] in kwargs[value['variable']]:
+                            args[key] = kwargs[value['variable']][value['key']]
+                        else:
+                            self._logger.error(f'Unable to find variable {value["key"]} in {list(kwargs[value["variable"]].keys())}')
+                            return False
+                    else:
+                        self._logger.error(f'Unable to find variable {value["type"]} in {", ".join(kwargs)}')
+                        return False
+                elif value['type'] == 'variable':
+                    if value['variable'] in kwargs:
+                        args[key] = kwargs[value['variable']]
+                    else:
+                        self._logger.error(f'Unable to find variable {value["type"]} in {", ".join(kwargs)}')
+                        return False
+                elif value['type'] == 'attribute':
+                    if hasattr(kwargs['asset'], value['key']):
+                        args[key] = getattr(kwargs['asset'], value['key'])
+                    elif '.' in value['key']:
+                        # Allow "asset.subasset.value"
+                        args[key] = getattr(
+                            getattr(kwargs['asset'], value['key'].split('.')[0]),
+                            value['key'].split('.')[1])
+                    else:
+                        self._logger.error(f'Unable to find attribute {value["key"]} in {kwargs["asset"].name}')
+                        return False
+        except Exception as err_msg:
+            self._logger.error(f'Unable to prepare data_sources for the report message: {err_msg}', exc_info=True)
+            return False
         else:
             try:
-                args = dict()
-                for key, value in message['args'].items():
-                    if value['type'] == 'dict':
-                        if value['variable'] in kwargs:
-                            if value['key'] in kwargs[value['variable']]:
-                                args[key] = kwargs[value['variable']][value['key']]
-                            else:
-                                self._logger.error(f'Unable to find variable {value["key"]} in {list(kwargs[value["variable"]].keys())}')
-                                return False
-                        else:
-                            self._logger.error(f'Unable to find variable {value["type"]} in {", ".join(kwargs)}')
-                            return False
-                    elif value['type'] == 'variable':
-                        if value['variable'] in kwargs:
-                            args[key] = kwargs[value['variable']]
-                        else:
-                            self._logger.error(f'Unable to find variable {value["type"]} in {", ".join(kwargs)}')
-                            return False
-            except Exception as e:
-                self._logger.error(f'Unable to prepare data_sources for the report message: {e}', exc_info=True)
+                report_message = {
+                    'title': message['text'].format(**args),
+                    'severity': f'{severity}'
+                }
+            except Exception as err_msg:
+                self._logger.error(f'Unable to generate report message: {err_msg}')
                 return False
-            else:
-                try:
-                    report_message = {
-                        'title': message['text'].format(**args),
-                        'severity': f'{severity}'
-                    }
-                except Exception as e:
-                    self._logger.error(f'Unable to generate report message: {e}')
-                    return False
         return report_message
 
     def _check_findings_by_type(self, findings_type, loop=True, **kwargs):
         """Check every finding rule on kwargs
         Example: Try to check if a source is a valid CIDR and is a private CIDR
 
-        :param findings_type: Findings to use like metadata, security_groups, ...
+        :param findings_type: Findings to use like attributes, security_groups, ...
         :type findings_type: str
         :param loop: If True then we don't stop after the first finding found
         :type loop: bool, optional
@@ -438,8 +568,8 @@ class Patterns:
                 for rule in finding['rules']:
                     if 'type' in rule and 'conditions' in rule and 'data_sources' in rule:
                         func_rule = f'_check_rule_{rule["type"]}'
-                        if not self._check_definition(rule["type"], rule["data_sources"], rule["conditions"]):
-                            self._logger.error(f'Bad rule definition!')
+                        if not self._check_definition(rule['type'], rule['data_sources'], rule['conditions']):
+                            self._logger.error('Bad rule definition!')
                             finding_found = False
                             break
                         if hasattr(self, func_rule):
@@ -476,19 +606,19 @@ class Patterns:
                         break
         return report
 
-    def extract_findings_from_security_groups(self, metadata):
-        """Try to extract findings from security groups
+    def extract_findings_from_security_groups(self, asset):
+        """Try to extract findings from asset security groups
 
-        :param metadata: Metadata from aws asset
-        :type metadata: dict
+        :param asset: aws asset
+        :type asset: AssetType
         :return: Report generated from the findings
         :rtype: list
         """
-        if len(self._patterns) == 0 or len(metadata) == 0:
+        if len(self._patterns) == 0:
             return list()
         report = list()
-        if 'SecurityGroups' in metadata:
-            for sg_name, sg_rules in metadata['SecurityGroups'].items():
+        if hasattr(asset, 'security_groups'):
+            for sg_name, sg_rules in asset.security_groups.items():
                 for ports, sources in sg_rules.items():
                     for source in sources:
                         result = self._check_findings_by_type(
@@ -500,21 +630,21 @@ class Patterns:
                         )
                         if result is not False:
                             report += result
-        report_metadata = self._check_findings_by_type('metadata', metadata=metadata)
-        if report_metadata is not False:
-            report += report_metadata
+        report_attributes = self._check_findings_by_type('attributes', asset=asset)
+        if report_attributes is not False:
+            report += report_attributes
         return report
 
-    def extract_findings(self, metadata):
-        """Try to extract findings from metadata
+    def extract_findings(self, asset):
+        """Try to extract findings from asset
 
-        :param metadata: Metadata from aws asset
-        :type metadata: dict
+        :param asset: aws asset
+        :type asset: AssetType
         :return: Report generated
         :rtype: list()
         """
         report = list()
-        report += self.extract_findings_from_security_groups(metadata)
+        report += self.extract_findings_from_security_groups(asset)
         return report
 
     def _check_arguments_definitions(self, arguments, name):

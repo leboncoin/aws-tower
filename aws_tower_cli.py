@@ -17,15 +17,17 @@ import sys
 import boto3
 import botocore
 
-from libs.display import print_subnet, print_summary
-from libs.scan import aws_scan, compute_report
+from libs.display import print_report, print_summary
+from libs.scan import aws_scan
 from config import variables
 
 # Debug
 # from pdb import set_trace as st
 
+# pylint: disable=logging-fstring-interpolation
+
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '2.2.2'
+VERSION = '3.0.0'
 
 def main(verb, args):
     """
@@ -39,38 +41,36 @@ def main(verb, args):
         sys.exit(1)
     meta_types = list()
     if args.type is None:
-        meta_types = variables.META_TYPES.keys()
+        meta_types = variables.META_TYPES
     else:
         for meta_type in args.type:
             if meta_type.upper() not in variables.META_TYPES:
-                LOGGER.critical(f'Unable to find meta type "{meta_type}" in {variables.META_TYPES.keys()}')
+                LOGGER.critical(f'Unable to find meta type "{meta_type}" in {variables.META_TYPES}')
                 sys.exit(1)
             if meta_type.upper() not in meta_types:
                 meta_types.append(meta_type.upper())
 
     if verb == 'discover':
-        report = aws_scan(
+        assets = aws_scan(
             session,
             public_only=args.public_only,
             meta_types=meta_types
         )
-        report = compute_report(report)
         if args.summary:
             print_summary(
-                report,
+                assets,
                 variables.META_TYPES,
                 None
             )
         else:
-            print_subnet(
-                report,
+            print_report(
+                assets,
                 variables.META_TYPES,
                 brief=args.brief,
-                verbose=args.verbose,
-                security=None
+                security_config=None
             )
-    elif verb == 'scan':
-        report = aws_scan(
+    elif verb == 'audit':
+        assets = aws_scan(
             session,
             public_only=False,
             meta_types=meta_types
@@ -81,26 +81,24 @@ def main(verb, args):
             min_severity = args.min_severity
         if args.max_severity in variables.SEVERITY_LEVELS:
             max_severity = args.max_severity
-        security = {
+        security_config = {
             'findings_rules_path': variables.FINDING_RULES_PATH,
             'severity_levels': variables.SEVERITY_LEVELS,
             'min_severity': min_severity,
             'max_severity': max_severity
         }
-        report = compute_report(report)
         if args.summary:
             print_summary(
-                report,
+                assets,
                 variables.META_TYPES,
-                security
+                security_config
             )
         else:
-            print_subnet(
-                report,
+            print_report(
+                assets,
                 variables.META_TYPES,
                 brief=args.brief,
-                verbose=args.verbose,
-                security=security
+                security_config=security_config
             )
     else:
         sys.exit(1)
@@ -145,38 +143,38 @@ if __name__ == '__main__':
         action='store_true',
         help='Summary of the account assets')
 
-    # SCAN Arguments
-    SCAN_PARSER = SUBPARSERS.add_parser(
-        'scan',
-        help='Scan AWS account to find security issues')
-    SCAN_PARSER.add_argument(
+    # AUDIT Arguments
+    AUDIT_PARSER = SUBPARSERS.add_parser(
+        'audit',
+        help='Audit AWS account to find security issues')
+    AUDIT_PARSER.add_argument(
         'profile',
         action='store',\
         help='A valid profile name configured in the ~/.aws/config file')
-    SCAN_PARSER.add_argument(
+    AUDIT_PARSER.add_argument(
         '-t', '--type',
         action='append',
         choices=variables.META_TYPES,
         help='Types to display (default: display everything)')
-    SCAN_PARSER.add_argument(
+    AUDIT_PARSER.add_argument(
         '-m', '--min-severity',
-        default='low',
+        default='medium',
         choices=variables.SEVERITY_LEVELS,
-        help='min severity level to report when security is enabled (default: low)')
-    SCAN_PARSER.add_argument(
+        help='min severity level to report when security is enabled (default: medium)')
+    AUDIT_PARSER.add_argument(
         '-M', '--max-severity',
         default='high',
         choices=variables.SEVERITY_LEVELS,
         help='max severity level to report when security is enabled (default: high)')
-    SCAN_PARSER.add_argument(
+    AUDIT_PARSER.add_argument(
         '-v', '--verbose',
         action='store_true',
         help='Verbose output of the account assets')
-    SCAN_PARSER.add_argument(
+    AUDIT_PARSER.add_argument(
         '-b', '--brief',
         action='store_true',
         help='Brief output of the account assets')
-    SCAN_PARSER.add_argument(
+    AUDIT_PARSER.add_argument(
         '-s', '--summary',
         action='store_true',
         help='Summary of the account assets')
