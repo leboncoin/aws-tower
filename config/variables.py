@@ -15,8 +15,7 @@ SEVERITY_LEVELS = {
     'critical': 4
 }
 
-MIN_SEVERITY = SEVERITY_LEVELS['info']
-MAX_SEVERITY = SEVERITY_LEVELS['critical']
+ALERTING_SEVERITIES = ['medium', 'high', 'critical']
 
 # Paths
 ROOT_PATH = Path(__file__).parent.parent

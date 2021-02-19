@@ -9,7 +9,6 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 """
 
 # Standard library imports
-from configparser import ConfigParser
 import logging
 import os
 import sys
@@ -50,12 +49,10 @@ PATROWL_API = PatrowlManagerApi(
 
 SESSION = Session()
 
-def main():
+def main(account):
     """
     Main function
     """
-    config = ConfigParser()
-    config.read('config/lambda.config')
     try:
         security_config = Patterns(
             variables.FINDING_RULES_PATH,
@@ -65,42 +62,54 @@ def main():
         )
     except Exception as err_msg:
         LOGGER.critical(f"Can't get security config: {err_msg}")
-    else:
-        for profile in config.sections():
-            if not profile.startswith('profile '):
-                LOGGER.critical(f'Profile {profile} is malformed...')
+        return
+
+    aws_account_name = list(account.keys())[0]
+    LOGGER.warning(f'Start scanning {aws_account_name}...')
+    try:
+        session = get_session(account[aws_account_name])
+    except Exception as err_msg:
+        LOGGER.critical(f"Can't get session: {err_msg}")
+        return
+    try:
+        assets = aws_scan(
+            session,
+            public_only=False,
+            meta_types=variables.META_TYPES
+        )
+    except Exception as err_msg:
+        LOGGER.critical(f"Can't parse report: {err_msg}")
+        return
+
+    patrowl_assets = get_assets(PATROWL_API, PATROWL['assetgroup'])
+    for asset in assets:
+        asset.audit(security_config)
+        asset_id = None
+        asset_patrowl_name = f'[{aws_account_name}] {asset.name}'
+
+        is_new_asset = True
+        for patrowl_asset in patrowl_assets:
+            if patrowl_asset['name'] == asset_patrowl_name:
+                is_new_asset = False
+                asset_id = patrowl_asset['id']
                 continue
-            aws_account_name = profile.split()[1]
-            if 'role_arn' not in config[profile]:
-                LOGGER.critical(f'No role_arn in {profile}')
+
+        for new_finding in security_config.extract_findings(asset):
+            is_new_finding = True
+
+            if new_finding['severity'] not in variables.ALERTING_SEVERITIES:
                 continue
-            LOGGER.warning(aws_account_name)
-            try:
-                session = get_session(config[profile]['role_arn'])
-            except Exception as err_msg:
-                LOGGER.critical(f"Can't get session: {err_msg}")
-                continue
-            try:
-                assets = aws_scan(
-                    session,
-                    public_only=False,
-                    meta_types=variables.META_TYPES
-                )
-            except Exception as err_msg:
-                LOGGER.critical(f"Can't parse report: {err_msg}")
-                continue
-            patrowl_assets = get_assets(PATROWL_API, PATROWL['assetgroup'])
-            for asset in assets:
-                asset.audit(security_config)
-                new_asset = True
-                asset_id = None
-                asset_patrowl_name = f'[{aws_account_name}] {asset.name}'
-                for patrowl_asset in patrowl_assets:
-                    if patrowl_asset['name'] == asset_patrowl_name:
-                        new_asset = False
-                        asset_id = patrowl_asset['id']
-                        continue
-                if new_asset:
+
+            # Get Patrowl findings only if we have a match
+            if not is_new_asset:
+                findings = get_findings(PATROWL_API, asset_id)
+                for finding in findings:
+                    if finding['title'] == new_finding['title'] and \
+                        finding['severity'] == new_finding['severity']:
+                        is_new_finding = False
+
+            if is_new_finding:
+                if is_new_asset:
                     LOGGER.warning(f'Add a new asset: {asset_patrowl_name}')
                     created_asset = add_asset(
                         PATROWL_API,
@@ -109,35 +118,31 @@ def main():
                     if not created_asset or 'id' not in created_asset:
                         LOGGER.critical(f'Error during asset {asset_patrowl_name} creation...')
                         continue
+                    is_new_asset = False
                     asset_id = created_asset['id']
                     add_in_assetgroup(
                         PATROWL_API,
                         PATROWL['assetgroup'],
                         asset_id)
-                    add_finding(
-                        PATROWL_API,
-                        asset_id,
-                        f'Public {asset.get_type()} has been found in {aws_account_name}',
-                        asset.report_brief(),
-                        'info')
-                findings = get_findings(PATROWL_API, asset_id)
-                for pattern in security_config.extract_findings(asset):
-                    new_finding = True
-                    for finding in findings:
-                        if finding['title'] == pattern['title'] and \
-                            finding['severity'] == pattern['severity']:
-                            new_finding = False
-                    if new_finding:
-                        LOGGER.warning(f"Add a {pattern['severity']} finding: {pattern['title']} for asset {asset_patrowl_name}")
+                    if 'info' in variables.ALERTING_SEVERITIES:
                         add_finding(
                             PATROWL_API,
                             asset_id,
-                            pattern['title'],
+                            f'Public {asset.get_type()} has been found in {aws_account_name}',
                             asset.report_brief(),
-                            pattern['severity'])
+                            'info')
+                LOGGER.warning(f"Add a {new_finding['severity']} finding: {new_finding['title']} for asset {asset_patrowl_name}")
+                add_finding(
+                    PATROWL_API,
+                    asset_id,
+                    new_finding['title'],
+                    asset.report_brief(),
+                    new_finding['severity'])
+    return
 
 def handler(event, context):
     """
     Specific entrypoint for lambda
+    event = { "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly" }
     """
-    main()
+    main(event)
