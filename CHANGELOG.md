@@ -4,6 +4,18 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.1.0
+-----
+
+2021/02/23
+
+### New features
+  - Add a -n|--name optional argument, to filter the asset name
+
+### Fixtures
+  - Fix rules by splitting public|private assets
+
+
 3.0.0
 -----
 

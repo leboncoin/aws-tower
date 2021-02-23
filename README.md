@@ -26,7 +26,7 @@ optional arguments:
 
 ```bash
 $ ./aws_tower_cli.py discover --help
-usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS,S3}] [-p] [-v] [-b] [-s] profile
+usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS,S3}] [-p] [-n NAME] [-v] [-b] [-s] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
@@ -36,6 +36,7 @@ optional arguments:
   -t {EC2,ELBV2,RDS,S3}, --type {EC2,ELBV2,RDS,S3}
                         Types to display (default: display everything)
   -p, --public-only     Display public assets only
+  -n NAME, --name NAME  Filter this asset name
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets
@@ -43,7 +44,7 @@ optional arguments:
 
 ```bash
 $ ./aws_tower_cli.py audit --help
-usage: aws_tower_cli.py audit [-h] [-t {EC2,ELBV2,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-v] [-b] [-s] profile
+usage: aws_tower_cli.py audit [-h] [-t {EC2,ELBV2,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-n NAME] [-v] [-b] [-s] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
@@ -56,6 +57,7 @@ optional arguments:
                         min severity level to report when security is enabled (default: medium)
   -M {info,low,medium,high,critical}, --max-severity {info,low,medium,high,critical}
                         max severity level to report when security is enabled (default: high)
+  -n NAME, --name NAME  Filter this asset name
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets

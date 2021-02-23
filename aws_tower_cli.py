@@ -27,7 +27,7 @@ from config import variables
 # pylint: disable=logging-fstring-interpolation
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '3.0.0'
+VERSION = '3.1.0'
 
 def main(verb, args):
     """
@@ -54,7 +54,8 @@ def main(verb, args):
         assets = aws_scan(
             session,
             public_only=args.public_only,
-            meta_types=meta_types
+            meta_types=meta_types,
+            name_filter=args.name
         )
         if args.summary:
             print_summary(
@@ -73,7 +74,8 @@ def main(verb, args):
         assets = aws_scan(
             session,
             public_only=False,
-            meta_types=meta_types
+            meta_types=meta_types,
+            name_filter=args.name
         )
         min_severity = list(variables.SEVERITY_LEVELS.keys())[0]
         max_severity = list(variables.SEVERITY_LEVELS.keys())[-1]
@@ -131,6 +133,11 @@ if __name__ == '__main__':
         action='store_true',
         help='Display public assets only')
     DISCOVER_PARSER.add_argument(
+        '-n', '--name',
+        action='store',
+        default='',
+        help='Filter this asset name')
+    DISCOVER_PARSER.add_argument(
         '-v', '--verbose',
         action='store_true',
         help='Verbose output of the account assets')
@@ -166,6 +173,11 @@ if __name__ == '__main__':
         default='high',
         choices=variables.SEVERITY_LEVELS,
         help='max severity level to report when security is enabled (default: high)')
+    AUDIT_PARSER.add_argument(
+        '-n', '--name',
+        action='store',
+        default='',
+        help='Filter this asset name')
     AUDIT_PARSER.add_argument(
         '-v', '--verbose',
         action='store_true',

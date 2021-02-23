@@ -189,7 +189,8 @@ def s3_scan(s_three, configuration, region, acls, public_only):
 def aws_scan(
     boto_session,
     public_only=False,
-    meta_types=list()):
+    meta_types=list(),
+    name_filter=''):
     """
     SCAN AWS
     """
@@ -209,7 +210,7 @@ def aws_scan(
                     sg_raw,
                     subnets_raw,
                     public_only)
-                if asset is not None:
+                if asset is not None and name_filter in asset.name:
                     assets.append(asset)
 
     if 'ELBV2' in meta_types:
@@ -217,7 +218,7 @@ def aws_scan(
         elbv2_raw = elbv2_client.describe_load_balancers()['LoadBalancers']
         for elbv2 in elbv2_raw:
             asset = elbv2_scan(elbv2, sg_raw, subnets_raw, public_only)
-            if asset is not None:
+            if asset is not None and name_filter in asset.name:
                 assets.append(asset)
 
     if 'RDS' in meta_types:
@@ -228,7 +229,7 @@ def aws_scan(
                 rds,
                 subnets_raw,
                 public_only)
-            if asset is not None:
+            if asset is not None and name_filter in asset.name:
                 assets.append(asset)
 
     if 'S3' in meta_types:
@@ -248,7 +249,7 @@ def aws_scan(
                 region,
                 acls,
                 public_only)
-            if asset is not None:
+            if asset is not None and name_filter in asset.name:
                 assets.append(asset)
 
     for hosted_zone in route53_client.list_hosted_zones()['HostedZones']:
