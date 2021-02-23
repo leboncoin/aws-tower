@@ -1,4 +1,4 @@
-version: 3.0.0
+version: 3.0.1
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -17,6 +17,16 @@ types:
               type: variable
               variable: ports
         rules:
+          - type: has_attribute_equal
+            description: Check is the asset is public
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: 'true'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
           - type: is_ports
             description: Check if ports is a specific port (or range) (like 9000-9001)
             conditions:
@@ -51,6 +61,16 @@ types:
               type: variable
               variable: ports
         rules:
+          - type: has_attribute_equal
+            description: Check is the asset is public
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: 'true'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
           - type: in
             description: Check if variable_in is in value_in
             conditions:
@@ -85,6 +105,16 @@ types:
               type: variable
               variable: ports
         rules:
+          - type: has_attribute_equal
+            description: Check is the asset is private
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: 'false'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
           - type: in
             description: Check if variable_in is in value_in
             conditions:
@@ -120,6 +150,16 @@ types:
               type: variable
               variable: ports
         rules:
+          - type: has_attribute_equal
+            description: Check is the asset is private
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: 'false'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
           - type: is_ports
             description: Check if ports is a specific port (or range) (like 9000-9001)
             conditions:

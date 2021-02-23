@@ -626,7 +626,8 @@ class Patterns:
                             loop=False,
                             sg_name=sg_name,
                             ports=ports,
-                            source=source
+                            source=source,
+                            asset=asset
                         )
                         if result is not False:
                             report += result
