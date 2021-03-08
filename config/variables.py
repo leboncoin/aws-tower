@@ -7,8 +7,6 @@ Written by Fabien Martinez <fabien.martinez+github@adevinta.com>
 '''
 from pathlib import Path
 
-VERSION = '1.1.0'
-
 SEVERITY_LEVELS = {
     'info': 0,
     'low': 1,
@@ -17,24 +15,10 @@ SEVERITY_LEVELS = {
     'critical': 4
 }
 
-MIN_SEVERITY = SEVERITY_LEVELS['info']
-MAX_SEVERITY = SEVERITY_LEVELS['critical']
+ALERTING_SEVERITIES = ['medium', 'high', 'critical']
 
 # Paths
 ROOT_PATH = Path(__file__).parent.parent
-FINDING_RULES_PATH = ROOT_PATH / 'config' / 'rules.json'
+FINDING_RULES_PATH = ROOT_PATH / 'config' / 'rules.yaml'
 
-META_TYPES = {
-    'EC2': {
-        'Name': 'Name'
-    },
-    'ELBV2': {
-        'Name': 'DNSName'
-    },
-    'RDS': {
-        'Name': 'Name'
-    },
-    'S3': {
-        'Name': 'Name'
-    }
-}
+META_TYPES = ['EC2', 'ELBV2', 'RDS', 'S3']

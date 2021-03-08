@@ -1,0 +1,441 @@
+version: 3.0.2
+types:
+  security_group:
+    description: Check each rule on each security group and on each source
+    findings:
+      - message:
+          text: '[{name}] Allow connection to specific port (or range) from public
+            network ({source}=>{ports})'
+          args:
+            name:
+              type: variable
+              variable: sg_name
+            source:
+              type: variable
+              variable: source
+            ports:
+              type: variable
+              variable: ports
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is public
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
+          - type: is_ports
+            description: Check if ports is a specific port (or range) (like 9000-9001)
+            conditions:
+              - type: constant
+                name: is_ports
+                value: true
+            data_sources:
+              - type: variable
+                name: source
+                value: ports
+          - type: is_private_cidr
+            description: Check if source is not a private CIDR block - RFC 1918
+            conditions:
+              - type: constant
+                name: is_private_cidr
+                value: false
+            data_sources:
+              - type: variable
+                name: source
+                value: source
+        severity: high
+      - message:
+          text: '[{name}] Allow connection to all port from public network ({source}=>{ports})'
+          args:
+            name:
+              type: variable
+              variable: sg_name
+            source:
+              type: variable
+              variable: source
+            ports:
+              type: variable
+              variable: ports
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is public
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
+          - type: in
+            description: Check if variable_in is in value_in
+            conditions:
+              - type: constant
+                name: data_element
+                value: all
+            data_sources:
+              - type: variable
+                name: data_list
+                value: ports
+          - type: is_private_cidr
+            description: Check if source is not a private CIDR block - RFC 1918
+            conditions:
+              - type: constant
+                name: is_private_cidr
+                value: false
+            data_sources:
+              - type: variable
+                name: source
+                value: source
+        severity: high
+      - message:
+          text: '[{name}] Allow connection to all port from private network ({source}=>{ports})'
+          args:
+            name:
+              type: variable
+              variable: sg_name
+            source:
+              type: variable
+              variable: source
+            ports:
+              type: variable
+              variable: ports
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is private
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: false
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
+          - type: in
+            description: Check if variable_in is in value_in
+            conditions:
+              - type: constant
+                name: data_element
+                value: all
+            data_sources:
+              - type: variable
+                name: data_list
+                value: ports
+          - type: is_private_cidr
+            description: Check if source is a private CIDR block - RFC 1918
+            conditions:
+              - type: constant
+                name: is_private_cidr
+                value: true
+            data_sources:
+              - type: variable
+                name: source
+                value: source
+        severity: medium
+      - message:
+          text: '[{name}] Allow connection to specific port (or range) from private
+            network ({source}=>{ports})'
+          args:
+            name:
+              type: variable
+              variable: sg_name
+            source:
+              type: variable
+              variable: source
+            ports:
+              type: variable
+              variable: ports
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is private
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: false
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
+          - type: is_ports
+            description: Check if ports is a specific port (or range) (like 9000-9001)
+            conditions:
+              - type: constant
+                name: is_ports
+                value: true
+            data_sources:
+              - type: variable
+                name: source
+                value: ports
+          - type: is_private_cidr
+            description: Check if source is a private CIDR block - RFC 1918
+            conditions:
+              - type: constant
+                name: is_private_cidr
+                value: true
+            data_sources:
+              - type: variable
+                name: source
+                value: source
+        severity: low
+  attributes:
+    description: Check each rule on asset attributes
+    findings:
+      - message:
+          text: 'DnsRecord: {dns_record}'
+          args:
+            dns_record:
+              type: attribute
+              key: dns_record
+        severity: medium
+        rules:
+          - type: has_attribute
+            description: Check if dns_record attribute exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: dns_record
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+      - message:
+          text: ACL BlockPublicAcls set to {attribute_value}
+          args:
+            attribute_value:
+              type: attribute
+              key: acls.block_public_acls
+        severity: low
+        rules:
+          - type: has_attribute
+            description: Check if acls exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: acls
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_equal
+            description: Check if BlockPublicAcls is False
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: False
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: acls.block_public_acls
+      - message:
+          text: ACL BlockPublicPolicy set to {attribute_value}
+          args:
+            attribute_value:
+              type: attribute
+              key: acls.block_public_policy
+        severity: low
+        rules:
+          - type: has_attribute
+            description: Check if acls exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: acls
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_equal
+            description: Check if BlockPublicPolicy is False
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: False
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: acls.block_public_policy
+      - message:
+          text: ACL IgnorePublicAcls set to {attribute_value}
+          args:
+            attribute_value:
+              type: attribute
+              key: acls.ignore_public_acls
+        severity: medium
+        rules:
+          - type: has_attribute
+            description: Check if acls exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: acls
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_equal
+            description: Check if IgnorePublicAcls is False
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: False
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: acls.ignore_public_acls
+      - message:
+          text: ACL RestrictPublicBuckets set to {attribute_value}
+          args:
+            attribute_value:
+              type: attribute
+              key: acls.restrict_public_buckets
+        severity: low
+        rules:
+          - type: has_attribute
+            description: Check if acls exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: acls
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_equal
+            description: Check if RestrictPublicBuckets is False
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: False
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: acls.restrict_public_buckets
+      - message:
+          text: 'ACL: All Users: {rights}'
+          args:
+            rights:
+              type: attribute
+              key: acls.all_users_grants
+        severity: high
+        rules:
+          - type: has_attribute
+            description: Check if acls exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: acls
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_not_equal
+            description: Check if All Users can access to anything
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: ''
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: acls.all_users_grants
+      - message:
+          text: 'ACL: Any Authenticated Users: {rights}'
+          args:
+            rights:
+              type: attribute
+              key: acls.any_authenticated_users_grants
+        severity: high
+        rules:
+          - type: has_attribute
+            description: Check if acls exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: acls
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_not_equal
+            description: Check if Any Authenticated Users can access to anything
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: ''
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: acls.any_authenticated_users_grants
+  #     - message:
+  #         text: Deprecated mysql engine version ({current_version})
+  #         args:
+  #           current_version:
+  #             type: dict
+  #             key: Engine
+  #             variable: metadata
+  #       severity: high
+  #       rules:
+  #         - type: in
+  #           description: Check if Engine is in metadata
+  #           conditions:
+  #             - type: constant
+  #               name: data_element
+  #               value: Engine
+  #           data_sources:
+  #             - type: variable
+  #               name: data_list
+  #               value: metadata
+  #         - type: engine_deprecated_version
+  #           description: Check if mysql engine is not deprecated
+  #           conditions:
+  #             - type: constant
+  #               name: engine_name
+  #               value: mysql
+  #             - type: constant
+  #               name: versions
+  #               value:
+  #                 - 5.2.0
+  #           data_sources:
+  #             - type: dict
+  #               name: engine
+  #               value: metadata
+  #               key: Engine
+  #     - message:
+  #         text: Deprecated postgres engine version ({current_version})
+  #         args:
+  #           current_version:
+  #             type: dict
+  #             key: Engine
+  #             variable: metadata
+  #       severity: high
+  #       rules:
+  #         - type: in
+  #           description: Check if Engine is in metadata
+  #           conditions:
+  #             - type: constant
+  #               name: data_element
+  #               value: Engine
+  #           data_sources:
+  #             - type: variable
+  #               name: data_list
+  #               value: metadata
+  #         - type: engine_deprecated_version
+  #           description: Check if postgres engine is not deprecated
+  #           conditions:
+  #             - type: constant
+  #               name: engine_name
+  #               value: postgres
+  #             - type: constant
+  #               name: versions
+  #               value:
+  #                 - '10.10'
+  #                 - '11.4'
+  #           data_sources:
+  #             - type: dict
+  #               name: engine
+  #               value: metadata
+  #               key: Engine

@@ -7,8 +7,6 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
-VERSION = '1.2.1'
-
 def add_asset(patrowl_api, title, description):
     """
     Create an asset
