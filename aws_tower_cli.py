@@ -18,6 +18,7 @@ import boto3
 import botocore
 
 from libs.display import print_report, print_summary
+from libs.iam_scan import iam_display, iam_display_roles, iam_extract, iam_scan
 from libs.scan import aws_scan
 from config import variables
 
@@ -27,7 +28,92 @@ from config import variables
 # pylint: disable=logging-fstring-interpolation
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '3.1.0'
+VERSION = '3.2.0'
+
+def audit_handler(session, args, meta_types):
+    """
+    Handle audit argument
+    """
+    assets = aws_scan(
+        session,
+        public_only=False,
+        meta_types=meta_types,
+        name_filter=args.name
+    )
+    min_severity = list(variables.SEVERITY_LEVELS.keys())[0]
+    max_severity = list(variables.SEVERITY_LEVELS.keys())[-1]
+    if args.min_severity in variables.SEVERITY_LEVELS:
+        min_severity = args.min_severity
+    if args.max_severity in variables.SEVERITY_LEVELS:
+        max_severity = args.max_severity
+    security_config = {
+        'findings_rules_path': variables.FINDING_RULES_PATH,
+        'severity_levels': variables.SEVERITY_LEVELS,
+        'min_severity': min_severity,
+        'max_severity': max_severity
+    }
+    if args.summary:
+        print_summary(
+            assets,
+            variables.META_TYPES,
+            security_config
+        )
+    else:
+        print_report(
+            assets,
+            variables.META_TYPES,
+            brief=args.brief,
+            security_config=security_config
+        )
+
+def discover_handler(session, args, meta_types):
+    """
+    Handle discover argument
+    """
+    assets = aws_scan(
+        session,
+        public_only=args.public_only,
+        meta_types=meta_types,
+        name_filter=args.name
+    )
+    if args.summary:
+        print_summary(
+            assets,
+            variables.META_TYPES,
+            None
+        )
+    else:
+        print_report(
+            assets,
+            variables.META_TYPES,
+            brief=args.brief,
+            security_config=None
+        )
+
+def iam_handler(session, args):
+    """
+    Handle iam argument
+    """
+    client_iam = session.client('iam')
+    res_iam = session.resource('iam')
+    if args.display:
+        iam_display(client_iam, res_iam, args.source, verbose=args.verbose)
+    elif args.source and args.action:
+        account_id = session.client('sts').get_caller_identity().get('Account')
+        arn_list = iam_extract(args.source, account_id, verbose=args.verbose)
+        for arn in arn_list:
+            if iam_scan(client_iam, res_iam, arn, args.action, verbose=args.verbose):
+                print(f'{args.source} -> {args.action}: Access Granted')
+                sys.exit(0)
+        print(f'{args.source} -> {args.action}: Not Authorized')
+    else:
+        iam_display_roles(
+            client_iam,
+            res_iam,
+            args.source,
+            args.action_category,
+            args.service,
+            verbose=args.verbose)
 
 def main(verb, args):
     """
@@ -40,7 +126,7 @@ def main(verb, args):
         LOGGER.critical('Take a look at the ~/.aws/config file.')
         sys.exit(1)
     meta_types = list()
-    if args.type is None:
+    if not hasattr(args, 'type') or args.type is None:
         meta_types = variables.META_TYPES
     else:
         for meta_type in args.type:
@@ -50,58 +136,12 @@ def main(verb, args):
             if meta_type.upper() not in meta_types:
                 meta_types.append(meta_type.upper())
 
-    if verb == 'discover':
-        assets = aws_scan(
-            session,
-            public_only=args.public_only,
-            meta_types=meta_types,
-            name_filter=args.name
-        )
-        if args.summary:
-            print_summary(
-                assets,
-                variables.META_TYPES,
-                None
-            )
-        else:
-            print_report(
-                assets,
-                variables.META_TYPES,
-                brief=args.brief,
-                security_config=None
-            )
-    elif verb == 'audit':
-        assets = aws_scan(
-            session,
-            public_only=False,
-            meta_types=meta_types,
-            name_filter=args.name
-        )
-        min_severity = list(variables.SEVERITY_LEVELS.keys())[0]
-        max_severity = list(variables.SEVERITY_LEVELS.keys())[-1]
-        if args.min_severity in variables.SEVERITY_LEVELS:
-            min_severity = args.min_severity
-        if args.max_severity in variables.SEVERITY_LEVELS:
-            max_severity = args.max_severity
-        security_config = {
-            'findings_rules_path': variables.FINDING_RULES_PATH,
-            'severity_levels': variables.SEVERITY_LEVELS,
-            'min_severity': min_severity,
-            'max_severity': max_severity
-        }
-        if args.summary:
-            print_summary(
-                assets,
-                variables.META_TYPES,
-                security_config
-            )
-        else:
-            print_report(
-                assets,
-                variables.META_TYPES,
-                brief=args.brief,
-                security_config=security_config
-            )
+    if verb == 'audit':
+        audit_handler(session, args, meta_types)
+    elif verb == 'discover':
+        discover_handler(session, args, meta_types)
+    elif verb == 'iam':
+        iam_handler(session, args)
     else:
         sys.exit(1)
     sys.exit(0)
@@ -190,6 +230,44 @@ if __name__ == '__main__':
         '-s', '--summary',
         action='store_true',
         help='Summary of the account assets')
+
+    # IAM Arguments
+    IAM_PARSER = SUBPARSERS.add_parser(
+        'iam',
+        help='Display IAM info for an AWS account')
+    IAM_PARSER.add_argument(
+        'profile',
+        action='store',
+        help='A valid profile name configured in the ~/.aws/config file')
+    IAM_PARSER.add_argument(
+        '-s', '--source',
+        action='store',
+        default='',
+        help='Source arn')
+    IAM_PARSER.add_argument(
+        '-a', '--action',
+        action='store',
+        default='',
+        help='Action to match')
+    IAM_PARSER.add_argument(
+        '--action-category',
+        action='store',
+        choices=['admin', 'poweruser', 'reader'],
+        default='',
+        help='Action Category to match')
+    IAM_PARSER.add_argument(
+        '--service',
+        action='store',
+        default='',
+        help='Action Category to match')
+    IAM_PARSER.add_argument(
+        '-d', '--display',
+        action='store_true',
+        help='Display informations about the source ARN')
+    IAM_PARSER.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='Verbose output of the account assets')
 
     ARGS = PARSER.parse_args()
     if len(sys.argv) == 1:
