@@ -11,39 +11,26 @@ $ cp config/subnet_allow_list.txt.sample config/subnet_allow_list.txt # if you w
 ## Usage
 
 ```bash
-$ ./aws_tower_cli.py --help
-usage: aws_tower_cli.py [-h] [--version] {discover,audit} ...
-
-positional arguments:
-  {discover,audit}  commands
-    discover        Discover assets in an AWS account
-    audit           Audit AWS account to find security issues
-
-optional arguments:
-  -h, --help        show this help message and exit
-  --version         show program's version number and exit
+$ alias aws-tower='<path>/aws_tower_cli.py'
 ```
 
 ```bash
-$ ./aws_tower_cli.py discover --help
-usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS,S3}] [-p] [-n NAME] [-v] [-b] [-s] profile
+$ aws-tower --help
+usage: aws_tower_cli.py [-h] [--version] {discover,audit,iam} ...
 
 positional arguments:
-  profile               A valid profile name configured in the ~/.aws/config file
+  {discover,audit,iam}  commands
+    discover            Discover assets in an AWS account
+    audit               Audit AWS account to find security issues
+    iam                 Display IAM info for an AWS account
 
 optional arguments:
   -h, --help            show this help message and exit
-  -t {EC2,ELBV2,RDS,S3}, --type {EC2,ELBV2,RDS,S3}
-                        Types to display (default: display everything)
-  -p, --public-only     Display public assets only
-  -n NAME, --name NAME  Filter this asset name
-  -v, --verbose         Verbose output of the account assets
-  -b, --brief           Brief output of the account assets
-  -s, --summary         Summary of the account assets
+  --version             show program's version number and exit
 ```
 
 ```bash
-$ ./aws_tower_cli.py audit --help
+$ aws-tower audit --help
 usage: aws_tower_cli.py audit [-h] [-t {EC2,ELBV2,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-n NAME] [-v] [-b] [-s] profile
 
 positional arguments:
@@ -61,6 +48,44 @@ optional arguments:
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets
+```
+
+```bash
+$ aws-tower discover --help
+usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS,S3}] [-p] [-n NAME] [-v] [-b] [-s] profile
+
+positional arguments:
+  profile               A valid profile name configured in the ~/.aws/config file
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t {EC2,ELBV2,RDS,S3}, --type {EC2,ELBV2,RDS,S3}
+                        Types to display (default: display everything)
+  -p, --public-only     Display public assets only
+  -n NAME, --name NAME  Filter this asset name
+  -v, --verbose         Verbose output of the account assets
+  -b, --brief           Brief output of the account assets
+  -s, --summary         Summary of the account assets
+```
+
+```bash
+$ aws-tower iam --help
+usage: aws_tower_cli.py iam [-h] [-s SOURCE] [-a ACTION] [--action-category {admin,poweruser,reader}] [--service SERVICE] [-d] [-v] profile
+
+positional arguments:
+  profile               A valid profile name configured in the ~/.aws/config file
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s SOURCE, --source SOURCE
+                        Source arn
+  -a ACTION, --action ACTION
+                        Action to match
+  --action-category {admin,poweruser,reader}
+                        Action Category to match
+  --service SERVICE     Action Category to match
+  -d, --display         Display informations about the source ARN
+  -v, --verbose         Verbose output of the account assets
 ```
 
 ## Usage (lambda)

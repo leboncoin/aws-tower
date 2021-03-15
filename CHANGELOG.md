@@ -4,6 +4,15 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.2.0
+-----
+
+2021/03/12
+
+### New features
+  - Add a iam positional argument, to display info avec IAM arn
+
+
 3.1.0
 -----
 
