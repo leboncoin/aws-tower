@@ -31,14 +31,14 @@ optional arguments:
 
 ```bash
 $ aws-tower audit --help
-usage: aws_tower_cli.py audit [-h] [-t {EC2,ELBV2,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-n NAME] [-v] [-b] [-s] profile
+usage: aws_tower_cli.py audit [-h] [-t {EC2,ELBV2,IAM,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-n NAME] [-v] [-b] [-s] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 optional arguments:
   -h, --help            show this help message and exit
-  -t {EC2,ELBV2,RDS,S3}, --type {EC2,ELBV2,RDS,S3}
+  -t {EC2,ELBV2,IAM,RDS,S3}, --type {EC2,ELBV2,IAM,RDS,S3}
                         Types to display (default: display everything)
   -m {info,low,medium,high,critical}, --min-severity {info,low,medium,high,critical}
                         min severity level to report when security is enabled (default: medium)
@@ -52,14 +52,14 @@ optional arguments:
 
 ```bash
 $ aws-tower discover --help
-usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,RDS,S3}] [-p] [-n NAME] [-v] [-b] [-s] profile
+usage: aws_tower_cli.py discover [-h] [-t {EC2,ELBV2,IAM,RDS,S3}] [-p] [-n NAME] [-v] [-b] [-s] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 optional arguments:
   -h, --help            show this help message and exit
-  -t {EC2,ELBV2,RDS,S3}, --type {EC2,ELBV2,RDS,S3}
+  -t {EC2,ELBV2,IAM,RDS,S3}, --type {EC2,ELBV2,IAM,RDS,S3}
                         Types to display (default: display everything)
   -p, --public-only     Display public assets only
   -n NAME, --name NAME  Filter this asset name
@@ -70,7 +70,7 @@ optional arguments:
 
 ```bash
 $ aws-tower iam --help
-usage: aws_tower_cli.py iam [-h] [-s SOURCE] [-a ACTION] [--action-category {admin,poweruser,reader}] [--service SERVICE] [-d] [-v] profile
+usage: aws_tower_cli.py iam [-h] [-s SOURCE] [-a ACTION] [--min-rights {admin,poweruser,reader}] [--service SERVICE] [-d] [-v] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
@@ -81,8 +81,8 @@ optional arguments:
                         Source arn
   -a ACTION, --action ACTION
                         Action to match
-  --action-category {admin,poweruser,reader}
-                        Action Category to match
+  --min-rights {admin,poweruser,reader}
+                        Minimum actions rights
   --service SERVICE     Action Category to match
   -d, --display         Display informations about the source ARN
   -v, --verbose         Verbose output of the account assets

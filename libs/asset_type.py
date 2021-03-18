@@ -35,7 +35,7 @@ class AssetType:
 
     def audit(self, security_config):
         """
-        This functions is returning an asset_report with security findings,
+        This function is returning an asset_report with security findings,
         it handles the brief mode output
         """
         try:
@@ -52,7 +52,7 @@ class AssetType:
 
     def update_audit_report(self, report):
         """
-        Returns an output of the audit
+        Return an output of the audit
         """
         for issue in self.security_issues:
             if 'Audit' not in report:
@@ -61,7 +61,7 @@ class AssetType:
 
     def display_brief_audit(self):
         """
-        Returns a brief output of the audit
+        Return a brief output of the audit
         """
         output = ''
         if self.security_issues:
@@ -77,6 +77,6 @@ class AssetType:
 
     def get_type(self):
         """
-        Returns the asset type
+        Return the asset type
         """
         return type(self).__name__

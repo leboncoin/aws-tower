@@ -1,4 +1,4 @@
-version: 3.0.2
+version: 3.3.0
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -198,6 +198,42 @@ types:
               - type: constant
                 name: attribute
                 value: dns_record
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+      - message:
+          text: 'Admin actions: {admin_actions}'
+          args:
+            admin_actions:
+              type: attribute
+              key: admin_actions
+        severity: high
+        rules:
+          - type: has_attribute
+            description: Check if admin_actions attribute exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: admin_actions
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+      - message:
+          text: 'Poweruser actions: {poweruser_actions}'
+          args:
+            poweruser_actions:
+              type: attribute
+              key: poweruser_actions
+        severity: medium
+        rules:
+          - type: has_attribute
+            description: Check if poweruser_actions attribute exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: poweruser_actions
             data_sources:
               - type: variable
                 name: asset

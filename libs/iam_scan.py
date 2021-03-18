@@ -9,7 +9,6 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 
 # Standard library imports
 import logging
-import re
 
 # Third party library imports
 import boto3
@@ -52,6 +51,8 @@ def get_actions_from_rolepolicy(rolepolicy):
     if isinstance(statements, dict):
         statements = [statements]
     for statement in statements:
+        if 'Action' not in statement:
+            continue
         if isinstance(statement['Action'], str):
             actions.append(statement['Action'])
         else:
@@ -138,7 +139,7 @@ def iam_extract(arn, account_id, verbose=False):
     return arns
 
 
-def iam_scan(client, resource, source_arn, action, verbose=False):
+def iam_simulate(client, resource, source_arn, action, verbose=False):
     """
     Return True if the ARN can do the action
     """
@@ -186,66 +187,6 @@ def iam_display(client, resource, arn, verbose=False):
             print(f'Actions: {set(actions)}')
 
 
-def format_print(arn, actions, action_category):
-    if not actions:
-        return False
-    if action_category is not None:
-        if action_category in actions:
-            filtered_actions = {action_category: actions[action_category]}
-            LOGGER.warning(f'{arn}: {filtered_actions}')
-            return True
-        return False
-    LOGGER.warning(f'{arn}: {actions}')
-    return True
-
-
-def display_actions(arn, actions, action_category):
-    """
-    Display a regrouped way to understand actions
-    admin > poweruser (write|delete|update) > reader > lister
-    """
-    result = dict()
-    types = dict()
-    poweruser_multi_verbs = ['GitPush']
-    readers_verb = [
-        'Batch', 'Check', 'Compare', 'Count', 'Describe', 'Detect', 'Discover',
-        'Download', 'Estimate', 'Evaluate', 'Export', 'Filter', 'Get', 'Git',
-        'Is', 'List', 'Lookup', 'Preview', 'Query', 'Read', 'Receive', 'Resolve',
-        'Request', 'Retrieve', 'Sample', 'Scan', 'Search', 'Select', 'Simulate',
-        'Synthesize', 'Test', 'Verify', 'View']
-    for action in actions:
-        if action == '*':
-            return format_print(arn, {'admin': ['*']}, action_category)
-        service = action.split(':')[0]
-        if service not in types:
-            types[service] = []
-        types[service].append(action.split(':')[1])
-    for service in types:
-        if '*' in types[service]:
-            if 'admin' not in result:
-                result['admin'] = list()
-            result['admin'].append(service)
-        else:
-            is_poweruser = False
-            is_reader = False
-            for action in types[service]:
-                verb = re.search('^[A-Z][a-z]+', action)
-                is_poweruser = is_poweruser or \
-                    (verb and verb.group(0) not in readers_verb) or \
-                    (action in poweruser_multi_verbs)
-                is_reader = is_reader or \
-                    (verb and verb.group(0) in readers_verb and action not in poweruser_multi_verbs)
-            if is_poweruser:
-                if 'poweruser' not in result:
-                    result['poweruser'] = list()
-                result['poweruser'].append(service)
-            elif is_reader:
-                if 'reader' not in result:
-                    result['reader'] = list()
-                result['reader'].append(service)
-    return format_print(arn, result, action_category)
-
-
 def get_role_services(role):
     """
     Return services associated to the role
@@ -263,10 +204,11 @@ def get_role_services(role):
     return services
 
 
-def iam_display_roles(client, resource, arn, action_category, service, verbose=False):
+def iam_get_roles(client, resource, arn=None, service=None):
     """
-    Display all roles actions
+    Return all roles, with associated actions
     """
+    roles = []
     paginator = client.get_paginator('list_roles')
     for response in paginator.paginate():
         for role in response['Roles']:
@@ -274,12 +216,26 @@ def iam_display_roles(client, resource, arn, action_category, service, verbose=F
                 continue
             if service and service not in get_role_services(role):
                 continue
+            role_obj = IAM(arn=role['Arn'])
+            if role_obj.resource_id in ['aws-reserved', 'aws-service-role', 'service-role']:
+                continue
             actions = []
             for rolepolicy in resource.Role(role['RoleName']).policies.all():
                 actions = [*actions, *get_actions_from_rolepolicy(rolepolicy)]
             for policy in resource.Role(role['RoleName']).attached_policies.all():
                 actions = [*actions, *get_actions_from_policy(client, policy)]
-            is_diplayed = display_actions(role['Arn'], actions, action_category)
-            if verbose and is_diplayed:
-                LOGGER.warning(f'Actions: {actions}')
-                LOGGER.warning(f'AWS Services: {get_role_services(role)}')
+            role_obj.actions = actions
+            role_obj.simplify_actions()
+            roles.append(role_obj)
+    return roles
+
+
+def iam_display_roles(client, resource, arn, min_rights, service, verbose=False):
+    """
+    Display all roles actions
+    """
+    roles = iam_get_roles(client, resource, arn, service)
+    for role in roles:
+        is_displayed = role.print_actions(min_rights)
+        if verbose and is_displayed:
+            LOGGER.warning(f'Actions: {role.actions}')

@@ -18,6 +18,7 @@ from .asset_type_ec2 import EC2
 from .asset_type_elbv2 import ELBV2
 from .asset_type_rds import RDS
 from .asset_type_s3 import S3
+from .iam_scan import iam_get_roles
 
 # Debug
 # from pdb import set_trace as st
@@ -220,6 +221,13 @@ def aws_scan(
             asset = elbv2_scan(elbv2, sg_raw, subnets_raw, public_only)
             if asset is not None and name_filter in asset.name:
                 assets.append(asset)
+
+    if 'IAM' in meta_types:
+        client_iam = boto_session.client('iam')
+        resource_iam = boto_session.resource('iam')
+        for role in iam_get_roles(client_iam, resource_iam):
+            if name_filter in role.arn:
+                assets.append(role)
 
     if 'RDS' in meta_types:
         rds_client = boto_session.client('rds')

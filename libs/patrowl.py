@@ -6,6 +6,10 @@ Copyright 2020-2021 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
+# Standard library imports
+import logging
+LOGGER = logging.getLogger('aws-tower')
+
 
 def add_asset(patrowl_api, title, description):
     """
@@ -20,8 +24,8 @@ def add_asset(patrowl_api, title, description):
             'medium',
             'external',
             tags=['All'])
-    except:
-        pass
+    except Exception as err_msg:
+        LOGGER.critical(f'{err_msg=}')
     return None
 
 
@@ -68,8 +72,8 @@ def add_finding(patrowl_api, asset_id, title, description, criticity):
             'aws_tower',
             criticity,
             asset_id)
-    except:
-        pass
+    except Exception as err_msg:
+        LOGGER.critical(f'{err_msg=}')
 
 def get_findings(patrowl_api, asset_id):
     """
@@ -77,6 +81,6 @@ def get_findings(patrowl_api, asset_id):
     """
     try:
         return patrowl_api.get_asset_findings_by_id(asset_id)
-    except:
-        pass
+    except Exception as err_msg:
+        LOGGER.critical(f'{err_msg=}')
     return list()

@@ -4,6 +4,19 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.3.0
+-----
+
+2021/03/17
+
+### New features
+  - Add IAM service type in discover and audit
+  - Add IAM rules
+
+### Changes
+  - `--action-category` is replaced by `--min-rights`
+
+
 3.2.0
 -----
 
