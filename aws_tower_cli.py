@@ -18,7 +18,7 @@ import boto3
 import botocore
 
 from libs.display import print_report, print_summary
-from libs.iam_scan import iam_display, iam_display_roles, iam_extract, iam_scan
+from libs.iam_scan import iam_display, iam_display_roles, iam_extract, iam_simulate
 from libs.scan import aws_scan
 from config import variables
 
@@ -28,7 +28,7 @@ from config import variables
 # pylint: disable=logging-fstring-interpolation
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '3.2.0'
+VERSION = '3.3.0'
 
 def audit_handler(session, args, meta_types):
     """
@@ -102,7 +102,7 @@ def iam_handler(session, args):
         account_id = session.client('sts').get_caller_identity().get('Account')
         arn_list = iam_extract(args.source, account_id, verbose=args.verbose)
         for arn in arn_list:
-            if iam_scan(client_iam, res_iam, arn, args.action, verbose=args.verbose):
+            if iam_simulate(client_iam, res_iam, arn, args.action, verbose=args.verbose):
                 print(f'{args.source} -> {args.action}: Access Granted')
                 sys.exit(0)
         print(f'{args.source} -> {args.action}: Not Authorized')
@@ -111,7 +111,7 @@ def iam_handler(session, args):
             client_iam,
             res_iam,
             args.source,
-            args.action_category,
+            args.min_rights,
             args.service,
             verbose=args.verbose)
 
@@ -250,11 +250,11 @@ if __name__ == '__main__':
         default='',
         help='Action to match')
     IAM_PARSER.add_argument(
-        '--action-category',
+        '--min-rights',
         action='store',
         choices=['admin', 'poweruser', 'reader'],
         default='',
-        help='Action Category to match')
+        help='Minimum actions rights')
     IAM_PARSER.add_argument(
         '--service',
         action='store',

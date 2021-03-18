@@ -9,6 +9,7 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 
 # Standard library imports
 import logging
+import re
 
 from .asset_type import AssetType
 
@@ -34,6 +35,10 @@ class IAM(AssetType):
     def __init__(self, arn: str):
         super().__init__(arn, public=False)
         self.arn = arn
+        self.actions = []
+        self.admin_actions = None
+        self.poweruser_actions = None
+        self.reader_actions = None
         if self.is_valid():
             self.partition = arn.split(':')[1]
             self.service = arn.split(':')[2]
@@ -48,7 +53,7 @@ class IAM(AssetType):
         arn:partition:service:region:account-id:resource-type/resource-id
         """
         return len(self.arn.split(':')) == 6 and \
-            len(self.arn.split(':')[5].split('/')) == 2
+            len(self.arn.split(':')[5].split('/')) >= 2
 
     def is_allowed_action(self, session, actions, verbose=False):
         """
@@ -70,8 +75,109 @@ class IAM(AssetType):
             LOGGER.warning(f'Match for {self.arn}')
         return is_allowed
 
-    def display(self, verbose=False):
+    def simplify_actions(self):
         """
-        Describe the object
+        Simplify the actions and regroupe in a way to understand actions
+        admin > poweruser (write|delete|update) > reader > lister
         """
-        return f'ARN: {self.arn}'
+        types = dict()
+        poweruser_multi_verbs = ['GitPush']
+        readers_verb = [
+            'Batch', 'Check', 'Compare', 'Count', 'Describe', 'Detect', 'Discover',
+            'Download', 'Estimate', 'Evaluate', 'Export', 'Filter', 'Get', 'Git',
+            'Is', 'List', 'Lookup', 'Preview', 'Query', 'Read', 'Receive', 'Resolve',
+            'Request', 'Retrieve', 'Sample', 'Scan', 'Search', 'Select', 'Simulate',
+            'Synthesize', 'Test', 'Verify', 'View']
+        for action in self.actions:
+            if action == '*':
+                self.admin_actions = ['*']
+                return
+            service = action.split(':')[0]
+            if service not in types:
+                types[service] = []
+            types[service].append(action.split(':')[1])
+        for service in types:
+            if '*' in types[service]:
+                if self.admin_actions is None:
+                    self.admin_actions = []
+                self.admin_actions.append(service)
+            else:
+                is_poweruser = False
+                is_reader = False
+                for action in types[service]:
+                    verb = re.search('^[A-Z][a-z]+', action)
+                    is_poweruser = is_poweruser or \
+                        (verb and verb.group(0) not in readers_verb) or \
+                        (action in poweruser_multi_verbs)
+                    is_reader = is_reader or \
+                        (verb and verb.group(0) in readers_verb and action not in poweruser_multi_verbs)
+                if is_poweruser:
+                    if self.poweruser_actions is None:
+                        self.poweruser_actions = []
+                    self.poweruser_actions.append(service)
+                elif is_reader:
+                    if self.reader_actions is None:
+                        self.reader_actions = []
+                    self.reader_actions.append(service)
+
+
+    def print_actions(self, min_rights):
+        """
+        Display the actions right filtered by min_rights action category
+        """
+        action_category = {
+            "admin": 0,
+            "poweruser": 1,
+            "reader": 2
+        }
+        action_id = {
+            0: "admin",
+            1: "poweruser",
+            2: "reader"
+        }
+        if not self.actions:
+            return False
+        if min_rights is None or min_rights not in action_category:
+            min_rights = 'reader'
+        filtered_actions = {}
+        for i in range(action_category[min_rights]+1):
+            if getattr(self, f'{action_id[i]}_actions') is None:
+                continue
+            filtered_actions[action_id[i]] = getattr(self, f'{action_id[i]}_actions')
+        LOGGER.warning(f'{self.arn}: {filtered_actions}')
+        return True
+
+
+    def report(self, report, brief=False):
+        """
+        Add an asset with only relevent informations
+        """
+        if brief:
+            asset_report = self.report_brief()
+        else:
+            asset_report = {
+                'Arn': self.arn
+            }
+            if self.admin_actions:
+                asset_report['Admin actions'] = self.admin_actions
+            if self.poweruser_actions:
+                asset_report['Poweruser actions'] = self.poweruser_actions
+            if self.security_issues:
+                self.update_audit_report(asset_report)
+        if 'IAM' not in report:
+            report['IAM'] = { self.arn: asset_report }
+            return report
+        report['IAM'].update(
+            { self.arn: asset_report })
+        return report
+
+    def report_brief(self):
+        """
+        Return the report in one line
+        """
+        actions = ''
+        if self.admin_actions:
+            actions += f'Admin actions: {self.admin_actions} '
+        if self.admin_actions:
+            actions += f'Poweruser actions: {self.poweruser_actions} '
+        return f'ARN {actions}{self.display_brief_audit()}'
