@@ -22,7 +22,6 @@ from requests import Session
 
 # Own library and config files
 from libs.patrowl import add_asset, add_in_assetgroup, add_finding, get_assets, get_findings
-from libs.patterns import Patterns
 from libs.scan import aws_scan
 from libs.session import get_session
 from config import variables
@@ -53,16 +52,12 @@ def main(account):
     """
     Main function
     """
-    try:
-        security_config = Patterns(
-            variables.FINDING_RULES_PATH,
-            variables.SEVERITY_LEVELS,
-            list(variables.SEVERITY_LEVELS.keys())[0],
-            list(variables.SEVERITY_LEVELS.keys())[-1]
-        )
-    except Exception as err_msg:
-        LOGGER.critical(f"Can't get security config: {err_msg}")
-        return
+    security_config = {
+        'findings_rules_path': variables.FINDING_RULES_PATH,
+        'severity_levels': variables.SEVERITY_LEVELS,
+        'min_severity': list(variables.SEVERITY_LEVELS.keys())[0],
+        'max_severity': list(variables.SEVERITY_LEVELS.keys())[-1]
+    }
 
     aws_account_name = list(account.keys())[0]
     LOGGER.warning(f'Start scanning {aws_account_name}...')
@@ -94,7 +89,7 @@ def main(account):
                 asset_id = patrowl_asset['id']
                 continue
 
-        for new_finding in security_config.extract_findings(asset):
+        for new_finding in asset.security_issues:
             is_new_finding = True
 
             if new_finding['severity'] not in variables.ALERTING_SEVERITIES:

@@ -224,7 +224,7 @@ def aws_scan(
                 assets.append(asset)
 
     if 'IAM' in meta_types:
-        iamgroup = IAMGroup(name='IAM')
+        iamgroup = IAMGroup(name='IAM roles')
         client_iam = boto_session.client('iam')
         resource_iam = boto_session.resource('iam')
         for role in iam_get_roles(client_iam, resource_iam):

@@ -1,4 +1,4 @@
-version: 3.3.0
+version: 3.3.1
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -203,11 +203,14 @@ types:
                 name: asset
                 value: asset
       - message:
-          text: 'Admin actions: {admin_actions}'
+          text: '[{resource_id}] Admin actions: {admin_actions}'
           args:
             admin_actions:
               type: attribute
               key: admin_actions
+            resource_id:
+              type: attribute
+              key: resource_id
         severity: high
         rules:
           - type: has_attribute
@@ -221,11 +224,14 @@ types:
                 name: asset
                 value: asset
       - message:
-          text: 'Poweruser actions: {poweruser_actions}'
+          text: '[{resource_id}] Poweruser actions: {poweruser_actions}'
           args:
             poweruser_actions:
               type: attribute
               key: poweruser_actions
+            resource_id:
+              type: attribute
+              key: resource_id
         severity: medium
         rules:
           - type: has_attribute

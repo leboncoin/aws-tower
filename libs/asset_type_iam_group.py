@@ -50,8 +50,7 @@ class IAMGroup(AssetType):
             for asset in self.list:
                 if asset.report_brief():
                     asset_report[asset.resource_id] = asset.report_brief()
-        account_id = self.list[0].account_id
-        report[f'[{account_id}] IAM roles'] = asset_report
+        report[self.name] = asset_report
         return report
 
     def report_brief(self):
