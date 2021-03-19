@@ -16,6 +16,7 @@ import botocore
 
 from .asset_type_ec2 import EC2
 from .asset_type_elbv2 import ELBV2
+from .asset_type_iam_group import IAMGroup
 from .asset_type_rds import RDS
 from .asset_type_s3 import S3
 from .iam_scan import iam_get_roles
@@ -211,7 +212,7 @@ def aws_scan(
                     sg_raw,
                     subnets_raw,
                     public_only)
-                if asset is not None and name_filter in asset.name:
+                if asset is not None and name_filter.lower() in asset.name.lower():
                     assets.append(asset)
 
     if 'ELBV2' in meta_types:
@@ -219,15 +220,17 @@ def aws_scan(
         elbv2_raw = elbv2_client.describe_load_balancers()['LoadBalancers']
         for elbv2 in elbv2_raw:
             asset = elbv2_scan(elbv2, sg_raw, subnets_raw, public_only)
-            if asset is not None and name_filter in asset.name:
+            if asset is not None and name_filter.lower() in asset.name.lower():
                 assets.append(asset)
 
     if 'IAM' in meta_types:
+        iamgroup = IAMGroup(name='IAM')
         client_iam = boto_session.client('iam')
         resource_iam = boto_session.resource('iam')
         for role in iam_get_roles(client_iam, resource_iam):
-            if name_filter in role.arn:
-                assets.append(role)
+            if name_filter.lower() in role.arn.lower():
+                iamgroup.list.append(role)
+        assets.append(iamgroup)
 
     if 'RDS' in meta_types:
         rds_client = boto_session.client('rds')
@@ -237,7 +240,7 @@ def aws_scan(
                 rds,
                 subnets_raw,
                 public_only)
-            if asset is not None and name_filter in asset.name:
+            if asset is not None and name_filter.lower() in asset.name.lower():
                 assets.append(asset)
 
     if 'S3' in meta_types:
@@ -257,7 +260,7 @@ def aws_scan(
                 region,
                 acls,
                 public_only)
-            if asset is not None and name_filter in asset.name:
+            if asset is not None and name_filter.lower() in asset.name.lower():
                 assets.append(asset)
 
     for hosted_zone in route53_client.list_hosted_zones()['HostedZones']:
