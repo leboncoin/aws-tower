@@ -4,6 +4,17 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.3.1
+-----
+
+2021/03/19
+
+### Changes
+  - Case insensitive during name search `--name|-n`
+  - Hidding IAM roles without Poweruser/Admin actions
+  - Stack IAM roles in an IAM Group
+  - Lambda: Remove Patterns and use asset.audit() only
+
 3.3.0
 -----
 

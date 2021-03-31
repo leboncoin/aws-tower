@@ -178,6 +178,6 @@ class IAM(AssetType):
         actions = ''
         if self.admin_actions:
             actions += f'Admin actions: {self.admin_actions} '
-        if self.admin_actions:
+        if self.poweruser_actions:
             actions += f'Poweruser actions: {self.poweruser_actions} '
-        return f'ARN {actions}{self.display_brief_audit()}'
+        return f'{actions}{self.display_brief_audit()}'
