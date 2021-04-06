@@ -43,12 +43,11 @@ def get_assets(patrowl_api, assetgroup_id):
     return assets_list
 
 
-def add_in_assetgroup(patrowl_api, assetgroup_id, asset_id):
+def add_in_assetgroup(patrowl_api, assetgroup_id, asset_ids):
     """
-    Add asset in AssetGroup
+    Add assets in AssetGroup
     """
-    new_assets_ids = list()
-    new_assets_ids.append(asset_id)
+    new_assets_ids = asset_ids
 
     dst_assetgroup = patrowl_api.get_assetgroup_by_id(assetgroup_id)
     for current_asset in dst_assetgroup['assets']:

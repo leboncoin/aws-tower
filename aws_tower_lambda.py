@@ -31,7 +31,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '3.3.1'
+VERSION = '3.4.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -77,6 +77,8 @@ def main(account):
         return
 
     patrowl_assets = get_assets(PATROWL_API, PATROWL['assetgroup'])
+    patrowl_all_assets = PATROWL_API.get_assets()
+    assets_to_add = []
     for asset in assets:
         asset.audit(security_config)
         asset_id = None
@@ -88,6 +90,20 @@ def main(account):
                 is_new_asset = False
                 asset_id = patrowl_asset['id']
                 continue
+
+        # In some cases, the assets is not attached to the asset group
+        if is_new_asset:
+            is_lost_asset = False
+            for patrowl_asset in patrowl_all_assets:
+                if patrowl_asset['name'] == asset_patrowl_name:
+                    is_lost_asset = True
+                    is_new_asset = False
+                    asset_id = patrowl_asset['id']
+                    LOGGER.critical(f'asset {asset_patrowl_name} was lost..., {asset_id=}')
+
+        # List of asset id, added at the end
+        if is_new_asset or is_lost_asset:
+            assets_to_add.append(asset_id)
 
         for new_finding in asset.security_issues:
             is_new_finding = True
@@ -104,6 +120,7 @@ def main(account):
                         is_new_finding = False
 
             if is_new_finding:
+                lost_asset = False
                 if is_new_asset:
                     LOGGER.warning(f'Add a new asset: {asset_patrowl_name}')
                     created_asset = add_asset(
@@ -114,11 +131,10 @@ def main(account):
                         LOGGER.critical(f'Error during asset {asset_patrowl_name} creation...')
                         continue
                     is_new_asset = False
-                    asset_id = created_asset['id']
-                    add_in_assetgroup(
-                        PATROWL_API,
-                        PATROWL['assetgroup'],
-                        asset_id)
+                    # add_in_assetgroup(
+                    #     PATROWL_API,
+                    #     PATROWL['assetgroup'],
+                    #     asset_id)
                     if 'info' in variables.ALERTING_SEVERITIES:
                         add_finding(
                             PATROWL_API,
@@ -133,6 +149,10 @@ def main(account):
                     new_finding['title'],
                     asset.report_brief(),
                     new_finding['severity'])
+    add_in_assetgroup(
+        PATROWL_API,
+        PATROWL['assetgroup'],
+        assets_to_add)
     return
 
 def handler(event, context):

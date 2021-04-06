@@ -28,7 +28,7 @@ from config import variables
 # pylint: disable=logging-fstring-interpolation
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '3.3.1'
+VERSION = '3.4.0'
 
 def audit_handler(session, args, meta_types):
     """

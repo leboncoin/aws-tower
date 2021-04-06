@@ -4,6 +4,15 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.4.0
+-----
+
+2021/04/06
+
+### Changes
+  - Lambda: Can retrieve lost assets (asset without asset-group)
+  - Lambda: Add in asset group at the end of the lambda (instead of each new asset)
+
 3.3.1
 -----
 
