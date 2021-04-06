@@ -4,6 +4,14 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.4.1
+-----
+
+2021/04/06
+
+### Fixtures
+  - Fix not referenced is_lost_asset in lambda...
+
 3.4.0
 -----
 

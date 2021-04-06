@@ -31,7 +31,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '3.4.0'
+VERSION = '3.4.1'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -85,6 +85,7 @@ def main(account):
         asset_patrowl_name = f'[{aws_account_name}] {asset.name}'
 
         is_new_asset = True
+        is_lost_asset = False
         for patrowl_asset in patrowl_assets:
             if patrowl_asset['name'] == asset_patrowl_name:
                 is_new_asset = False
@@ -93,7 +94,6 @@ def main(account):
 
         # In some cases, the assets is not attached to the asset group
         if is_new_asset:
-            is_lost_asset = False
             for patrowl_asset in patrowl_all_assets:
                 if patrowl_asset['name'] == asset_patrowl_name:
                     is_lost_asset = True
@@ -131,10 +131,6 @@ def main(account):
                         LOGGER.critical(f'Error during asset {asset_patrowl_name} creation...')
                         continue
                     is_new_asset = False
-                    # add_in_assetgroup(
-                    #     PATROWL_API,
-                    #     PATROWL['assetgroup'],
-                    #     asset_id)
                     if 'info' in variables.ALERTING_SEVERITIES:
                         add_finding(
                             PATROWL_API,
