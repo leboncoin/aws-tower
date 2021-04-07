@@ -48,7 +48,7 @@ def main():
         if 'role_arn' not in config[profile]:
             LOGGER.critical(f'No role_arn in {profile}')
             continue
-        payload = {aws_account_name: config[profile]['role_arn']}
+        payload = {aws_account_name: config[profile]['role_arn'], 'env': config[profile]['env']}
         LOGGER.warning(payload)
         call_lambda(payload)
 

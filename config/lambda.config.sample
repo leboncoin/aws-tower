@@ -1,6 +1,11 @@
 [profile some-account]
 role_arn = arn:aws:iam::12345678999:role/readonly
+env = pro
 
 [profile some-another-account]
 role_arn = arn:aws:iam::223456788888:role/readonly
+env = pre
 
+[profile some-dev-account]
+role_arn = arn:aws:iam::223456788888:role/readonly
+env = dev

@@ -95,7 +95,9 @@ $ pip install -r requirements.lambda.txt --target ./package
 
 $ cp config/lambda.config.sample config/lambda.config
 $ export PATROWL_APITOKEN=xxxxxxxxxxxxxxx
-$ export PATROWL_ASSETGROUP=1
+$ export PATROWL_PRO_ASSETGROUP=1
+$ export PATROWL_PRE_ASSETGROUP=2
+$ export PATROWL_DEV_ASSETGROUP=3
 $ export PATROWL_PRIVATE_ENDPOINT=http://localhost/
 $ export PATROWL_PUBLIC_ENDPOINT=http://localhost/
 

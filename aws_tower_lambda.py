@@ -35,7 +35,9 @@ VERSION = '3.5.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
-PATROWL['assetgroup'] = int(os.environ['PATROWL_ASSETGROUP'])
+PATROWL['assetgroup_pro'] = int(os.environ['PATROWL_PRO_ASSETGROUP'])
+PATROWL['assetgroup_pre'] = int(os.environ['PATROWL_PRE_ASSETGROUP'])
+PATROWL['assetgroup_dev'] = int(os.environ['PATROWL_DEV_ASSETGROUP'])
 PATROWL['private_endpoint'] = os.environ['PATROWL_PRIVATE_ENDPOINT']
 PATROWL['public_endpoint'] = os.environ['PATROWL_PUBLIC_ENDPOINT']
 
@@ -60,7 +62,8 @@ def main(account):
     }
 
     aws_account_name = list(account.keys())[0]
-    LOGGER.warning(f'Start scanning {aws_account_name}...')
+    env = account['env']
+    LOGGER.warning(f'Start scanning {aws_account_name=}, {env=}...')
     try:
         session = get_session(account[aws_account_name])
     except Exception as err_msg:
@@ -76,7 +79,7 @@ def main(account):
         LOGGER.critical(f"Can't parse report: {err_msg}")
         return
 
-    patrowl_assets = get_assets(PATROWL_API, PATROWL['assetgroup'])
+    patrowl_assets = get_assets(PATROWL_API, PATROWL[f'assetgroup_{env}'])
     patrowl_all_assets = PATROWL_API.get_assets()
     assets_to_add = []
     for asset in assets:
@@ -147,13 +150,13 @@ def main(account):
                     new_finding['severity'])
     add_in_assetgroup(
         PATROWL_API,
-        PATROWL['assetgroup'],
+        PATROWL[f'assetgroup_{env}'],
         assets_to_add)
     return
 
 def handler(event, context):
     """
     Specific entrypoint for lambda
-    event = { "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly" }
+    event = { "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly", "env": "pro|pre|dev" }
     """
     main(event)
