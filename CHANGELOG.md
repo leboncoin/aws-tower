@@ -4,6 +4,18 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.5.0
+-----
+
+2021/04/07
+
+### New feature
+  - Add finding_description method in assettypes
+
+### Changes
+  - S3 Groups are returned instead of S3
+  - Add 'env' parameter in lambda.config
+
 3.4.1
 -----
 
