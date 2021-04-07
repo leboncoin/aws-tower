@@ -1,4 +1,4 @@
-version: 3.3.1
+version: 3.5.0
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -245,11 +245,14 @@ types:
                 name: asset
                 value: asset
       - message:
-          text: ACL BlockPublicAcls set to {attribute_value}
+          text: '[{bucket_name}] ACL BlockPublicAcls set to {attribute_value}'
           args:
             attribute_value:
               type: attribute
               key: acls.block_public_acls
+            bucket_name:
+              type: attribute
+              key: name
         severity: low
         rules:
           - type: has_attribute
@@ -273,11 +276,14 @@ types:
                 name: attribute_value
                 value: acls.block_public_acls
       - message:
-          text: ACL BlockPublicPolicy set to {attribute_value}
+          text: '[{bucket_name}] ACL BlockPublicPolicy set to {attribute_value}'
           args:
             attribute_value:
               type: attribute
               key: acls.block_public_policy
+            bucket_name:
+              type: attribute
+              key: name
         severity: low
         rules:
           - type: has_attribute
@@ -301,11 +307,14 @@ types:
                 name: attribute_value
                 value: acls.block_public_policy
       - message:
-          text: ACL IgnorePublicAcls set to {attribute_value}
+          text: '[{bucket_name}] ACL IgnorePublicAcls set to {attribute_value}'
           args:
             attribute_value:
               type: attribute
               key: acls.ignore_public_acls
+            bucket_name:
+              type: attribute
+              key: name
         severity: medium
         rules:
           - type: has_attribute
@@ -329,11 +338,14 @@ types:
                 name: attribute_value
                 value: acls.ignore_public_acls
       - message:
-          text: ACL RestrictPublicBuckets set to {attribute_value}
+          text: '[{bucket_name}] ACL RestrictPublicBuckets set to {attribute_value}'
           args:
             attribute_value:
               type: attribute
               key: acls.restrict_public_buckets
+            bucket_name:
+              type: attribute
+              key: name
         severity: low
         rules:
           - type: has_attribute
@@ -357,11 +369,14 @@ types:
                 name: attribute_value
                 value: acls.restrict_public_buckets
       - message:
-          text: 'ACL: All Users: {rights}'
+          text: '[{bucket_name}] ACL: All Users: {rights}'
           args:
             rights:
               type: attribute
               key: acls.all_users_grants
+            bucket_name:
+              type: attribute
+              key: name
         severity: high
         rules:
           - type: has_attribute
@@ -385,11 +400,14 @@ types:
                 name: attribute_value
                 value: acls.all_users_grants
       - message:
-          text: 'ACL: Any Authenticated Users: {rights}'
+          text: '[{bucket_name}] ACL: Any Authenticated Users: {rights}'
           args:
             rights:
               type: attribute
               key: acls.any_authenticated_users_grants
+            bucket_name:
+              type: attribute
+              key: name
         severity: high
         rules:
           - type: has_attribute

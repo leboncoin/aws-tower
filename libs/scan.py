@@ -19,6 +19,7 @@ from .asset_type_elbv2 import ELBV2
 from .asset_type_iam_group import IAMGroup
 from .asset_type_rds import RDS
 from .asset_type_s3 import S3
+from .asset_type_s3_group import S3Group
 from .iam_scan import iam_get_roles
 
 # Debug
@@ -244,6 +245,7 @@ def aws_scan(
                 assets.append(asset)
 
     if 'S3' in meta_types:
+        s3group = S3Group(name='S3 buckets')
         s3_client = boto_session.client('s3')
         s3_list_buckets = s3_client.list_buckets()['Buckets']
         for s_three in s3_list_buckets:
@@ -254,14 +256,15 @@ def aws_scan(
                 public_access_block_configuration = None
             region = s3_client.get_bucket_location(Bucket=s_three['Name'])['LocationConstraint']
             acls = s3_client.get_bucket_acl(Bucket=s_three['Name'])['Grants']
-            asset = s3_scan(
+            s3bucket = s3_scan(
                 s_three['Name'],
                 public_access_block_configuration,
                 region,
                 acls,
                 public_only)
-            if asset is not None and name_filter.lower() in asset.name.lower():
-                assets.append(asset)
+            if s3bucket is not None and name_filter.lower() in s3bucket.name.lower():
+                s3group.list.append(s3bucket)
+        assets.append(s3group)
 
     for hosted_zone in route53_client.list_hosted_zones()['HostedZones']:
         for record in route53_client.list_resource_record_sets(
