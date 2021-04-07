@@ -53,5 +53,13 @@ class ELBV2(AssetType):
         Return the report in one line
         """
         if self.public:
-            return f'[Public]{self.display_brief_audit()}'
-        return f'[{self.scheme}]{self.display_brief_audit()}'
+            return f'[Public] {self.display_brief_audit()}'
+        return f'[{self.scheme}] {self.display_brief_audit()}'
+
+    def finding_description(self, _):
+        """
+        Return a description of the finding
+        """
+        if self.public:
+            return f'[Public] {self.dns_record}'
+        return f'[{self.scheme}] {self.dns_record}'

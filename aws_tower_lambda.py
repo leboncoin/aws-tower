@@ -31,7 +31,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '3.4.1'
+VERSION = '3.5.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -143,7 +143,7 @@ def main(account):
                     PATROWL_API,
                     asset_id,
                     new_finding['title'],
-                    asset.report_brief(),
+                    asset.finding_description(new_finding['title']),
                     new_finding['severity'])
     add_in_assetgroup(
         PATROWL_API,

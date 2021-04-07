@@ -61,3 +61,13 @@ class IAMGroup(AssetType):
         for asset in self.list:
             result += f'[{asset.resource_id}] {asset.report_brief()},'
         return result
+
+    def finding_description(self, finding_title):
+        """
+        Return a description of the finding
+        """
+        resource_id = finding_title.split('[')[1].split(']')[0]
+        for iam in self.list:
+            if iam.resource_id == resource_id:
+                return iam.finding_description(resource_id)
+        return 'IAM role not found...'

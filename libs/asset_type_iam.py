@@ -181,3 +181,9 @@ class IAM(AssetType):
         if self.poweruser_actions:
             actions += f'Poweruser actions: {self.poweruser_actions} '
         return f'{actions}{self.display_brief_audit()}'
+
+    def finding_description(self, _):
+        """
+        Return a description of the finding
+        """
+        return f'Actions: {self.actions}'

@@ -58,3 +58,11 @@ class EC2(AssetType):
         if self.public:
             return f'[Public] {self.public_ip} {self.private_ip}{self.display_brief_audit()}'
         return f'{self.private_ip}{self.display_brief_audit()}'
+
+    def finding_description(self, _):
+        """
+        Return a description of the finding
+        """
+        if self.public:
+            return f'[Public] {self.public_ip} {self.private_ip}'
+        return f'[Private] {self.private_ip}'

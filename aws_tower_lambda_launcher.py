@@ -16,7 +16,7 @@ import boto3
 
 LOGGER = logging.getLogger('aws-tower-launcher')
 
-VERSION = '3.4.1'
+VERSION = '3.5.0'
 
 def call_lambda(row):
     """

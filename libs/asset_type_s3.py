@@ -145,3 +145,9 @@ class S3(AssetType):
         if self.public:
             is_public = '[Public] '
         return f'{is_public}{self.url} {" ".join(important_acls)}{self.display_brief_audit()}'
+
+    def finding_description(self, _):
+        """
+        Return a description of the finding
+        """
+        return self.report_brief()
