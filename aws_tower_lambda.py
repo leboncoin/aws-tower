@@ -31,7 +31,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '3.5.0'
+VERSION = '3.6.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -72,6 +72,7 @@ def main(account):
     try:
         assets = aws_scan(
             session,
+            action_passlist=variables.ACTION_PASSLIST,
             public_only=False,
             meta_types=variables.META_TYPES
         )

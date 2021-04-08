@@ -4,6 +4,15 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.6.0
+-----
+
+2021/04/08
+
+### New feature
+  - Add ACTION_PASSLIST to hide some legit actions
+  - Hide not roles without resources `'*'` to limit false positive
+
 3.5.0
 -----
 

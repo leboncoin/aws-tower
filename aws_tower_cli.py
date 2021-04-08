@@ -28,7 +28,7 @@ from config import variables
 # pylint: disable=logging-fstring-interpolation
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '3.5.0'
+VERSION = '3.6.0'
 
 def audit_handler(session, args, meta_types):
     """
@@ -36,6 +36,7 @@ def audit_handler(session, args, meta_types):
     """
     assets = aws_scan(
         session,
+        action_passlist=variables.ACTION_PASSLIST,
         public_only=False,
         meta_types=meta_types,
         name_filter=args.name
@@ -72,6 +73,7 @@ def discover_handler(session, args, meta_types):
     """
     assets = aws_scan(
         session,
+        action_passlist=variables.ACTION_PASSLIST,
         public_only=args.public_only,
         meta_types=meta_types,
         name_filter=args.name
@@ -97,7 +99,12 @@ def iam_handler(session, args):
     client_iam = session.client('iam')
     res_iam = session.resource('iam')
     if args.display:
-        iam_display(client_iam, res_iam, args.source, verbose=args.verbose)
+        iam_display(
+            client_iam,
+            res_iam,
+            args.source,
+            action_passlist=variables.ACTION_PASSLIST,
+            verbose=args.verbose)
     elif args.source and args.action:
         account_id = session.client('sts').get_caller_identity().get('Account')
         arn_list = iam_extract(args.source, account_id, verbose=args.verbose)
@@ -113,6 +120,7 @@ def iam_handler(session, args):
             args.source,
             args.min_rights,
             args.service,
+            action_passlist=variables.ACTION_PASSLIST,
             verbose=args.verbose)
 
 def main(verb, args):

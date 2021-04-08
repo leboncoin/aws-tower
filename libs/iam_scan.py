@@ -21,9 +21,22 @@ from .asset_type_iam import IAM
 LOGGER = logging.getLogger('aws-tower')
 
 
+def filter_actions(actions, passlist):
+    """
+    Return a filtered list of actions using the passlist
+    """
+    filtered_actions = []
+    for action in actions:
+        if ':' not in action or action.split(':')[0] not in passlist:
+            filtered_actions.append(action)
+    return filtered_actions
+
+
 def get_policy_from_rolepolicy(rolepolicy, account_id):
     """
     Return policies in a RolePolicy, in a specific accountId
+    Do not return:
+        - Actions without 'sts:AssumeRole'
     """
     arns = []
     statements = rolepolicy.policy_document['Statement']
@@ -45,6 +58,8 @@ def get_policy_from_rolepolicy(rolepolicy, account_id):
 def get_actions_from_rolepolicy(rolepolicy):
     """
     Return actions associated to a RolePolicy
+    Do not return:
+        - Resource != '*'
     """
     actions = []
     statements = rolepolicy.policy_document['Statement']
@@ -52,6 +67,9 @@ def get_actions_from_rolepolicy(rolepolicy):
         statements = [statements]
     for statement in statements:
         if 'Action' not in statement:
+            continue
+        # Hide non-global actions
+        if statement['Resource'] != '*':
             continue
         if isinstance(statement['Action'], str):
             actions.append(statement['Action'])
@@ -70,6 +88,9 @@ def get_actions_from_policy(client, policy):
         VersionId=policy.default_version_id)
     for statement in document['PolicyVersion']['Document']['Statement']:
         if 'Action' not in statement:
+            continue
+        # Hide non-global actions
+        if statement['Resource'] != '*':
             continue
         if isinstance(statement['Action'], str):
             actions.append(statement['Action'])
@@ -163,7 +184,12 @@ def iam_simulate(client, resource, source_arn, action, verbose=False):
     return False
 
 
-def iam_display(client, resource, arn, verbose=False):
+def iam_display(
+    client,
+    resource,
+    arn,
+    action_passlist=list(),
+    verbose=False):
     """
     Display information about the ARN
     """
@@ -184,6 +210,7 @@ def iam_display(client, resource, arn, verbose=False):
                 if verbose:
                     LOGGER.warning(f'Policy: {policy.arn}')
                 actions = [*actions, *get_actions_from_policy(client, policy)]
+            actions = filter_actions(actions, action_passlist)
             print(f'Actions: {set(actions)}')
 
 
@@ -204,9 +231,15 @@ def get_role_services(role):
     return services
 
 
-def iam_get_roles(client, resource, arn=None, service=None):
+def iam_get_roles(
+    client,
+    resource,
+    action_passlist=list(),
+    arn=None,
+    service=None):
     """
     Return all roles, with associated actions
+    Filter actions with the action_passlist
     """
     roles = []
     paginator = client.get_paginator('list_roles')
@@ -224,17 +257,29 @@ def iam_get_roles(client, resource, arn=None, service=None):
                 actions = [*actions, *get_actions_from_rolepolicy(rolepolicy)]
             for policy in resource.Role(role['RoleName']).attached_policies.all():
                 actions = [*actions, *get_actions_from_policy(client, policy)]
-            role_obj.actions = actions
+            role_obj.actions = filter_actions(actions, action_passlist)
             role_obj.simplify_actions()
             roles.append(role_obj)
     return roles
 
 
-def iam_display_roles(client, resource, arn, min_rights, service, verbose=False):
+def iam_display_roles(
+    client,
+    resource,
+    arn,
+    min_rights,
+    service,
+    action_passlist=list(),
+    verbose=False):
     """
     Display all roles actions
     """
-    roles = iam_get_roles(client, resource, arn, service)
+    roles = iam_get_roles(
+        client,
+        resource,
+        action_passlist=action_passlist,
+        arn=arn,
+        service=service)
     for role in roles:
         is_displayed = role.print_actions(min_rights)
         if verbose and is_displayed:

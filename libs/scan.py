@@ -191,6 +191,7 @@ def s3_scan(s_three, configuration, region, acls, public_only):
 
 def aws_scan(
     boto_session,
+    action_passlist=list(),
     public_only=False,
     meta_types=list(),
     name_filter=''):
@@ -228,7 +229,7 @@ def aws_scan(
         iamgroup = IAMGroup(name='IAM roles')
         client_iam = boto_session.client('iam')
         resource_iam = boto_session.resource('iam')
-        for role in iam_get_roles(client_iam, resource_iam):
+        for role in iam_get_roles(client_iam, resource_iam, action_passlist=action_passlist):
             if name_filter.lower() in role.arn.lower():
                 iamgroup.list.append(role)
         assets.append(iamgroup)
