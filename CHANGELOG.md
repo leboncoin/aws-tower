@@ -9,9 +9,12 @@ AWS-TOWER
 
 2021/04/08
 
-### New feature
+### New features
   - Add ACTION_PASSLIST to hide some legit actions
   - Hide not roles without resources `'*'` to limit false positive
+
+### Fixture
+  - Lambda: Block asset add in assetgroup is remote is empty (becaus of previous request failure)
 
 3.5.0
 -----
