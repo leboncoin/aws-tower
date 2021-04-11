@@ -1,5 +1,10 @@
 # AWS Tower
 
+AWS Tower give the ability to discover and monitor AWS account to find vulnerabilities or misconfigurations.
+Give also a brief overview for non-AWS expert.
+
+Not related at all of the AWS Trusted Advisor.
+
 ## Prerequisites
 
 ```bash
