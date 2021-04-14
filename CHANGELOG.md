@@ -4,6 +4,14 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.6.1
+-----
+
+2021/04/14
+
+### Fixture
+  - Fix missing 'Resource' parameter in policy statement
+
 3.6.0
 -----
 

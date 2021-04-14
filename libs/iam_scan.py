@@ -90,7 +90,7 @@ def get_actions_from_policy(client, policy):
         if 'Action' not in statement:
             continue
         # Hide non-global actions
-        if statement['Resource'] != '*':
+        if 'Resource' not in statement or statement['Resource'] != '*':
             continue
         if isinstance(statement['Action'], str):
             actions.append(statement['Action'])
