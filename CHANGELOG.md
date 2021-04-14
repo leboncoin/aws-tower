@@ -4,6 +4,14 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.6.2
+-----
+
+2021/04/14
+
+### Changes
+  - Strip too long finding title in Patrowl import and add a hashcode
+
 3.6.1
 -----
 

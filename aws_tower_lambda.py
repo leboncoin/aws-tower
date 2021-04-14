@@ -9,6 +9,7 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 """
 
 # Standard library imports
+from hashlib import sha256
 import logging
 import os
 import sys
@@ -31,7 +32,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '3.6.1'
+VERSION = '3.6.2'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -49,6 +50,12 @@ PATROWL_API = PatrowlManagerApi(
 )
 
 SESSION = Session()
+
+def hashcode(message):
+    """
+    Return the 8th first char of the sha256
+    """
+    return sha256(message.encode()).hexdigest()[:8]
 
 def main(account):
     """
@@ -124,7 +131,6 @@ def main(account):
                         is_new_finding = False
 
             if is_new_finding:
-                lost_asset = False
                 if is_new_asset:
                     LOGGER.warning(f'Add a new asset: {asset_patrowl_name}')
                     created_asset = add_asset(
@@ -143,6 +149,9 @@ def main(account):
                             asset.report_brief(),
                             'info')
                 LOGGER.warning(f"Add a {new_finding['severity']} finding: {new_finding['title']} for asset {asset_patrowl_name}")
+                # Strip finding title if too long and add a hashcode at the end
+                if len(new_finding['title']) > 150:
+                    new_finding['title'] = f'{new_finding["title"][:120]}... [{hashcode(new_finding["title"])}]'
                 add_finding(
                     PATROWL_API,
                     asset_id,
