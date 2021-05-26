@@ -32,7 +32,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '3.7.0'
+VERSION = '3.8.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -70,9 +70,12 @@ def main(account):
 
     aws_account_name = list(account.keys())[0]
     env = account['env']
+    region_name = None
+    if 'region_name' in account:
+        region_name = account['region_name']
     LOGGER.warning(f'Start scanning {aws_account_name=}, {env=}...')
     try:
-        session = get_session(account[aws_account_name])
+        session = get_session(account[aws_account_name], region_name)
     except Exception as err_msg:
         LOGGER.critical(f"Can't get session: {err_msg}")
         return
@@ -171,6 +174,6 @@ def main(account):
 def handler(event, context):
     """
     Specific entrypoint for lambda
-    event = { "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly", "env": "pro|pre|dev" }
+    event = { "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly", "env": "pro|pre|dev", "region_name": "eu-west-1" }
     """
     main(event)

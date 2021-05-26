@@ -4,6 +4,14 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.8.0
+-----
+
+2021/05/26
+
+### New feature
+  - Add region for lambda profile configuration
+
 3.7.0
 -----
 

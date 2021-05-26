@@ -12,7 +12,7 @@ import boto3
 
 PIVOTAL_ROLE = 'arn:aws:iam::xxxxxxxxxxxx:role/AWS-Tower'
 
-def get_session(role_arn):
+def get_session(role_arn, region_name):
     """
     Returns a session for the specified accountId
     """
@@ -46,5 +46,6 @@ def get_session(role_arn):
         aws_access_key_id=access_key,
         aws_secret_access_key=secret_key,
         aws_session_token=session_token,
+        region_name=region_name
     )
     return session
