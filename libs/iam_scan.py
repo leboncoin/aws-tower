@@ -21,6 +21,17 @@ from .asset_type_iam import IAM
 LOGGER = logging.getLogger('aws-tower')
 
 
+def complete_source_arn(session, arn):
+    """
+    Return a complete ARN if this is just a simple string
+    arn:partition:service:region:account-id:resource-type/resource-id
+    """
+    if IAM(arn=arn).is_valid():
+        return arn
+    account_id = session.client('sts').get_caller_identity().get('Account')
+    return f'arn:aws:iam::{account_id}:role/{arn}'
+
+
 def filter_actions(actions, passlist):
     """
     Return a filtered list of actions using the passlist

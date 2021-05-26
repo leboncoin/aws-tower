@@ -18,7 +18,7 @@ import boto3
 import botocore
 
 from libs.display import print_report, print_summary
-from libs.iam_scan import iam_display, iam_display_roles, iam_extract, iam_simulate
+from libs.iam_scan import complete_source_arn, iam_display, iam_display_roles, iam_extract, iam_simulate
 from libs.scan import aws_scan
 from config import variables
 
@@ -28,7 +28,7 @@ from config import variables
 # pylint: disable=logging-fstring-interpolation
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '3.6.2'
+VERSION = '3.7.0'
 
 def audit_handler(session, args, meta_types):
     """
@@ -96,6 +96,7 @@ def iam_handler(session, args):
     """
     Handle iam argument
     """
+    args.source = complete_source_arn(session, args.source)
     client_iam = session.client('iam')
     res_iam = session.resource('iam')
     if args.display:

@@ -32,7 +32,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '3.6.2'
+VERSION = '3.7.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -119,6 +119,13 @@ def main(account):
         for new_finding in asset.security_issues:
             is_new_finding = True
 
+            # Strip finding title too long
+            title_hashcode = hashcode(new_finding['title'])
+            if len(new_finding['title']) > 150:
+                new_finding['title'] = f'{new_finding["title"][:120]}...'
+            # Add a hashcode at the end
+            new_finding['title'] = f'{new_finding["title"]} [{title_hashcode}]'
+
             if new_finding['severity'] not in variables.ALERTING_SEVERITIES:
                 continue
 
@@ -149,9 +156,6 @@ def main(account):
                             asset.report_brief(),
                             'info')
                 LOGGER.warning(f"Add a {new_finding['severity']} finding: {new_finding['title']} for asset {asset_patrowl_name}")
-                # Strip finding title if too long and add a hashcode at the end
-                if len(new_finding['title']) > 150:
-                    new_finding['title'] = f'{new_finding["title"][:120]}... [{hashcode(new_finding["title"])}]'
                 add_finding(
                     PATROWL_API,
                     asset_id,

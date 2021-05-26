@@ -47,12 +47,16 @@ def add_in_assetgroup(patrowl_api, assetgroup_id, asset_ids):
     """
     Add assets in AssetGroup
     """
+    # If no new assets, do nothing
+    if not asset_ids:
+        return None
+
     new_assets_ids = asset_ids
 
     dst_assetgroup = patrowl_api.get_assetgroup_by_id(assetgroup_id)
     if len(dst_assetgroup) == 0:
         LOGGER.critical('Remote assetgroup empty, aborting...')
-        return
+        return None
     for current_asset in dst_assetgroup['assets']:
         new_assets_ids.append(current_asset['id'])
     patrowl_api.edit_assetgroup(

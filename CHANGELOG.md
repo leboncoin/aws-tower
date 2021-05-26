@@ -4,6 +4,22 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.7.0
+-----
+
+2021/04/20
+
+### Changes
+  - Can specify IAM resource-name only, not necessarily the complete ARN
+
+3.6.3
+-----
+
+2021/04/15
+
+### Changes
+  - Add hashcode for all findings
+
 3.6.2
 -----
 
