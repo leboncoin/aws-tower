@@ -14,6 +14,8 @@ import logging
 # Third party library imports
 import botocore
 
+from .asset_type_apigw import APIGW
+from .asset_type_cf import CloudFront
 from .asset_type_ec2 import EC2
 from .asset_type_elbv2 import ELBV2
 from .asset_type_iam_group import IAMGroup
@@ -89,6 +91,33 @@ def get_network(subnet_id, subnets_raw):
                 vpc = '-'.join(tag_name.split('-')[:-3])
                 subnet = _subnet['AvailabilityZone']
     return region, vpc, subnet
+
+def cloudfront_scan(cf_dist):
+    """
+    Scan CloudFront
+    """
+    if not cf_dist['Enabled']:
+        return None
+    aliases = []
+    if 'Aliases' in cf_dist and 'Items' in cf_dist['Aliases']:
+        aliases = cf_dist['Aliases']['Items']
+    authorization_types = []
+    if 'WebACLId' in cf_dist and cf_dist['WebACLId']:
+        authorization_types.append('WebACL')
+    if 'DefaultCacheBehavior' in cf_dist and \
+        'LambdaFunctionAssociations' in cf_dist['DefaultCacheBehavior'] and \
+        'Items' in cf_dist['DefaultCacheBehavior']['LambdaFunctionAssociations']:
+        for l_edge in cf_dist['DefaultCacheBehavior']['LambdaFunctionAssociations']['Items']:
+            # Suppose that an authentication lambda has "auth" in its name...
+            if 'auth' in l_edge['LambdaFunctionARN']:
+                authorization_types.append('Lambda')
+    if not authorization_types:
+        authorization_types = ['NONE']
+    return CloudFront(
+        cf_dist['DomainName'],
+        aliases,
+        authorization_types,
+        public=True)
 
 def ec2_scan(ec2, sg_raw, subnets_raw, public_only):
     """
@@ -189,6 +218,93 @@ def s3_scan(s_three, configuration, region, acls, public_only):
         return None
     return s3_asset
 
+def get_raw_data(boto_session, meta_types):
+    """
+    Returned raw data and authorization failure for logging
+    """
+    authorizations = {'apigw': True, 'cloudfront': True, 'ec2': True, 'elbv2': True, 'iam': True, 'rds': True, 's3': True, 'route53': True}
+    raw_data = dict()
+
+    ec2_client = boto_session.client('ec2')
+    try:
+        raw_data['ec2_raw'] = ec2_client.describe_instances()['Reservations']
+    except botocore.exceptions.ClientError:
+        raw_data['ec2_raw'] = []
+        authorizations['ec2'] = False
+    try:
+        raw_data['subnets_raw'] = ec2_client.describe_subnets()['Subnets']
+    except botocore.exceptions.ClientError:
+        raw_data['subnets_raw'] = list()
+        authorizations['ec2'] = False
+        authorizations['elbv2'] = False
+        authorizations['rds'] = False
+    try:
+        raw_data['sg_raw'] = ec2_client.describe_security_groups()['SecurityGroups']
+    except botocore.exceptions.ClientError:
+        raw_data['sg_raw'] = []
+        authorizations['ec2'] = False
+        authorizations['elbv2'] = False
+
+    if 'APIGW' in meta_types:
+        ag_client = boto_session.client('apigateway')
+        try:
+            raw_data['ag_raw'] = ag_client.get_rest_apis()['items']
+        except botocore.exceptions.ClientError:
+            raw_data['ag_raw'] = []
+            authorizations['apigw'] = False
+
+        agv2_client = boto_session.client('apigatewayv2')
+        raw_data['agv2_client'] = agv2_client
+        try:
+            raw_data['agv2_raw'] = agv2_client.get_apis()['Items']
+        except botocore.exceptions.ClientError:
+            raw_data['agv2_raw'] = []
+            authorizations['apigw'] = False
+
+    if 'CLOUDFRONT' in meta_types:
+        cf_client = boto_session.client('cloudfront')
+        try:
+            raw_data['cf_raw'] = cf_client.list_distributions()['DistributionList']
+        except botocore.exceptions.ClientError:
+            raw_data['cf_raw'] = []
+            authorizations['cloudfront'] = False
+
+    if 'ELBV2' in meta_types:
+        elbv2_client = boto_session.client('elbv2')
+        try:
+            raw_data['elbv2_raw'] = elbv2_client.describe_load_balancers()['LoadBalancers']
+        except botocore.exceptions.ClientError:
+            raw_data['elbv2_raw'] = []
+            authorizations['elbv2'] = False
+
+    if 'RDS' in meta_types:
+        rds_client = boto_session.client('rds')
+        try:
+            raw_data['rds_raw'] = rds_client.describe_db_instances()['DBInstances']
+        except botocore.exceptions.ClientError:
+            raw_data['rds_raw'] = []
+            authorizations['rds'] = False
+
+    if 'S3' in meta_types:
+        s3group = S3Group(name='S3 buckets')
+        s3_client = boto_session.client('s3')
+        raw_data['s3_client'] = s3_client
+        try:
+            raw_data['s3_list_buckets'] = s3_client.list_buckets()['Buckets']
+        except botocore.exceptions.ClientError:
+            raw_data['s3_list_buckets'] = []
+            authorizations['s3'] = False
+
+    raw_data['route53_client'] = boto_session.client('route53')
+
+    return raw_data, authorizations
+
+def log_authorization_errors(authorizations):
+    """
+    Print authorizations errors during scan
+    """
+    LOGGER.critical(f'A "False" suggest that something fail, too few authorizations?: {authorizations}')
+
 def aws_scan(
     boto_session,
     action_passlist=list(),
@@ -198,65 +314,101 @@ def aws_scan(
     """
     SCAN AWS
     """
-    ec2_client = boto_session.client('ec2')
-    ec2_raw = ec2_client.describe_instances()['Reservations']
-    subnets_raw = ec2_client.describe_subnets()['Subnets']
-    sg_raw = ec2_client.describe_security_groups()['SecurityGroups']
-    route53_client = boto_session.client('route53')
+    raw_data, authorizations = get_raw_data(boto_session, meta_types)
 
     assets = list()
 
+    if 'APIGW' in meta_types:
+        LOGGER.warning('Scanning API Gateway...')
+        for apigw in raw_data['ag_raw']:
+            is_public = 'REGIONAL' in apigw['endpointConfiguration']['types']
+            if public_only and not is_public:
+                continue
+            asset = APIGW(
+                apigw['name'],
+                apigw['id'],
+                boto_session.region_name,
+                [apigw['apiKeySource']],
+                public=is_public)
+            if asset is not None and name_filter.lower() in asset.name.lower():
+                assets.append(asset)
+        for apigw in raw_data['agv2_raw']:
+            authorization_types = []
+            try:
+                for route in raw_data['agv2_client'].get_routes(ApiId=apigw['ApiId'])['Items']:
+                    authorization_types.append(route['AuthorizationType'])
+            except botocore.exceptions.ClientError:
+                authorizations['apigw'] = False
+            asset = APIGW(
+                apigw['Name'],
+                apigw['ApiId'],
+                boto_session.region_name,
+                authorization_types,
+                public=True)
+            if asset is not None and name_filter.lower() in asset.name.lower():
+                assets.append(asset)
+
+    if 'CLOUDFRONT' in meta_types:
+        LOGGER.warning('Scanning Cloudfront...')
+        if 'Items' in raw_data['cf_raw']:
+            for cf_dist in raw_data['cf_raw']['Items']:
+                asset = cloudfront_scan(cf_dist)
+                if asset is not None and name_filter.lower() in asset.name.lower():
+                    assets.append(asset)
+
     if 'EC2' in meta_types:
-        for ec2 in ec2_raw:
+        LOGGER.warning('Scanning EC2...')
+        for ec2 in raw_data['ec2_raw']:
             for ec2_ in ec2['Instances']:
                 asset = ec2_scan(
                     ec2_,
-                    sg_raw,
-                    subnets_raw,
+                    raw_data['sg_raw'],
+                    raw_data['subnets_raw'],
                     public_only)
                 if asset is not None and name_filter.lower() in asset.name.lower():
                     assets.append(asset)
 
     if 'ELBV2' in meta_types:
-        elbv2_client = boto_session.client('elbv2')
-        elbv2_raw = elbv2_client.describe_load_balancers()['LoadBalancers']
-        for elbv2 in elbv2_raw:
-            asset = elbv2_scan(elbv2, sg_raw, subnets_raw, public_only)
+        LOGGER.warning('Scanning ELBv2...')
+        for elbv2 in raw_data['elbv2_raw']:
+            asset = elbv2_scan(elbv2, raw_data['sg_raw'], raw_data['subnets_raw'], public_only)
             if asset is not None and name_filter.lower() in asset.name.lower():
                 assets.append(asset)
 
     if 'IAM' in meta_types:
+        LOGGER.warning('Scanning IAM... (can be long)')
         iamgroup = IAMGroup(name='IAM roles')
         client_iam = boto_session.client('iam')
         resource_iam = boto_session.resource('iam')
-        for role in iam_get_roles(client_iam, resource_iam, action_passlist=action_passlist):
-            if name_filter.lower() in role.arn.lower():
-                iamgroup.list.append(role)
+        try:
+            for role in iam_get_roles(client_iam, resource_iam, action_passlist=action_passlist):
+                if name_filter.lower() in role.arn.lower():
+                    iamgroup.list.append(role)
+        except botocore.exceptions.ClientError:
+            authorizations['iam'] = False
         assets.append(iamgroup)
 
     if 'RDS' in meta_types:
-        rds_client = boto_session.client('rds')
-        rds_raw = rds_client.describe_db_instances()['DBInstances']
-        for rds in rds_raw:
+        LOGGER.warning('Scanning RDS...')
+        for rds in raw_data['rds_raw']:
             asset = rds_scan(
                 rds,
-                subnets_raw,
+                raw_data['subnets_raw'],
                 public_only)
             if asset is not None and name_filter.lower() in asset.name.lower():
                 assets.append(asset)
 
     if 'S3' in meta_types:
+        LOGGER.warning('Scanning S3...')
         s3group = S3Group(name='S3 buckets')
-        s3_client = boto_session.client('s3')
-        s3_list_buckets = s3_client.list_buckets()['Buckets']
-        for s_three in s3_list_buckets:
+        for s_three in raw_data['s3_list_buckets']:
             try:
-                public_access_block_configuration = s3_client.get_public_access_block(
+                public_access_block_configuration = raw_data['s3_client'].get_public_access_block(
                     Bucket=s_three['Name'])['PublicAccessBlockConfiguration']
             except botocore.exceptions.ClientError:
                 public_access_block_configuration = None
-            region = s3_client.get_bucket_location(Bucket=s_three['Name'])['LocationConstraint']
-            acls = s3_client.get_bucket_acl(Bucket=s_three['Name'])['Grants']
+            region = raw_data['s3_client'].get_bucket_location(Bucket=s_three['Name'])['LocationConstraint']
+            acls = raw_data['s3_client'].get_bucket_acl(Bucket=s_three['Name'])['Grants']
             s3bucket = s3_scan(
                 s_three['Name'],
                 public_access_block_configuration,
@@ -267,14 +419,21 @@ def aws_scan(
                 s3group.list.append(s3bucket)
         assets.append(s3group)
 
-    for hosted_zone in route53_client.list_hosted_zones()['HostedZones']:
-        for record in route53_client.list_resource_record_sets(
-            HostedZoneId=hosted_zone['Id'])['ResourceRecordSets']:
-            if 'ResourceRecords' in record:
-                for record_ in record['ResourceRecords']:
-                    if 'Value' not in record_:
-                        continue
-                    route53_scan(assets, record_['Value'], record)
-            elif 'AliasTarget' in record:
-                route53_scan(assets, record['AliasTarget']['DNSName'], record)
+    try:
+        LOGGER.warning('Scanning Route53...')
+        for hosted_zone in raw_data['route53_client'].list_hosted_zones()['HostedZones']:
+            for record in raw_data['route53_client'].list_resource_record_sets(
+                HostedZoneId=hosted_zone['Id'])['ResourceRecordSets']:
+                if 'ResourceRecords' in record:
+                    for record_ in record['ResourceRecords']:
+                        if 'Value' not in record_:
+                            continue
+                        route53_scan(assets, record_['Value'], record)
+                elif 'AliasTarget' in record:
+                    route53_scan(assets, record['AliasTarget']['DNSName'], record)
+    except botocore.exceptions.ClientError:
+        authorizations['route53'] = False
+
+    log_authorization_errors(authorizations)
+
     return assets

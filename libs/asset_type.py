@@ -27,7 +27,8 @@ class AssetType:
     """
     Asset Type
     """
-    def __init__(self, name: str, public: bool=False):
+    def __init__(self, aws_service: str, name: str, public: bool=False):
+        self.aws_service = aws_service
         self.name = name
         self.public = public
         self.location = Location()

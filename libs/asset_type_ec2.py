@@ -17,7 +17,7 @@ class EC2(AssetType):
     EC2 Asset Type
     """
     def __init__(self, name: str, private_ip: str, public: bool=False):
-        super().__init__(name, public=public)
+        super().__init__('EC2', name, public=public)
         self.private_ip = private_ip
         self.public_ip = ''
         self.security_groups = dict()

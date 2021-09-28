@@ -17,7 +17,7 @@ class ELBV2(AssetType):
     ELBv2 Asset Type
     """
     def __init__(self, name: str, scheme: str, public: bool=False):
-        super().__init__(name, public=public)
+        super().__init__('ELB', name, public=public)
         self.scheme = scheme
         self.security_groups = dict()
         self.dns_record = None

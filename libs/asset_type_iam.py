@@ -33,7 +33,7 @@ class IAM(AssetType):
     IAM Asset Type
     """
     def __init__(self, arn: str):
-        super().__init__(arn, public=False)
+        super().__init__('IAM role', arn, public=False)
         self.arn = arn
         self.actions = []
         self.admin_actions = None

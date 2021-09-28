@@ -1,4 +1,4 @@
-version: 3.5.0
+version: 3.9.0
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -266,11 +266,11 @@ types:
                 name: asset
                 value: asset
           - type: has_attribute_equal
-            description: Check if BlockPublicAcls is False
+            description: Check if BlockPublicAcls is false
             conditions:
               - type: constant
                 name: attribute_value
-                value: False
+                value: false
             data_sources:
               - type: attribute
                 name: attribute_value
@@ -297,11 +297,11 @@ types:
                 name: asset
                 value: asset
           - type: has_attribute_equal
-            description: Check if BlockPublicPolicy is False
+            description: Check if BlockPublicPolicy is false
             conditions:
               - type: constant
                 name: attribute_value
-                value: False
+                value: false
             data_sources:
               - type: attribute
                 name: attribute_value
@@ -328,11 +328,11 @@ types:
                 name: asset
                 value: asset
           - type: has_attribute_equal
-            description: Check if IgnorePublicAcls is False
+            description: Check if IgnorePublicAcls is false
             conditions:
               - type: constant
                 name: attribute_value
-                value: False
+                value: false
             data_sources:
               - type: attribute
                 name: attribute_value
@@ -359,11 +359,11 @@ types:
                 name: asset
                 value: asset
           - type: has_attribute_equal
-            description: Check if RestrictPublicBuckets is False
+            description: Check if RestrictPublicBuckets is false
             conditions:
               - type: constant
                 name: attribute_value
-                value: False
+                value: false
             data_sources:
               - type: attribute
                 name: attribute_value
@@ -430,6 +430,129 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.any_authenticated_users_grants
+      - message:
+          text: '[{service_name}] Public {service_type} with authentication'
+          args:
+            service_name:
+              type: attribute
+              key: name
+            service_type:
+              type: attribute
+              key: aws_service
+        severity: medium
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is public
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
+          - type: has_attribute
+            description: Check if authorization exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: authorization
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_equal
+            description: Check if the asset has_no_auth_endpoint is false
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: false
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: authorization.has_no_auth_endpoint
+      - message:
+          text: '[{service_name}] Public {service_type} without authentication'
+          args:
+            service_name:
+              type: attribute
+              key: name
+            service_type:
+              type: attribute
+              key: aws_service
+        severity: high
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is public
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
+          - type: has_attribute
+            description: Check if authorization exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: authorization
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_equal
+            description: Check if the asset has_no_auth_endpoint is true
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: authorization.has_no_auth_endpoint
+      - message:
+          text: '[{service_name}] Private {service_type} without authentication'
+          args:
+            service_name:
+              type: attribute
+              key: name
+            service_type:
+              type: attribute
+              key: aws_service
+        severity: high
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is public
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: false
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
+          - type: has_attribute
+            description: Check if authorization exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: authorization
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_equal
+            description: Check if the asset has_no_auth_endpoint is true
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: authorization.has_no_auth_endpoint
   #     - message:
   #         text: Deprecated mysql engine version ({current_version})
   #         args:

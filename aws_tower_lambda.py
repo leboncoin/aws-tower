@@ -22,7 +22,7 @@ from patrowl4py.api import PatrowlManagerApi
 from requests import Session
 
 # Own library and config files
-from libs.patrowl import add_asset, add_in_assetgroup, add_finding, get_assets, get_findings
+from libs.patrowl import add_asset, add_finding, get_findings
 from libs.scan import aws_scan
 from libs.session import get_session
 from config import variables
@@ -32,13 +32,10 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '3.8.0'
+VERSION = '3.10.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
-PATROWL['assetgroup_pro'] = int(os.environ['PATROWL_PRO_ASSETGROUP'])
-PATROWL['assetgroup_pre'] = int(os.environ['PATROWL_PRE_ASSETGROUP'])
-PATROWL['assetgroup_dev'] = int(os.environ['PATROWL_DEV_ASSETGROUP'])
 PATROWL['private_endpoint'] = os.environ['PATROWL_PRIVATE_ENDPOINT']
 PATROWL['public_endpoint'] = os.environ['PATROWL_PUBLIC_ENDPOINT']
 
@@ -73,7 +70,7 @@ def main(account):
     region_name = None
     if 'region_name' in account:
         region_name = account['region_name']
-    LOGGER.warning(f'Start scanning {aws_account_name=}, {env=}...')
+    LOGGER.warning(f'Start scanning {aws_account_name=}, {env=}, {region_name=}...')
     try:
         session = get_session(account[aws_account_name], region_name)
     except Exception as err_msg:
@@ -89,35 +86,23 @@ def main(account):
     except Exception as err_msg:
         LOGGER.critical(f"Can't parse report: {err_msg}")
         return
+    LOGGER.warning(f'Stop scanning {aws_account_name=}, {env=}, {region_name=}...')
 
-    patrowl_assets = get_assets(PATROWL_API, PATROWL[f'assetgroup_{env}'])
-    patrowl_all_assets = PATROWL_API.get_assets()
-    assets_to_add = []
+    patrowl_assets = PATROWL_API.get_assets()
+    count = 0
     for asset in assets:
+        count += 1
+        LOGGER.warning(f'Checking asset {count}/{len(assets)}: {asset.name}')
         asset.audit(security_config)
         asset_id = None
         asset_patrowl_name = f'[{aws_account_name}] {asset.name}'
 
         is_new_asset = True
-        is_lost_asset = False
         for patrowl_asset in patrowl_assets:
             if patrowl_asset['name'] == asset_patrowl_name:
                 is_new_asset = False
                 asset_id = patrowl_asset['id']
                 continue
-
-        # In some cases, the assets is not attached to the asset group
-        if is_new_asset:
-            for patrowl_asset in patrowl_all_assets:
-                if patrowl_asset['name'] == asset_patrowl_name:
-                    is_lost_asset = True
-                    is_new_asset = False
-                    asset_id = patrowl_asset['id']
-                    LOGGER.critical(f'asset {asset_patrowl_name} was lost..., {asset_id=}')
-
-        # List of asset id, added at the end
-        if is_new_asset or is_lost_asset:
-            assets_to_add.append(asset_id)
 
         for new_finding in asset.security_issues:
             is_new_finding = True
@@ -165,10 +150,6 @@ def main(account):
                     new_finding['title'],
                     asset.finding_description(new_finding['title']),
                     new_finding['severity'])
-    add_in_assetgroup(
-        PATROWL_API,
-        PATROWL[f'assetgroup_{env}'],
-        assets_to_add)
     return
 
 def handler(event, context):

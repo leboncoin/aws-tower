@@ -24,7 +24,7 @@ def print_report(assets, meta_types, brief=False, security_config=None):
     # Construct Region/VPC/subnet
     report = dict()
     for asset in assets:
-        if type(asset).__name__ not in meta_types:
+        if type(asset).__name__.upper() not in meta_types:
             continue
         if asset.location.region is None:
             continue

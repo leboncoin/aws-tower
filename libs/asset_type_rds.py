@@ -17,7 +17,7 @@ class RDS(AssetType):
     RDS Asset Type
     """
     def __init__(self, name: str, engine: str, url: str='', public: bool=False):
-        super().__init__(name, public=public)
+        super().__init__('RDS', name, public=public)
         self.engine = engine
         self.url = url
 

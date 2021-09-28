@@ -4,6 +4,27 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.10.0
+-----
+
+2021/09/28
+
+### New feature
+  - Display errors if user with few authorizations
+  - Add welcome logging
+
+3.9.0
+-----
+
+2021/05/28
+
+### New feature
+  - Add API GATEWAY monitoring
+  - Add CloudFront monitoring
+
+### Changes
+  - [Lambda] Add in assetgroup in the laucher directly, before starting every sub lambdas
+
 3.8.0
 -----
 

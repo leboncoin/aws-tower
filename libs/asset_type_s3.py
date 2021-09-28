@@ -53,7 +53,7 @@ class S3(AssetType):
     S3 Asset Type
     """
     def __init__(self, name: str, url: str):
-        super().__init__(name)
+        super().__init__('S3 bucket', name)
         self.url = url
         self.acls = S3Acl()
 

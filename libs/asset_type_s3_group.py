@@ -22,7 +22,7 @@ class S3Group(AssetType):
     S3Group Asset Type
     """
     def __init__(self, name: str):
-        super().__init__(name)
+        super().__init__('S3 buckets', name)
         self.list = []
 
     def audit(self, security_config):

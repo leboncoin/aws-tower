@@ -6,17 +6,81 @@ Copyright 2020-2021 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
+# Standard library imports
 from configparser import ConfigParser
 import json
 import logging
-
+import os
+import sys
 import boto3
+
+# Third party library imports
+sys.path.append('package')
+from patrowl4py.api import PatrowlManagerApi
+
+# Own library and config files
+from libs.patrowl import add_in_assetgroup
 
 # pylint: disable=logging-fstring-interpolation
 
 LOGGER = logging.getLogger('aws-tower-launcher')
 
-VERSION = '3.8.0'
+VERSION = '3.10.0'
+
+PATROWL = dict()
+PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
+PATROWL['assetgroup_dev'] = int(os.environ['PATROWL_DEV_ASSETGROUP'])
+PATROWL['assetgroup_pre'] = int(os.environ['PATROWL_PRE_ASSETGROUP'])
+PATROWL['assetgroup_pro'] = int(os.environ['PATROWL_PRO_ASSETGROUP'])
+PATROWL['private_endpoint'] = os.environ['PATROWL_PRIVATE_ENDPOINT']
+PATROWL['public_endpoint'] = os.environ['PATROWL_PUBLIC_ENDPOINT']
+
+LOGGER = logging.getLogger('aws-tower')
+
+PATROWL_API = PatrowlManagerApi(
+    url=PATROWL['private_endpoint'],
+    auth_token=PATROWL['api_token']
+)
+
+def organize_assetgroups(config):
+    """
+    Organize all assetgroups by adding automatically all assets
+    This will be done once, not in every call_lambda.
+    A Patrowl call is long and add latencies in every lambdas...
+    """
+    patrowl_assets = PATROWL_API.get_assets()
+    assetgroup = dict()
+    assetgroup['dev'] = list()
+    assetgroup['pre'] = list()
+    assetgroup['pro'] = list()
+    for asset in patrowl_assets:
+        for profile in config.sections():
+            if not is_config_ok(config, profile):
+                continue
+            aws_account_name = profile.split()[1]
+            if asset['name'].startswith(f'[{aws_account_name}]'):
+                assetgroup[config[profile]['env']].append(asset['id'])
+    for env in assetgroup:
+        add_in_assetgroup(
+            PATROWL_API,
+            PATROWL[f'assetgroup_{env}'],
+            assetgroup[env])
+        LOGGER.warning(f'Add these IDs in {env}: {assetgroup[env]}')
+
+def is_config_ok(config, profile):
+    """
+    Return True if the profile configuration is ok
+    """
+    if not profile.startswith('profile '):
+        LOGGER.critical(f'Profile {profile} is malformed...')
+        return False
+    if 'role_arn' not in config[profile]:
+        LOGGER.critical(f'No role_arn in {profile}')
+        return False
+    if 'env' not in config[profile]:
+        LOGGER.critical(f'No env in {profile}')
+        return False
+    return True
 
 def call_lambda(row):
     """
@@ -40,17 +104,11 @@ def main():
     """
     config = ConfigParser()
     config.read('config/lambda.config')
+    organize_assetgroups(config)
     for profile in config.sections():
-        if not profile.startswith('profile '):
-            LOGGER.critical(f'Profile {profile} is malformed...')
+        if not is_config_ok(config, profile):
             continue
         aws_account_name = profile.split()[1]
-        if 'role_arn' not in config[profile]:
-            LOGGER.critical(f'No role_arn in {profile}')
-            continue
-        if 'env' not in config[profile]:
-            LOGGER.critical(f'No env in {profile}')
-            continue
         payload = {aws_account_name: config[profile]['role_arn'], 'env': config[profile]['env']}
         LOGGER.warning(payload)
         call_lambda(payload)

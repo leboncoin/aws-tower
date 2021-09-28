@@ -28,7 +28,7 @@ from config import variables
 # pylint: disable=logging-fstring-interpolation
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '3.8.0'
+VERSION = '3.10.0'
 
 def audit_handler(session, args, meta_types):
     """
@@ -144,6 +144,8 @@ def main(verb, args):
                 sys.exit(1)
             if meta_type.upper() not in meta_types:
                 meta_types.append(meta_type.upper())
+    LOGGER.warning(f'Welcome "{session.client("sts").get_caller_identity()["Arn"]}" !')
+    LOGGER.warning(f'Scan type: {verb}, Profile: {args.profile}, Region: {session.region_name}')
 
     if verb == 'audit':
         audit_handler(session, args, meta_types)
