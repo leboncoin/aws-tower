@@ -25,7 +25,7 @@ from libs.patrowl import add_in_assetgroup
 
 LOGGER = logging.getLogger('aws-tower-launcher')
 
-VERSION = '3.10.0'
+VERSION = '3.10.1'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']

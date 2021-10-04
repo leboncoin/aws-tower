@@ -4,6 +4,14 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.10.1
+-----
+
+2021/10/04
+
+### Fixture
+  - Fix unknown region/vpc/subnet if token lacks permissions
+
 3.10.0
 -----
 

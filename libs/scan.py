@@ -82,6 +82,9 @@ def get_network(subnet_id, subnets_raw):
     """
     Get simple name for vpc and subnet
     """
+    region = 'unknown'
+    vpc = 'unknown'
+    subnet = 'unknown'
     for _subnet in subnets_raw:
         if _subnet['SubnetId'] == subnet_id:
             region = _subnet['AvailabilityZone'][:-1]
