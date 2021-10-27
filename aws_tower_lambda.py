@@ -32,7 +32,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '3.10.1'
+VERSION = '3.11.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -67,10 +67,11 @@ def main(account):
 
     aws_account_name = list(account.keys())[0]
     env = account['env']
+    meta_types = account['meta_types']
     region_name = None
     if 'region_name' in account:
         region_name = account['region_name']
-    LOGGER.warning(f'Start scanning {aws_account_name=}, {env=}, {region_name=}...')
+    LOGGER.warning(f'Start scanning {aws_account_name=}, {env=}, {region_name=}, {meta_types=}...')
     try:
         session = get_session(account[aws_account_name], region_name)
     except Exception as err_msg:
@@ -79,9 +80,10 @@ def main(account):
     try:
         assets = aws_scan(
             session,
-            action_passlist=variables.ACTION_PASSLIST,
+            iam_action_passlist=variables.IAM_ACTION_PASSLIST,
+            iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             public_only=False,
-            meta_types=variables.META_TYPES
+            meta_types=meta_types
         )
     except Exception as err_msg:
         LOGGER.critical(f"Can't parse report: {err_msg}")
@@ -152,9 +154,10 @@ def main(account):
                     new_finding['severity'])
     return
 
+
 def handler(event, context):
     """
     Specific entrypoint for lambda
-    event = { "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly", "env": "pro|pre|dev", "region_name": "eu-west-1" }
+    event = { "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly", "env": "pro|pre|dev", "region_name": "eu-west-1", "meta_types": ["S3", "..."] }
     """
     main(event)

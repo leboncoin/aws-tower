@@ -199,7 +199,8 @@ def iam_display(
     client,
     resource,
     arn,
-    action_passlist=list(),
+    iam_action_passlist=list(),
+    iam_rolename_passlist=list(),
     verbose=False):
     """
     Display information about the ARN
@@ -210,6 +211,8 @@ def iam_display(
     if iam_obj.resource_type == 'role':
         role_info = get_role_from_arn(client, arn)
         if role_info is not None:
+            if role_info['RoleName'] in iam_rolename_passlist:
+                return
             print(f'Role Name: {role_info["RoleName"]}')
             role = resource.Role(role_info['RoleName'])
             actions = []
@@ -221,7 +224,7 @@ def iam_display(
                 if verbose:
                     LOGGER.warning(f'Policy: {policy.arn}')
                 actions = [*actions, *get_actions_from_policy(client, policy)]
-            actions = filter_actions(actions, action_passlist)
+            actions = filter_actions(actions, iam_action_passlist)
             print(f'Actions: {set(actions)}')
 
 
@@ -245,7 +248,8 @@ def get_role_services(role):
 def iam_get_roles(
     client,
     resource,
-    action_passlist=list(),
+    iam_action_passlist=list(),
+    iam_rolename_passlist=list(),
     arn=None,
     service=None):
     """
@@ -263,12 +267,14 @@ def iam_get_roles(
             role_obj = IAM(arn=role['Arn'])
             if role_obj.resource_id in ['aws-reserved', 'aws-service-role', 'service-role']:
                 continue
+            if role['RoleName'] in iam_rolename_passlist:
+                continue
             actions = []
             for rolepolicy in resource.Role(role['RoleName']).policies.all():
                 actions = [*actions, *get_actions_from_rolepolicy(rolepolicy)]
             for policy in resource.Role(role['RoleName']).attached_policies.all():
                 actions = [*actions, *get_actions_from_policy(client, policy)]
-            role_obj.actions = filter_actions(actions, action_passlist)
+            role_obj.actions = filter_actions(actions, iam_action_passlist)
             role_obj.simplify_actions()
             roles.append(role_obj)
     return roles
@@ -280,7 +286,8 @@ def iam_display_roles(
     arn,
     min_rights,
     service,
-    action_passlist=list(),
+    iam_action_passlist=list(),
+    iam_rolename_passlist=list(),
     verbose=False):
     """
     Display all roles actions
@@ -288,7 +295,8 @@ def iam_display_roles(
     roles = iam_get_roles(
         client,
         resource,
-        action_passlist=action_passlist,
+        iam_action_passlist=iam_action_passlist,
+        iam_rolename_passlist=iam_rolename_passlist,
         arn=arn,
         service=service)
     for role in roles:

@@ -23,4 +23,22 @@ FINDING_RULES_PATH = ROOT_PATH / 'config' / 'rules.yaml'
 
 META_TYPES = ['APIGW', 'CLOUDFRONT', 'EC2', 'ELBV2', 'IAM', 'RDS', 'S3']
 
-ACTION_PASSLIST = ['ec2messages', 'logs', 'ssm', 'ssmmessages']
+IAM_ACTION_PASSLIST = ['ec2messages', 'logs', 'ssm', 'ssmmessages']
+
+IAM_ROLENAME_PASSLIST = [
+    'AccountManagementRole',
+    'admin',
+    'awx-baseami-lambda-role',
+    'data-lifecycle-manager',
+    'ebs-auto-tagging-lambda-role',
+    'GovernanceExecutionRole',
+    'govrnance-conrad-janitor-role',
+    'GSN',
+    'GSNRole',
+    'lambda-scheduler-start-scheduler-lambda',
+    'lambda-scheduler-stop-scheduler-lambda',
+    'PayerAccountAccessRole',
+    'poweruser',
+    'readonly',
+    'SchibstedSecurityAuditRole'
+]

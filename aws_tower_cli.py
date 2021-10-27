@@ -28,7 +28,7 @@ from config import variables
 # pylint: disable=logging-fstring-interpolation
 
 LOGGER = logging.getLogger('aws-tower')
-VERSION = '3.10.1'
+VERSION = '3.11.0'
 
 def audit_handler(session, args, meta_types):
     """
@@ -36,7 +36,8 @@ def audit_handler(session, args, meta_types):
     """
     assets = aws_scan(
         session,
-        action_passlist=variables.ACTION_PASSLIST,
+        iam_action_passlist=variables.IAM_ACTION_PASSLIST,
+        iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
         public_only=False,
         meta_types=meta_types,
         name_filter=args.name
@@ -73,7 +74,8 @@ def discover_handler(session, args, meta_types):
     """
     assets = aws_scan(
         session,
-        action_passlist=variables.ACTION_PASSLIST,
+        iam_action_passlist=variables.IAM_ACTION_PASSLIST,
+        iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
         public_only=args.public_only,
         meta_types=meta_types,
         name_filter=args.name
@@ -104,7 +106,8 @@ def iam_handler(session, args):
             client_iam,
             res_iam,
             args.source,
-            action_passlist=variables.ACTION_PASSLIST,
+            iam_action_passlist=variables.IAM_ACTION_PASSLIST,
+            iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             verbose=args.verbose)
     elif args.source and args.action:
         account_id = session.client('sts').get_caller_identity().get('Account')
@@ -121,7 +124,8 @@ def iam_handler(session, args):
             args.source,
             args.min_rights,
             args.service,
-            action_passlist=variables.ACTION_PASSLIST,
+            iam_action_passlist=variables.IAM_ACTION_PASSLIST,
+            iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             verbose=args.verbose)
 
 def main(verb, args):

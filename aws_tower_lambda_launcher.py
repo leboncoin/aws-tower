@@ -20,12 +20,13 @@ from patrowl4py.api import PatrowlManagerApi
 
 # Own library and config files
 from libs.patrowl import add_in_assetgroup
+from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
 LOGGER = logging.getLogger('aws-tower-launcher')
 
-VERSION = '3.10.1'
+VERSION = '3.11.0'
 
 PATROWL = dict()
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -102,16 +103,21 @@ def main():
     """
     Main function
     """
-    config = ConfigParser()
+    config = ConfigParser(strict=False)
     config.read('config/lambda.config')
     organize_assetgroups(config)
     for profile in config.sections():
         if not is_config_ok(config, profile):
             continue
         aws_account_name = profile.split()[1]
-        payload = {aws_account_name: config[profile]['role_arn'], 'env': config[profile]['env']}
-        LOGGER.warning(payload)
-        call_lambda(payload)
+        for meta_type in variables.META_TYPES:
+            payload = {
+                aws_account_name: config[profile]['role_arn'],
+                'env': config[profile]['env'],
+                'meta_types': [meta_type]
+            }
+            LOGGER.warning(payload)
+            call_lambda(payload)
 
 
 def handler(event, context):

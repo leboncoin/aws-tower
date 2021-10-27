@@ -25,7 +25,7 @@ from .asset_type_s3_group import S3Group
 from .iam_scan import iam_get_roles
 
 # Debug
-# from pdb import set_trace as st
+from pdb import set_trace as st
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -90,9 +90,6 @@ def get_network(subnet_id, subnets_raw):
             region = _subnet['AvailabilityZone'][:-1]
             vpc = _subnet['VpcId']
             subnet = _subnet['SubnetId']
-            if tag_name := get_tag(_subnet['Tags'], 'Name'):
-                vpc = '-'.join(tag_name.split('-')[:-3])
-                subnet = _subnet['AvailabilityZone']
     return region, vpc, subnet
 
 def cloudfront_scan(cf_dist):
@@ -122,10 +119,11 @@ def cloudfront_scan(cf_dist):
         authorization_types,
         public=True)
 
-def ec2_scan(ec2, sg_raw, subnets_raw, public_only):
+def ec2_scan(ec2, sg_raw, subnets_raw, boto_session, public_only):
     """
     Scan EC2
     """
+    ec2_res = boto_session.resource('ec2')
     if 'VpcId' not in ec2 or 'SubnetId' not in ec2:
         return None
     if public_only and not 'PublicIpAddress' in ec2:
@@ -138,6 +136,11 @@ def ec2_scan(ec2, sg_raw, subnets_raw, public_only):
     ec2_asset.location.region = region
     ec2_asset.location.vpc = vpc
     ec2_asset.location.subnet = subnet
+    if 'ImageId' in ec2:
+        try:
+            ec2_asset.os = ec2_res.Image(ec2['ImageId']).platform_details
+        except:
+            pass
     if 'Tags' in ec2:
         ec2_asset.name = get_tag(ec2['Tags'], 'Name')
     if 'PublicIpAddress' in ec2:
@@ -310,7 +313,8 @@ def log_authorization_errors(authorizations):
 
 def aws_scan(
     boto_session,
-    action_passlist=list(),
+    iam_action_passlist=list(),
+    iam_rolename_passlist=list(),
     public_only=False,
     meta_types=list(),
     name_filter=''):
@@ -367,6 +371,7 @@ def aws_scan(
                     ec2_,
                     raw_data['sg_raw'],
                     raw_data['subnets_raw'],
+                    boto_session,
                     public_only)
                 if asset is not None and name_filter.lower() in asset.name.lower():
                     assets.append(asset)
@@ -384,7 +389,10 @@ def aws_scan(
         client_iam = boto_session.client('iam')
         resource_iam = boto_session.resource('iam')
         try:
-            for role in iam_get_roles(client_iam, resource_iam, action_passlist=action_passlist):
+            for role in iam_get_roles(
+                client_iam, resource_iam,
+                iam_action_passlist=iam_action_passlist,
+                iam_rolename_passlist=iam_rolename_passlist):
                 if name_filter.lower() in role.arn.lower():
                     iamgroup.list.append(role)
         except botocore.exceptions.ClientError:

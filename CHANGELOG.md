@@ -4,6 +4,15 @@ CHANGELOG
 AWS-TOWER
 -----
 
+3.11.0
+-----
+
+2021/10/04
+
+### New feature
+  - Add IAM_ROLENAME_PASSLIST to reduce noise
+  - Lambda: Can limite meta-type check for each account
+
 3.10.1
 -----
 
