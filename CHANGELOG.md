@@ -11,6 +11,7 @@ AWS-TOWER
 
 ### New feature
   - Rich color for the CLI
+  - Add RDS version alerting: mariadb, postgres, mysql, sqlserver-se (mssql)
 
 ### Changes
   - Remove not vuln members in assetgroup (IAM and S3)

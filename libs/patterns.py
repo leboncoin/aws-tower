@@ -107,7 +107,7 @@ class Patterns:
             'conditions': ['is_ports']
         },
         'engine_deprecated_version': {
-            'data_sources': ['engine'],
+            'data_sources': ['attribute_value'],
             'conditions': ['engine_name', 'versions']
         }
     }
@@ -457,28 +457,50 @@ class Patterns:
         :return: True if the engine version is deprecated
         :rtype: bool
         """
-        if len(data_sources['engine'].split('==')) < 2:
-            self._logger.debug(f'Wrong format for {data_sources["engine"]}')
+        if len(data_sources['attribute_value'].split('==')) < 2:
+            self._logger.debug(f'Wrong format for {data_sources["attribute_value"]}')
             return False
-        engine_name, current_version = data_sources['engine'].split('==')
+        engine_name, current_version = data_sources['attribute_value'].split('==')
         if conditions['engine_name'] != engine_name:
             return False
         current_version = LooseVersion(current_version)
-        min_version = None
-        versions = []
-        for min_version_allowed in conditions['versions']:
-            version = LooseVersion(min_version_allowed)
-            if min_version is None:
-                min_version = version
-            elif version < min_version:
-                min_version = version
-            else:
-                versions.append(version)
-        # Compare only if major version match
-        for version in versions:
-            if version.version[0] == current_version.version[0]:
-                return current_version < version
-        return current_version < min_version
+        previous_version = LooseVersion('0')
+        next_version = LooseVersion('999')
+        # Get previous and next version
+        for i in conditions['versions']:
+            version = LooseVersion(i)
+            # If this is the perfect match, it's not deprecated
+            if version == current_version:
+                return False
+            if next_version > version > current_version:
+                next_version = version
+            elif previous_version < version < current_version:
+                previous_version = version
+
+        # There is no previous version, it's deprecated
+        if previous_version == LooseVersion('0'):
+            return True
+
+        # Check how much sub version matches, longest is closest
+        for i in range(min(len(previous_version.version), len(current_version.version), len(next_version.version))):
+            # Undetermine, but the current version could be latest
+            if previous_version.version[i] != current_version.version[i] != next_version.version[i]:
+                if next_version == LooseVersion('999'):
+                    return False
+                self._logger.error(f'Unable to determine the version to compare...{previous_version=}{current_version=}{next_version=}')
+                return False
+            if previous_version.version[i] == current_version.version[i] == next_version.version[i]:
+                continue
+            # The only option, is to have a version that is closest to the current version
+            # This case, the previous version can be compared,
+            # and is below our current version, not deprecated
+            if previous_version.version[i] == current_version.version[i]:
+                return False
+            # At the opposite, the next version is the closest, but the current version
+            # is below, this is deprecated
+            return True
+        self._logger.error(f'Unable to determine the version to compare...{previous_version=}{current_version=}{next_version=}')
+        return False
 
     def _generate_report_message(self, message, severity, kwargs):
         """Generate a message for the report

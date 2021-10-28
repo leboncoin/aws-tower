@@ -156,6 +156,9 @@ def main(verb, args):
         identity = session.client("sts").get_caller_identity()['Arn']
     except:
         CONSOLE.print('[red]Can\'t get the caller identity...')
+    if session.region_name is None:
+        CONSOLE.print('[red]No region defined, take a look at the ~/.aws/config file')
+        sys.exit(1)
     CONSOLE.print(f'[white]Welcome [bold]{identity}[/bold] !')
     CONSOLE.print(f'[white]Scan type: [bold]{verb}[/bold], Profile: [bold]{args.profile}[/bold], Region: [bold]{session.region_name}')
 
