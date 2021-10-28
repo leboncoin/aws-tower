@@ -15,6 +15,7 @@ AWS-TOWER
 
 ### Changes
   - Remove not vuln members in assetgroup (IAM and S3)
+  - DnsRecord severity changes from medium to low
 
 ### Fixture
   - Avoid crash if sts get caller identity fails
