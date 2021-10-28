@@ -138,12 +138,12 @@ class S3(AssetType):
         """
         important_acls = []
         if self.acls.all_users_grants:
-            important_acls.append(f'[ALL {self.acls.all_users_grants}]')
+            important_acls.append(f'<ALL {self.acls.all_users_grants}>')
         if self.acls.any_authenticated_users_grants:
-            important_acls.append(f'[AWS Auth {self.acls.any_authenticated_users_grants}]')
+            important_acls.append(f'<AWS Auth {self.acls.any_authenticated_users_grants}>')
         is_public = ''
         if self.public:
-            is_public = '[Public] '
+            is_public = '<Public> '
         return f'{is_public}{self.url} {" ".join(important_acls)}{self.display_brief_audit()}'
 
     def finding_description(self, _):

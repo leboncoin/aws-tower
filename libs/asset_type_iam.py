@@ -80,7 +80,7 @@ class IAM(AssetType):
         Simplify the actions and regroupe in a way to understand actions
         admin > poweruser (write|delete|update) > reader > lister
         """
-        types = dict()
+        types = {}
         poweruser_multi_verbs = ['GitPush']
         readers_verb = [
             'Batch', 'Check', 'Compare', 'Count', 'Describe', 'Detect', 'Discover',

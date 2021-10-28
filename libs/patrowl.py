@@ -34,7 +34,7 @@ def get_assets(patrowl_api, assetgroup_id):
     Get assets from AssetGroup
     """
     assets_list = []
-    assets = list()
+    assets = []
     assetgroup = patrowl_api.get_assetgroup_by_id(assetgroup_id)
     assets += sorted(assetgroup['assets'], key=lambda k: k['id'], reverse=True)
     for asset in assets:

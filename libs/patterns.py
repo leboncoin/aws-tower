@@ -60,9 +60,9 @@ class Patterns:
     :param max_severity: Maximum level of severity (critical for example) to check
     :type max_severity: str
     """
-    _patterns = list()
+    _patterns = []
     _ports_range = re.compile(r'^(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])(?:-(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5]))?$')
-    _severity_levels = dict()
+    _severity_levels = {}
     _min_severity = 0
     _max_severity = 0
     _rules_definitions = {
@@ -146,7 +146,7 @@ class Patterns:
             self._max_severity = 0
         if self._max_severity < self._min_severity:
             raise Exception(f'Error: min severity ({min_severity}) higher than max severity ({max_severity})')
-        self.subnet_allow_list = list()
+        self.subnet_allow_list = []
         allow_list_path = Path('config/subnet_allow_list.txt')
         if allow_list_path.exists():
             with allow_list_path.open() as allow_list:
@@ -166,7 +166,7 @@ class Patterns:
         :rtype: dict, bool
         """
         self._logger.debug(f'Preparing arguments: {arguments}')
-        prepared_arguments = dict()
+        prepared_arguments = {}
         for argument in arguments:
             if argument['type'] == 'constant':
                 prepared_arguments[argument['name']] = argument['value']
@@ -465,7 +465,7 @@ class Patterns:
             return False
         current_version = LooseVersion(current_version)
         min_version = None
-        versions = list()
+        versions = []
         for min_version_allowed in conditions['versions']:
             version = LooseVersion(min_version_allowed)
             if min_version is None:
@@ -491,7 +491,7 @@ class Patterns:
         :return: Message generated
         :rtype: dict
         """
-        report_message = dict()
+        report_message = {}
         if isinstance(message, str):
             report_message = {
                 'title': f'{message}',
@@ -499,7 +499,7 @@ class Patterns:
             }
             return report_message
         try:
-            args = dict()
+            args = {}
             for key, value in message['args'].items():
                 if value['type'] == 'dict':
                     if value['variable'] in kwargs:
@@ -558,7 +558,7 @@ class Patterns:
         if findings_rules is False:
             self._logger.debug(f'Unable to find findings rules for {findings_type}')
             return False
-        report = list()
+        report = []
         for finding in findings_rules:
             finding_found = False
             if finding['severity'] in self._severity_levels and \
@@ -616,7 +616,7 @@ class Patterns:
         """
         if len(self._patterns) == 0:
             return list()
-        report = list()
+        report = []
         if hasattr(asset, 'security_groups'):
             for sg_name, sg_rules in asset.security_groups.items():
                 for ports, sources in sg_rules.items():
@@ -644,7 +644,7 @@ class Patterns:
         :return: Report generated
         :rtype: list()
         """
-        report = list()
+        report = []
         report += self.extract_findings_from_security_groups(asset)
         return report
 

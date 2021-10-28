@@ -32,9 +32,9 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '3.11.0'
+VERSION = '4.0.0'
 
-PATROWL = dict()
+PATROWL = {}
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
 PATROWL['private_endpoint'] = os.environ['PATROWL_PRIVATE_ENDPOINT']
 PATROWL['public_endpoint'] = os.environ['PATROWL_PUBLIC_ENDPOINT']

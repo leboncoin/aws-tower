@@ -71,6 +71,7 @@ def get_actions_from_rolepolicy(rolepolicy):
     Return actions associated to a RolePolicy
     Do not return:
         - Resource != '*'
+        - NotResource
     """
     actions = []
     statements = rolepolicy.policy_document['Statement']
@@ -78,6 +79,9 @@ def get_actions_from_rolepolicy(rolepolicy):
         statements = [statements]
     for statement in statements:
         if 'Action' not in statement:
+            continue
+        # Hide NotResource type
+        if 'Resource' not in statement:
             continue
         # Hide non-global actions
         if statement['Resource'] != '*':

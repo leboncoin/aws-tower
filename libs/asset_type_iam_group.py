@@ -7,15 +7,14 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
-# Standard library imports
-import logging
+# Third party library imports
+import botocore
 
 from .asset_type import AssetType
+from .iam_scan import iam_get_roles
 
 # Debug
 # from pdb import set_trace as st
-
-LOGGER = logging.getLogger('aws-tower')
 
 class IAMGroup(AssetType):
     """
@@ -71,3 +70,34 @@ class IAMGroup(AssetType):
             if iam.resource_id == resource_id:
                 return iam.finding_description(resource_id)
         return 'IAM role not found...'
+
+    def remove_not_vulnerable_members(self):
+        """
+        Remove the non vulnerable members in the AssetGroup.
+        """
+        new_list = []
+        for iam in self.list:
+            if iam.security_issues:
+                new_list.append(iam)
+        self.list = new_list
+        return True
+
+def parse_raw_data(assets, authorizations, boto_session, iam_action_passlist, iam_rolename_passlist, name_filter):
+    """
+    Parsing the raw data to extracts assets,
+    enrich the assets list and add a 'False' in authorizations in case of errors
+    """
+    iamgroup = IAMGroup(name='IAM roles')
+    client_iam = boto_session.client('iam')
+    resource_iam = boto_session.resource('iam')
+    try:
+        for role in iam_get_roles(
+            client_iam, resource_iam,
+            iam_action_passlist=iam_action_passlist,
+            iam_rolename_passlist=iam_rolename_passlist):
+            if name_filter.lower() in role.arn.lower():
+                iamgroup.list.append(role)
+    except botocore.exceptions.ClientError:
+        authorizations['iam'] = False
+    assets.append(iamgroup)
+    return assets, authorizations

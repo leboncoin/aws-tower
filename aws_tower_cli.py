@@ -10,12 +10,12 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 
 # Standard library imports
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-import logging
 import sys
 
 # Third party library imports
 import boto3
 import botocore
+from rich import console
 
 from libs.display import print_report, print_summary
 from libs.iam_scan import complete_source_arn, iam_display, iam_display_roles, iam_extract, iam_simulate
@@ -27,8 +27,8 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-LOGGER = logging.getLogger('aws-tower')
-VERSION = '3.11.0'
+CONSOLE = console.Console()
+VERSION = '4.0.0'
 
 def audit_handler(session, args, meta_types):
     """
@@ -40,7 +40,8 @@ def audit_handler(session, args, meta_types):
         iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
         public_only=False,
         meta_types=meta_types,
-        name_filter=args.name
+        name_filter=args.name,
+        console=CONSOLE
     )
     min_severity = list(variables.SEVERITY_LEVELS.keys())[0]
     max_severity = list(variables.SEVERITY_LEVELS.keys())[-1]
@@ -58,12 +59,14 @@ def audit_handler(session, args, meta_types):
         print_summary(
             assets,
             variables.META_TYPES,
+            CONSOLE,
             security_config
         )
     else:
         print_report(
             assets,
             variables.META_TYPES,
+            CONSOLE,
             brief=args.brief,
             security_config=security_config
         )
@@ -78,18 +81,21 @@ def discover_handler(session, args, meta_types):
         iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
         public_only=args.public_only,
         meta_types=meta_types,
-        name_filter=args.name
+        name_filter=args.name,
+        console=CONSOLE
     )
     if args.summary:
         print_summary(
             assets,
             variables.META_TYPES,
+            CONSOLE,
             None
         )
     else:
         print_report(
             assets,
             variables.META_TYPES,
+            CONSOLE,
             brief=args.brief,
             security_config=None
         )
@@ -135,21 +141,23 @@ def main(verb, args):
     try:
         session = boto3.Session(profile_name=args.profile)
     except botocore.exceptions.ProfileNotFound:
-        LOGGER.critical(f'The profile "{args.profile}" can\'t be found...')
-        LOGGER.critical('Take a look at the ~/.aws/config file.')
+        CONSOLE.print(f'[red]The profile [bold]{args.profile}[/bold] can\'t be found...')
+        CONSOLE.print('[red]Take a look at the ~/.aws/config file.')
         sys.exit(1)
-    meta_types = list()
+    meta_types = []
     if not hasattr(args, 'type') or args.type is None:
         meta_types = variables.META_TYPES
     else:
         for meta_type in args.type:
-            if meta_type.upper() not in variables.META_TYPES:
-                LOGGER.critical(f'Unable to find meta type "{meta_type}" in {variables.META_TYPES}')
-                sys.exit(1)
             if meta_type.upper() not in meta_types:
                 meta_types.append(meta_type.upper())
-    LOGGER.warning(f'Welcome "{session.client("sts").get_caller_identity()["Arn"]}" !')
-    LOGGER.warning(f'Scan type: {verb}, Profile: {args.profile}, Region: {session.region_name}')
+    identity = 'Unknown'
+    try:
+        identity = session.client("sts").get_caller_identity()['Arn']
+    except:
+        CONSOLE.print('[red]Can\'t get the caller identity...')
+    CONSOLE.print(f'[white]Welcome [bold]{identity}[/bold] !')
+    CONSOLE.print(f'[white]Scan type: [bold]{verb}[/bold], Profile: [bold]{args.profile}[/bold], Region: [bold]{session.region_name}')
 
     if verb == 'audit':
         audit_handler(session, args, meta_types)

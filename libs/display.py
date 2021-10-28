@@ -17,59 +17,64 @@ import logging
 
 LOGGER = logging.getLogger('aws-tower')
 
-def print_report(assets, meta_types, brief=False, security_config=None):
+def print_report(assets, meta_types, console, brief=False, security_config=None):
     """
     Print subnets
     """
     # Construct Region/VPC/subnet
-    report = dict()
+    report = {}
     for asset in assets:
-        if type(asset).__name__.upper() not in meta_types:
+        if asset.get_type().upper() not in meta_types:
             continue
         if asset.location.region is None:
             continue
         if asset.location.region not in report:
-            report[asset.location.region] = dict()
+            report[asset.location.region] = {}
         if asset.location.vpc is None:
             continue
         if asset.location.vpc not in report[asset.location.region]:
-            report[asset.location.region][asset.location.vpc] = dict()
+            report[asset.location.region][asset.location.vpc] = {}
         if asset.location.subnet is None:
             continue
         if asset.location.subnet not in report[asset.location.region][asset.location.vpc]:
-            report[asset.location.region][asset.location.vpc][asset.location.subnet] = dict()
+            report[asset.location.region][asset.location.vpc][asset.location.subnet] = {}
 
-    # Add asset in report
-    for asset in assets:
-        if security_config:
-            asset.audit(security_config)
-            if not asset.security_issues:
-                continue
-        report = asset.report(report, brief=brief)
+    with console.status('[bold green]Auditing the scan...'):
+        # Add asset in report
+        for asset in assets:
+            if security_config:
+                asset.audit(security_config)
+                if not asset.security_issues:
+                    continue
+                asset.remove_not_vulnerable_members()
+            report = asset.report(report, brief=brief)
 
-    LOGGER.warning(json.dumps(report, sort_keys=True, indent=4))
+    str_report = json.dumps(report, sort_keys=True, indent=4)
+
+    console.print(str_report)
     return True
 
-def print_summary(assets, meta_types, security_config):
+def print_summary(assets, meta_types, console, security_config):
     """
     Print summary
     """
-    new_report = dict()
-    for asset in assets:
-        asset_type = asset.get_type()
-        if asset_type not in meta_types:
-            continue
-        if asset_type not in new_report:
-            new_report[asset_type] = {'count': 0, 'public': 0}
-        new_report[asset_type]['count'] += 1
-        if asset.public:
-            new_report[asset_type]['public'] += 1
-        if security_config:
-            asset.audit(security_config)
-        if asset.security_issues:
-            for issue in asset.security_issues:
-                if issue['severity'] not in new_report[asset_type]:
-                    new_report[asset_type][issue['severity']] = 1
-                else:
-                    new_report[asset_type][issue['severity']] += 1
-    LOGGER.warning(json.dumps(new_report, sort_keys=False, indent=4))
+    with console.status('[bold green]Auditing the scan...'):
+        new_report = {}
+        for asset in assets:
+            asset_type = asset.get_type()
+            if asset_type not in meta_types:
+                continue
+            if asset_type not in new_report:
+                new_report[asset_type] = {'count': 0, 'public': 0}
+            new_report[asset_type]['count'] += 1
+            if asset.public:
+                new_report[asset_type]['public'] += 1
+            if security_config:
+                asset.audit(security_config)
+            if asset.security_issues:
+                for issue in asset.security_issues:
+                    if issue['severity'] not in new_report[asset_type]:
+                        new_report[asset_type][issue['severity']] = 1
+                    else:
+                        new_report[asset_type][issue['severity']] += 1
+    console.print(json.dumps(new_report, sort_keys=False, indent=4))

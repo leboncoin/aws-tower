@@ -4,6 +4,24 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.0.0
+------
+
+2021/10/28
+
+### New feature
+  - Rich color for the CLI
+
+### Changes
+  - Remove not vuln members in assetgroup (IAM and S3)
+
+### Fixture
+  - Avoid crash if sts get caller identity fails
+  - Avoid crash if S3 Acls and permissions fails
+  - Avoid crash if Route53 permissions fails
+  - Don't scan Route53 if it's EC2 or ELB are not selected
+  - Avoid crash when 'Resource' is not present in RolePolicy (NotResource is ignored)
+
 3.11.0
 -----
 
