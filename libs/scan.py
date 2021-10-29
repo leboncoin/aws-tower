@@ -11,17 +11,14 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 # Standard library imports
 import logging
 
-# Third party library imports
-import botocore
-
-from .asset_type_apigw import APIGW, get_raw_data as APIGW_get_raw_data, parse_raw_data as APIGW_parse_raw_data
-from .asset_type_cf import CloudFront, get_raw_data as CF_get_raw_data, parse_raw_data as CF_parse_raw_data
-from .asset_type_ec2 import EC2, get_raw_data as EC2_get_raw_data, parse_raw_data as EC2_parse_raw_data
-from .asset_type_elbv2 import ELBV2, get_raw_data as ELBV2_get_raw_data, parse_raw_data as ELBV2_parse_raw_data
-from .asset_type_iam_group import IAMGroup, parse_raw_data as IAM_parse_raw_data
-from .asset_type_rds import RDS, get_raw_data as RDS_get_raw_data, parse_raw_data as RDS_parse_raw_data
-from .asset_type_route53 import get_raw_data as R53_get_raw_data, parse_raw_data as R53_parse_raw_data
-from .asset_type_s3_group import S3Group, get_raw_data as S3_get_raw_data, parse_raw_data as S3_parse_raw_data
+import libs.asset_type_apigw as apigw
+import libs.asset_type_cf as cf
+import libs.asset_type_ec2 as ec2
+import libs.asset_type_elbv2 as elbv2
+import libs.asset_type_iam_group as iam
+import libs.asset_type_rds as rds
+import libs.asset_type_route53 as r53
+import libs.asset_type_s3_group as s3
 
 # Debug
 # from pdb import set_trace as st
@@ -44,49 +41,49 @@ def get_raw_data(boto_session, meta_types, console):
     }
     raw_data = {}
 
-    raw_data, authorizations = EC2_get_raw_data(
+    raw_data, authorizations = ec2.get_raw_data(
         raw_data,
         authorizations,
         boto_session,
         console)
 
     if 'APIGW' in meta_types:
-        raw_data, authorizations = APIGW_get_raw_data(
+        raw_data, authorizations = apigw.get_raw_data(
             raw_data,
             authorizations,
             boto_session,
             console)
 
     if 'CLOUDFRONT' in meta_types:
-        raw_data, authorizations = CF_get_raw_data(
+        raw_data, authorizations = cf.get_raw_data(
             raw_data,
             authorizations,
             boto_session,
             console)
 
     if 'ELBV2' in meta_types:
-        raw_data, authorizations = ELBV2_get_raw_data(
+        raw_data, authorizations = elbv2.get_raw_data(
             raw_data,
             authorizations,
             boto_session,
             console)
 
     if 'RDS' in meta_types:
-        raw_data, authorizations = RDS_get_raw_data(
+        raw_data, authorizations = rds.get_raw_data(
             raw_data,
             authorizations,
             boto_session,
             console)
 
     if 'S3' in meta_types:
-        raw_data, authorizations = S3_get_raw_data(
+        raw_data, authorizations = s3.get_raw_data(
             raw_data,
             authorizations,
             boto_session,
             console)
 
     if 'EC2' in meta_types or 'ELBV2' in meta_types:
-        raw_data, authorizations = R53_get_raw_data(
+        raw_data, authorizations = r53.get_raw_data(
             raw_data,
             authorizations,
             boto_session,
@@ -121,7 +118,7 @@ def aws_scan(
     assets = []
 
     if 'APIGW' in meta_types:
-        assets, authorizations = APIGW_parse_raw_data(
+        assets, authorizations = apigw.parse_raw_data(
             assets,
             authorizations,
             raw_data,
@@ -131,7 +128,7 @@ def aws_scan(
             console)
 
     if 'CLOUDFRONT' in meta_types:
-        assets, authorizations = CF_parse_raw_data(
+        assets, authorizations = cf.parse_raw_data(
             assets,
             authorizations,
             raw_data,
@@ -139,7 +136,7 @@ def aws_scan(
             console)
 
     if 'EC2' in meta_types:
-        assets, authorizations = EC2_parse_raw_data(
+        assets, authorizations = ec2.parse_raw_data(
             assets,
             authorizations,
             raw_data,
@@ -149,7 +146,7 @@ def aws_scan(
             console)
 
     if 'ELBV2' in meta_types:
-        assets, authorizations = ELBV2_parse_raw_data(
+        assets, authorizations = elbv2.parse_raw_data(
             assets,
             authorizations,
             raw_data,
@@ -158,7 +155,7 @@ def aws_scan(
             console)
 
     if 'IAM' in meta_types:
-        assets, authorizations = IAM_parse_raw_data(
+        assets, authorizations = iam.parse_raw_data(
             assets,
             authorizations,
             boto_session,
@@ -168,7 +165,7 @@ def aws_scan(
             console)
 
     if 'RDS' in meta_types:
-        assets, authorizations = RDS_parse_raw_data(
+        assets, authorizations = rds.parse_raw_data(
             assets,
             authorizations,
             raw_data,
@@ -177,7 +174,7 @@ def aws_scan(
             console)
 
     if 'S3' in meta_types:
-        assets, authorizations = S3_parse_raw_data(
+        assets, authorizations = s3.parse_raw_data(
             assets,
             authorizations,
             raw_data,
@@ -186,7 +183,7 @@ def aws_scan(
             console)
 
     if 'EC2' in meta_types or 'ELBV2' in meta_types:
-        assets, authorizations = R53_parse_raw_data(
+        assets, authorizations = r53.parse_raw_data(
             assets,
             authorizations,
             raw_data,
