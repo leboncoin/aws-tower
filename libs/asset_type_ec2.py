@@ -11,7 +11,7 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 import botocore
 
 from .asset_type import AssetType
-from .tools import draw_sg, get_tag, get_network
+from .tools import draw_sg, get_tag, get_network, log_me
 
 # Debug
 # from pdb import set_trace as st
@@ -73,8 +73,8 @@ class EC2(AssetType):
             return f'<Public> {self.public_ip} {self.private_ip}'
         return f'<Private> {self.private_ip}'
 
-
-def get_raw_data(raw_data, authorizations, boto_session):
+@log_me('Getting EC2 raw data...')
+def get_raw_data(raw_data, authorizations, boto_session, _):
     """
     Get raw data from boto requests.
     Return any EC2 findings and add a 'False' in authorizations in case of errors
@@ -133,7 +133,8 @@ def scan(ec2, sg_raw, subnets_raw, boto_session, public_only):
                 ec2_asset.security_groups[security_group['GroupId']] = draw
     return ec2_asset
 
-def parse_raw_data(assets, authorizations, raw_data, name_filter, boto_session, public_only):
+@log_me('Scanning EC2...')
+def parse_raw_data(assets, authorizations, raw_data, name_filter, boto_session, public_only, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors

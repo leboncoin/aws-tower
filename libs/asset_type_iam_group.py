@@ -12,6 +12,7 @@ import botocore
 
 from .asset_type import AssetType
 from .iam_scan import iam_get_roles
+from .tools import log_me
 
 # Debug
 # from pdb import set_trace as st
@@ -82,7 +83,15 @@ class IAMGroup(AssetType):
         self.list = new_list
         return True
 
-def parse_raw_data(assets, authorizations, boto_session, iam_action_passlist, iam_rolename_passlist, name_filter):
+@log_me('Scanning IAM...')
+def parse_raw_data(
+    assets,
+    authorizations,
+    boto_session,
+    iam_action_passlist,
+    iam_rolename_passlist,
+    name_filter,
+    _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors

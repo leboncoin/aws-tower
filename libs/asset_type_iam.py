@@ -12,6 +12,7 @@ import logging
 import re
 
 from .asset_type import AssetType
+from .tools import log_me
 
 # Debug
 # from pdb import set_trace as st

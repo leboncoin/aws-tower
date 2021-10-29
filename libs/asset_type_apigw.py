@@ -14,6 +14,7 @@ from dataclasses import dataclass
 import botocore
 
 from .asset_type import AssetType
+from .tools import log_me
 
 # Debug
 # from pdb import set_trace as st
@@ -95,7 +96,8 @@ class APIGW(AssetType):
             return f'<Public> {self.api_endpoint} Auth:{self.authorization.types}'
         return f'<Private> {self.api_endpoint} Auth:{self.authorization.types}'
 
-def get_raw_data(raw_data, authorizations, boto_session):
+@log_me('Getting API Gateway raw data...')
+def get_raw_data(raw_data, authorizations, boto_session, _):
     """
     Get raw data from boto requests.
     Return any API Gateway findings and add a 'False' in authorizations in case of errors
@@ -116,7 +118,8 @@ def get_raw_data(raw_data, authorizations, boto_session):
         authorizations['apigw'] = False
     return raw_data, authorizations
 
-def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, name_filter):
+# @log_me('Scanning API Gateway...')
+def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, name_filter, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors

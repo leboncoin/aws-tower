@@ -11,7 +11,7 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 import botocore
 
 from .asset_type import AssetType
-from .tools import draw_sg, get_network
+from .tools import draw_sg, get_network, log_me
 
 # Debug
 # from pdb import set_trace as st
@@ -68,7 +68,8 @@ class ELBV2(AssetType):
             return f'<Public> {self.dns_record}'
         return f'<{self.scheme}> {self.dns_record}'
 
-def get_raw_data(raw_data, authorizations, boto_session):
+@log_me('Getting Elastic Load Balancer raw data...')
+def get_raw_data(raw_data, authorizations, boto_session, _):
     """
     Get raw data from boto requests.
     Return any ELBv2 findings and add a 'False' in authorizations in case of errors
@@ -100,7 +101,8 @@ def scan(elbv2, sg_raw, subnets_raw, public_only):
             elbv2_asset.security_groups[security_group] = draw_sg(security_group, sg_raw)
     return elbv2_asset
 
-def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only):
+@log_me('Scanning Elastic Load Balancer...')
+def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors

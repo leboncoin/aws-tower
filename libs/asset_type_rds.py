@@ -11,7 +11,7 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 import botocore
 
 from .asset_type import AssetType
-from .tools import get_network
+from .tools import get_network, log_me
 
 # Debug
 # from pdb import set_trace as st
@@ -65,8 +65,8 @@ class RDS(AssetType):
             return f'<Public> {self.url} {self.engine}'
         return f'<Private> {self.engine}'
 
-
-def get_raw_data(raw_data, authorizations, boto_session):
+@log_me('Getting RDS raw data...')
+def get_raw_data(raw_data, authorizations, boto_session, _):
     """
     Get raw data from boto requests.
     Return any RDS findings and add a 'False' in authorizations in case of errors
@@ -99,7 +99,8 @@ def scan(rds, subnets_raw, public_only):
         rds_asset.url = rds['Endpoint']['Address']
     return rds_asset
 
-def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only):
+@log_me('Scanning RDS...')
+def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors

@@ -7,7 +7,12 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
+# Standard library imports
+import logging
+
 # from pdb import set_trace as st
+
+LOGGER = logging.getLogger('aws-tower')
 
 def get_tag(tags, key):
     """ Returns a specific value in aws tags, from specified key
@@ -88,3 +93,18 @@ def color_severity(severity, message):
     if isinstance(message, str):
         message = message.replace('[', '<').replace(']', '>')
     return f'[{color}]{severity}: {message}[/{color}]'
+
+def log_me(message):
+    """
+    This function with a decorator of logging
+    """
+    def decorator(func):
+        def inner(*kwargs):
+            console = kwargs[-1]
+            if isinstance(console, type(None)):
+                LOGGER.warning(message)
+                return func(*kwargs)
+            with console.status(f'[bold green]{message}'):
+                return func(*kwargs)
+        return inner
+    return decorator

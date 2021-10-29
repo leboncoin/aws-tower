@@ -14,6 +14,7 @@ from dataclasses import dataclass
 import botocore
 
 from .asset_type import AssetType
+from .tools import log_me
 
 # Debug
 # from pdb import set_trace as st
@@ -94,7 +95,8 @@ class CloudFront(AssetType):
         return f'<Private> {self.aliases} Auth:{self.authorization.types}'
 
 
-def get_raw_data(raw_data, authorizations, boto_session):
+@log_me('Getting Cloudfront raw data...')
+def get_raw_data(raw_data, authorizations, boto_session, _):
     """
     Get raw data from boto requests.
     Return any Cloudfront findings and add a 'False' in authorizations in case of errors
@@ -134,7 +136,8 @@ def scan(cf_dist):
         authorization_types,
         public=True)
 
-def parse_raw_data(assets, authorizations, raw_data, name_filter):
+@log_me('Scanning Cloudfront...')
+def parse_raw_data(assets, authorizations, raw_data, name_filter, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors

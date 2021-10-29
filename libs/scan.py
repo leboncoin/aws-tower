@@ -44,96 +44,53 @@ def get_raw_data(boto_session, meta_types, console):
     }
     raw_data = {}
 
-    if not console:
-        LOGGER.warning('Getting EC2 raw data...')
-        raw_data, authorizations = EC2_get_raw_data(raw_data, authorizations, boto_session)
-    else:
-        with console.status('[bold green]Getting EC2 raw data...'):
-            raw_data, authorizations = EC2_get_raw_data(raw_data, authorizations, boto_session)
+    raw_data, authorizations = EC2_get_raw_data(
+        raw_data,
+        authorizations,
+        boto_session,
+        console)
 
     if 'APIGW' in meta_types:
-        if not console:
-            LOGGER.warning('Getting API Gateway raw data...')
-            raw_data, authorizations = APIGW_get_raw_data(
-                raw_data,
-                authorizations,
-                boto_session)
-        else:
-            with console.status('[bold green]Getting API Gateway raw data...'):
-                raw_data, authorizations = APIGW_get_raw_data(
-                    raw_data,
-                    authorizations,
-                    boto_session)
+        raw_data, authorizations = APIGW_get_raw_data(
+            raw_data,
+            authorizations,
+            boto_session,
+            console)
 
     if 'CLOUDFRONT' in meta_types:
-        if not console:
-            LOGGER.warning('Getting Cloudfront raw data...')
-            raw_data, authorizations = CF_get_raw_data(
-                raw_data,
-                authorizations,
-                boto_session)
-        else:
-            with console.status('[bold green]Getting Cloudfront raw data...'):
-                raw_data, authorizations = CF_get_raw_data(
-                    raw_data,
-                    authorizations,
-                    boto_session)
+        raw_data, authorizations = CF_get_raw_data(
+            raw_data,
+            authorizations,
+            boto_session,
+            console)
 
     if 'ELBV2' in meta_types:
-        if not console:
-            LOGGER.warning('Getting Elastic Load Balancer raw data...')
-            raw_data, authorizations = ELBV2_get_raw_data(
-                raw_data,
-                authorizations,
-                boto_session)
-        else:
-            with console.status('[bold green]Getting Elastic Load Balancer raw data...'):
-                raw_data, authorizations = ELBV2_get_raw_data(
-                    raw_data,
-                    authorizations,
-                    boto_session)
+        raw_data, authorizations = ELBV2_get_raw_data(
+            raw_data,
+            authorizations,
+            boto_session,
+            console)
 
     if 'RDS' in meta_types:
-        if not console:
-            LOGGER.warning('Getting RDS raw data...')
-            raw_data, authorizations = RDS_get_raw_data(
-                raw_data,
-                authorizations,
-                boto_session)
-        else:
-            with console.status('[bold green]Getting RDS raw data...'):
-                raw_data, authorizations = RDS_get_raw_data(
-                    raw_data,
-                    authorizations,
-                    boto_session)
+        raw_data, authorizations = RDS_get_raw_data(
+            raw_data,
+            authorizations,
+            boto_session,
+            console)
 
     if 'S3' in meta_types:
-        if not console:
-            LOGGER.warning('Getting S3 raw data...')
-            raw_data, authorizations = S3_get_raw_data(
-                raw_data,
-                authorizations,
-                boto_session)
-        else:
-            with console.status('[bold green]Getting S3 raw data...'):
-                raw_data, authorizations = S3_get_raw_data(
-                    raw_data,
-                    authorizations,
-                    boto_session)
+        raw_data, authorizations = S3_get_raw_data(
+            raw_data,
+            authorizations,
+            boto_session,
+            console)
 
     if 'EC2' in meta_types or 'ELBV2' in meta_types:
-        if not console:
-            LOGGER.warning('Getting Route53 raw data...')
-            raw_data, authorizations = R53_get_raw_data(
-                raw_data,
-                authorizations,
-                boto_session)
-        else:
-            with console.status('[bold green]Getting Route53 raw data...'):
-                raw_data, authorizations = R53_get_raw_data(
-                    raw_data,
-                    authorizations,
-                    boto_session)
+        raw_data, authorizations = R53_get_raw_data(
+            raw_data,
+            authorizations,
+            boto_session,
+            console)
 
     return raw_data, authorizations
 
@@ -164,148 +121,76 @@ def aws_scan(
     assets = []
 
     if 'APIGW' in meta_types:
-        if not console:
-            LOGGER.warning('Scanning API Gateway...')
-            assets, authorizations = APIGW_parse_raw_data(
-                assets,
-                authorizations,
-                raw_data,
-                public_only,
-                boto_session,
-                name_filter)
-        else:
-            with console.status('[bold green]Scanning API Gateway...'):
-                assets, authorizations = APIGW_parse_raw_data(
-                    assets,
-                    authorizations,
-                    raw_data,
-                    public_only,
-                    boto_session,
-                    name_filter)
+        assets, authorizations = APIGW_parse_raw_data(
+            assets,
+            authorizations,
+            raw_data,
+            public_only,
+            boto_session,
+            name_filter,
+            console)
 
     if 'CLOUDFRONT' in meta_types:
-        if not console:
-            LOGGER.warning('Scanning Cloudfront...')
-            assets, authorizations = CF_parse_raw_data(
-                assets,
-                authorizations,
-                raw_data,
-                name_filter)
-        else:
-            with console.status('[bold green]Scanning Cloudfront...'):
-                assets, authorizations = CF_parse_raw_data(
-                    assets,
-                    authorizations,
-                    raw_data,
-                    name_filter)
+        assets, authorizations = CF_parse_raw_data(
+            assets,
+            authorizations,
+            raw_data,
+            name_filter,
+            console)
 
     if 'EC2' in meta_types:
-        if not console:
-            LOGGER.warning('Scanning EC2...')
-            assets, authorizations = EC2_parse_raw_data(
-                assets,
-                authorizations,
-                raw_data,
-                name_filter,
-                boto_session,
-                public_only)
-        else:
-            with console.status('[bold green]Scanning EC2...'):
-                assets, authorizations = EC2_parse_raw_data(
-                assets,
-                authorizations,
-                raw_data,
-                name_filter,
-                boto_session,
-                public_only)
+        assets, authorizations = EC2_parse_raw_data(
+            assets,
+            authorizations,
+            raw_data,
+            name_filter,
+            boto_session,
+            public_only,
+            console)
 
     if 'ELBV2' in meta_types:
-        if not console:
-            LOGGER.warning('Scanning Elastic Load Balancer...')
-            assets, authorizations = ELBV2_parse_raw_data(
-                assets,
-                authorizations,
-                raw_data,
-                name_filter,
-                public_only)
-        else:
-            with console.status('[bold green]Scanning Elastic Load Balancer...'):
-                assets, authorizations = ELBV2_parse_raw_data(
-                assets,
-                authorizations,
-                raw_data,
-                name_filter,
-                public_only)
+        assets, authorizations = ELBV2_parse_raw_data(
+            assets,
+            authorizations,
+            raw_data,
+            name_filter,
+            public_only,
+            console)
 
     if 'IAM' in meta_types:
-        if not console:
-            LOGGER.warning('Scanning IAM... (can be long)')
-            assets, authorizations = IAM_parse_raw_data(
-                assets,
-                authorizations,
-                boto_session,
-                iam_action_passlist,
-                iam_rolename_passlist,
-                name_filter)
-        else:
-            with console.status('[bold green]Scanning IAM... (can be long)'):
-                assets, authorizations = IAM_parse_raw_data(
-                assets,
-                authorizations,
-                boto_session,
-                iam_action_passlist,
-                iam_rolename_passlist,
-                name_filter)
+        assets, authorizations = IAM_parse_raw_data(
+            assets,
+            authorizations,
+            boto_session,
+            iam_action_passlist,
+            iam_rolename_passlist,
+            name_filter,
+            console)
 
     if 'RDS' in meta_types:
-        if not console:
-            LOGGER.warning('Scanning RDS...')
-            assets, authorizations = RDS_parse_raw_data(
-                assets,
-                authorizations,
-                raw_data,
-                name_filter,
-                public_only)
-        else:
-            with console.status('[bold green]Scanning RDS...'):
-                assets, authorizations = RDS_parse_raw_data(
-                    assets,
-                    authorizations,
-                    raw_data,
-                    name_filter,
-                    public_only)
+        assets, authorizations = RDS_parse_raw_data(
+            assets,
+            authorizations,
+            raw_data,
+            name_filter,
+            public_only,
+            console)
 
     if 'S3' in meta_types:
-        if not console:
-            LOGGER.warning('Scanning S3...')
-            assets, authorizations = S3_parse_raw_data(
-                assets,
-                authorizations,
-                raw_data,
-                name_filter,
-                public_only)
-        else:
-            with console.status('[bold green]Scanning S3...'):
-                assets, authorizations = S3_parse_raw_data(
-                    assets,
-                    authorizations,
-                    raw_data,
-                    name_filter,
-                    public_only)
+        assets, authorizations = S3_parse_raw_data(
+            assets,
+            authorizations,
+            raw_data,
+            name_filter,
+            public_only,
+            console)
 
     if 'EC2' in meta_types or 'ELBV2' in meta_types:
-        if not console:
-            LOGGER.warning('Scanning Route53...')
-            assets, authorizations = R53_parse_raw_data(
-                assets,
-                authorizations,
-                raw_data)
-        else:
-            with console.status('[bold green]Scanning Route53...'):
-                assets, authorizations = R53_parse_raw_data(
-                    assets,
-                    authorizations,
-                    raw_data)
+        assets, authorizations = R53_parse_raw_data(
+            assets,
+            authorizations,
+            raw_data,
+            console)
 
     log_authorization_errors(authorizations, console)
 

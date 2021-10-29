@@ -12,6 +12,7 @@ import botocore
 
 from .asset_type import AssetType
 from .asset_type_s3 import S3
+from .tools import log_me
 
 # Debug
 # from pdb import set_trace as st
@@ -82,7 +83,8 @@ class S3Group(AssetType):
         self.list = new_list
         return True
 
-def get_raw_data(raw_data, authorizations, boto_session):
+@log_me('Getting S3 raw data...')
+def get_raw_data(raw_data, authorizations, boto_session, _):
     """
     Get raw data from boto requests.
     Return any S3 findings and add a 'False' in authorizations in case of errors
@@ -117,7 +119,8 @@ def scan(s_three, configuration, region, acls, public_only):
         return None
     return s3_asset
 
-def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only):
+@log_me('Scanning S3...')
+def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors

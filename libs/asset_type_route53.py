@@ -10,7 +10,10 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 # Third party library imports
 import botocore
 
-def get_raw_data(raw_data, authorizations, boto_session):
+from .tools import log_me
+
+@log_me('Getting Route53 raw data...')
+def get_raw_data(raw_data, authorizations, boto_session, _):
     """
     Get raw data from boto requests.
     Return any Route53 findings and add a 'False' in authorizations in case of errors
@@ -33,7 +36,8 @@ def scan(assets, record_value, record):
             assets[i].dns_record = record['Name'].replace('\\052', '*')
     return assets
 
-def parse_raw_data(assets, authorizations, raw_data):
+@log_me('Scanning Route53...')
+def parse_raw_data(assets, authorizations, raw_data, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
