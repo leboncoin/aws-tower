@@ -32,7 +32,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '4.0.0'
+VERSION = '4.0.1'
 
 PATROWL = {}
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -122,6 +122,9 @@ def main(account):
             # Get Patrowl findings only if we have a match
             if not is_new_asset:
                 findings = get_findings(PATROWL_API, asset_id)
+                if findings is None:
+                    LOGGER.critical(f'Error during get_findings of {asset_id=} ...')
+                    continue
                 for finding in findings:
                     if finding['title'] == new_finding['title'] and \
                         finding['severity'] == new_finding['severity']:

@@ -89,4 +89,4 @@ def get_findings(patrowl_api, asset_id):
         return patrowl_api.get_asset_findings_by_id(asset_id)
     except Exception as err_msg:
         LOGGER.critical(f'{err_msg=}')
-    return list()
+    return None

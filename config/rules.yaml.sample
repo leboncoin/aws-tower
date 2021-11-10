@@ -623,7 +623,7 @@ types:
                   - '10.3.32'
                   - '10.4.22'
                   - '10.5.13'
-                  - '10.6.5'
+                  - '10.6.4'
             data_sources:
               - type: attribute
                 name: attribute_value

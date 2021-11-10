@@ -14,6 +14,7 @@ import logging
 import libs.asset_type_apigw as apigw
 import libs.asset_type_cf as cf
 import libs.asset_type_ec2 as ec2
+import libs.asset_type_eks as eks
 import libs.asset_type_elbv2 as elbv2
 import libs.asset_type_iam_group as iam
 import libs.asset_type_rds as rds
@@ -33,6 +34,7 @@ def get_raw_data(boto_session, meta_types, console):
         'apigw': True,
         'cloudfront': True,
         'ec2': True,
+        'eks': True,
         'elbv2': True,
         'iam': True,
         'rds': True,
@@ -56,6 +58,13 @@ def get_raw_data(boto_session, meta_types, console):
 
     if 'CLOUDFRONT' in meta_types:
         raw_data, authorizations = cf.get_raw_data(
+            raw_data,
+            authorizations,
+            boto_session,
+            console)
+
+    if 'EKS' in meta_types:
+        raw_data, authorizations = eks.get_raw_data(
             raw_data,
             authorizations,
             boto_session,
@@ -143,6 +152,14 @@ def aws_scan(
             name_filter,
             boto_session,
             public_only,
+            console)
+
+    if 'EKS' in meta_types:
+        assets, authorizations = eks.parse_raw_data(
+            assets,
+            authorizations,
+            raw_data,
+            name_filter,
             console)
 
     if 'ELBV2' in meta_types:

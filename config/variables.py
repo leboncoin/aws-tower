@@ -21,9 +21,9 @@ ALERTING_SEVERITIES = ['medium', 'high', 'critical']
 ROOT_PATH = Path(__file__).parent.parent
 FINDING_RULES_PATH = ROOT_PATH / 'config' / 'rules.yaml'
 
-META_TYPES = ['APIGW', 'CLOUDFRONT', 'EC2', 'ELBV2', 'IAM', 'RDS', 'S3']
+META_TYPES = ['APIGW', 'CLOUDFRONT', 'EC2', 'EKS', 'ELBV2', 'IAM', 'RDS', 'S3']
 
-IAM_ACTION_PASSLIST = ['ec2messages', 'logs', 'ssm', 'ssmmessages']
+IAM_ACTION_PASSLIST = ['ec2messages', 'logs', 'ssm', 'ssmmessages', 'support']
 
 IAM_ROLENAME_PASSLIST = [
     'AccountManagementRole',
