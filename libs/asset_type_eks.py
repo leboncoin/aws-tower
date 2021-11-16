@@ -56,16 +56,16 @@ class EKS(AssetType):
         Return the report in one line
         """
         if self.public:
-            return f'<Public> {self.endpoint} Auth:{self.version}{self.display_brief_audit()}'
-        return f'<Private> {self.endpoint} Auth:{self.version}{self.display_brief_audit()}'
+            return f'<Public> {self.endpoint} v{self.version}{self.display_brief_audit()}'
+        return f'<Private> {self.endpoint} v{self.version}{self.display_brief_audit()}'
 
     def finding_description(self, _):
         """
         Return a description of the finding
         """
         if self.public:
-            return f'<Public> {self.endpoint} Auth:{self.version}'
-        return f'<Private> {self.endpoint} Auth:{self.version}'
+            return f'<Public> {self.endpoint} v{self.version}'
+        return f'<Private> {self.endpoint} v{self.version}'
 
 
 @log_me('Getting EKS raw data...')
