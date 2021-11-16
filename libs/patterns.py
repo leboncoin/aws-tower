@@ -444,25 +444,25 @@ class Patterns:
         return False
 
     def _check_rule_engine_deprecated_version(self, data_sources, conditions):
-        """Check if the engine version is not deprecated.
-        Compare the engine version if it's smaller than the minimum version allowed in list
+        """Check if the version is not deprecated.
+        Compare the version if it's smaller than the minimum version allowed in list
         If there is multiple versions,
         it only checks the major version for the other listed versions
         Check rule "engine_deprecated_version"
 
-        :param metadata: RDS metadata
+        :param metadata: RDS (engine==version) or EKS (version) metadata
         :type metadata: dict
-        :param min_version_allowed: Minimum DBMS version allowed
+        :param min_version_allowed: Minimum version allowed
         :type list_min_version_allowed: string representation of list
-        :return: True if the engine version is deprecated
+        :return: True if the version is deprecated
         :rtype: bool
         """
-        if len(data_sources['attribute_value'].split('==')) < 2:
-            self._logger.debug(f'Wrong format for {data_sources["attribute_value"]}')
-            return False
-        engine_name, current_version = data_sources['attribute_value'].split('==')
-        if conditions['engine_name'] != engine_name:
-            return False
+        # Check engine_name if in version
+        current_version = data_sources['attribute_value']
+        if '==' in data_sources['attribute_value']:
+            engine_name, current_version = data_sources['attribute_value'].split('==')
+            if conditions['engine_name'] != engine_name:
+                return False
         current_version = LooseVersion(current_version)
         previous_version = LooseVersion('0')
         next_version = LooseVersion('999')

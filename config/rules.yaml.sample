@@ -706,3 +706,77 @@ types:
               - type: attribute
                 name: attribute_value
                 value: engine
+# https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
+      - message:
+          text: '[{service_name}] Deprecated EKS Kubernetes version ({current_version})'
+          args:
+            service_name:
+              type: attribute
+              key: name
+            current_version:
+              type: attribute
+              key: version
+        severity: high
+        rules:
+          - type: has_attribute
+            description: Check if version exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: version
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_equal
+            description: Check if the asset is a EKS cluster
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: EKS
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
+          - type: engine_deprecated_version
+            description: Check if k8s version is not deprecated
+            conditions:
+              - type: constant
+                name: engine_name
+                value: kubernetes
+              - type: constant
+                name: versions
+                value:
+                  - '1.18'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: version
+      - message:
+          text: '[{service_name}] Public EKS cluster'
+          args:
+            service_name:
+              type: attribute
+              key: name
+        severity: high
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is public
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
+          - type: has_attribute_equal
+            description: Check if the asset is a EKS cluster
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: EKS
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
