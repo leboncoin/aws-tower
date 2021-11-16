@@ -90,3 +90,12 @@ def get_findings(patrowl_api, asset_id):
     except Exception as err_msg:
         LOGGER.critical(f'{err_msg=}')
     return None
+
+def update_finding(patrowl_api, finding_id):
+    """
+    Update the finding 'updated_at'
+    """
+    try:
+        patrowl_api.update_finding(finding_id)
+    except Exception as err_msg:
+        LOGGER.critical(f'{err_msg=}')

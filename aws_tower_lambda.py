@@ -22,7 +22,7 @@ from patrowl4py.api import PatrowlManagerApi
 from requests import Session
 
 # Own library and config files
-from libs.patrowl import add_asset, add_finding, get_findings
+from libs.patrowl import add_asset, add_finding, get_findings, update_finding
 from libs.scan import aws_scan
 from libs.session import get_session
 from config import variables
@@ -129,6 +129,8 @@ def main(account):
                     if finding['title'] == new_finding['title'] and \
                         finding['severity'] == new_finding['severity']:
                         is_new_finding = False
+                        # Update the field 'updated_at'
+                        update_finding(PATROWL_API, finding['id'])
 
             if is_new_finding:
                 if is_new_asset:
