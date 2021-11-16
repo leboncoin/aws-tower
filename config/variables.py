@@ -42,3 +42,5 @@ IAM_ROLENAME_PASSLIST = [
     'readonly',
     'SchibstedSecurityAuditRole'
 ]
+
+LAMBDA_SCAN_REGION_LIST = ['eu-west-1', 'eu-west-3']

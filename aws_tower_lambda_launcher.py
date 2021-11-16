@@ -106,18 +106,23 @@ def main():
     config = ConfigParser(strict=False)
     config.read('config/lambda.config')
     organize_assetgroups(config)
+    # A lambda per profile
     for profile in config.sections():
         if not is_config_ok(config, profile):
             continue
         aws_account_name = profile.split()[1]
+        # ... and per aws service
         for meta_type in variables.META_TYPES:
             payload = {
                 aws_account_name: config[profile]['role_arn'],
                 'env': config[profile]['env'],
                 'meta_types': [meta_type]
             }
-            LOGGER.warning(payload)
-            call_lambda(payload)
+            # ... and per region
+            for region in variables.LAMBDA_SCAN_REGION_LIST:
+                payload['region_name'] = region
+                LOGGER.warning(payload)
+                call_lambda(payload)
 
 
 def handler(event, context):
