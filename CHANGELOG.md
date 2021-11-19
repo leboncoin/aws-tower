@@ -15,6 +15,7 @@ AWS-TOWER
   - Add RDS version alerting: mariadb, postgres, mysql, sqlserver-se (mssql)
   - lambda: Update finding 'updated_at', in Patrowl, at each iteration
   - lambda: Scan multiple regions
+  - Add EC2 associated roles, if at least EC2 and IAM are selected
 
 ### Changes
   - Remove not vuln members in assetgroup (IAM and S3)

@@ -28,6 +28,9 @@ class EC2(AssetType):
         self.security_groups = {}
         self.dns_record = None
         self.attached_ssh_key = False
+        self.role_poweruser = ''
+        self.role_admin = ''
+        self.instance_id = ''
 
     def report(self, report, brief=False):
         """
@@ -50,6 +53,10 @@ class EC2(AssetType):
                 asset_report['DnsRecord'] = self.dns_record
             if self.attached_ssh_key:
                 asset_report['SSHKey'] = self.attached_ssh_key
+            if self.role_poweruser:
+                asset_report['Roles PowerUser'] = self.role_poweruser
+            if self.role_admin:
+                asset_report['Roles Admin'] = self.role_admin
             if self.security_issues:
                 self.update_audit_report(asset_report)
         if 'EC2' not in report[self.location.region][self.location.vpc][self.location.subnet]:
@@ -101,6 +108,20 @@ def get_raw_data(raw_data, authorizations, boto_session, _):
         raw_data['sg_raw'] = []
         authorizations['ec2'] = False
         authorizations['elb'] = False
+    iam_res = boto_session.resource('iam')
+    raw_data['ec2_iam_raw'] = {}
+    try:
+        raw_data['ec2_iam_assoc_raw'] = ec2_client.describe_iam_instance_profile_associations()['IamInstanceProfileAssociations']
+    except botocore.exceptions.ClientError:
+        raw_data['ec2_iam_assoc_raw'] = []
+        authorizations['ec2'] = False
+    for assoc in raw_data['ec2_iam_assoc_raw']:
+        ip_name = assoc['IamInstanceProfile']['Arn'].split('/')[-1]
+        try:
+            raw_data['ec2_iam_raw'][ip_name] = iam_res.InstanceProfile(ip_name).roles
+        except botocore.exceptions.ClientError:
+            raw_data['ec2_iam_raw'][ip_name] = []
+            authorizations['ec2'] = False
     return raw_data, authorizations
 
 def scan(ec2, sg_raw, subnets_raw, boto_session, public_only):
@@ -116,6 +137,7 @@ def scan(ec2, sg_raw, subnets_raw, boto_session, public_only):
         name=ec2['InstanceId'],
         private_ip=ec2['PrivateIpAddress'],
         public='PublicIpAddress' in ec2)
+    ec2_asset.instance_id = ec2['InstanceId']
     region, vpc, subnet = get_network(ec2['SubnetId'], subnets_raw)
     ec2_asset.location.region = region
     ec2_asset.location.vpc = vpc
@@ -153,4 +175,41 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, boto_session, 
                 public_only)
             if asset is not None and name_filter.lower() in asset.name.lower():
                 assets.append(asset)
+    return assets, authorizations
+
+@log_me('Scaning EC2 - IAM instance profile')
+def parse_iam_instance_profile(assets, authorizations, raw_data, _):
+    for ec2 in assets:
+        if ec2.get_type() != 'EC2':
+            continue
+        # Loop on all EC2 <-> IAM instance profile association
+        for assoc in raw_data['ec2_iam_assoc_raw']:
+            if assoc['InstanceId'] != ec2.instance_id:
+                continue
+            if not ('IamInstanceProfile' in assoc and 'Arn' in assoc['IamInstanceProfile']):
+                continue
+            # Get the IAM Instance Profile of the EC2
+            ip_name = assoc['IamInstanceProfile']['Arn'].split('/')[-1]
+            if ip_name not in raw_data['ec2_iam_raw']:
+                continue
+            # Get the IAM Group
+            iam_group = None
+            for asset in assets:
+                if asset.get_type() == 'IAM':
+                    iam_group = asset
+                    break
+            # Loop on every IAM role associated to the IAM I.P.
+            for role in raw_data['ec2_iam_raw'][ip_name]:
+                # Loop on all IAM role of the AWS account
+                for iam in iam_group.list:
+                    if role.name != iam.arn.split('/')[-1]:
+                        continue
+                    if iam.poweruser_actions is not None:
+                        if ec2.role_poweruser != '':
+                            ec2.role_poweruser = ' '
+                        ec2.role_poweruser += f'{role.name}: {iam.poweruser_actions}'
+                    if iam.admin_actions is not None:
+                        if ec2.role_admin != '':
+                            ec2.role_admin = ' '
+                        ec2.role_admin += f'{role.name}: {iam.admin_actions}'
     return assets, authorizations

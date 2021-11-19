@@ -206,6 +206,13 @@ def aws_scan(
             raw_data,
             console)
 
+    if 'EC2' in meta_types and 'IAM' in meta_types:
+        assets, authorizations = ec2.parse_iam_instance_profile(
+            assets,
+            authorizations,
+            raw_data,
+            console)
+
     log_authorization_errors(authorizations, console)
 
     return assets
