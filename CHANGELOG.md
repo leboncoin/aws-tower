@@ -11,11 +11,16 @@ AWS-TOWER
 
 ### New feature
   - Rich color for the CLI
+  - Add EKS
   - Add RDS version alerting: mariadb, postgres, mysql, sqlserver-se (mssql)
+  - lambda: Update finding 'updated_at', in Patrowl, at each iteration
+  - lambda: Scan multiple regions
 
 ### Changes
   - Remove not vuln members in assetgroup (IAM and S3)
   - DnsRecord severity changes from medium to low
+  - Remove 'support' IAM permission by default
+  - Rename ELBV2 to ELB
 
 ### Fixture
   - Avoid crash if sts get caller identity fails

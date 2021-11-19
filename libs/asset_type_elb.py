@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Asset types ELBv2 class
+Asset types ELB class
 
 Copyright 2020-2021 Leboncoin
 Licensed under the Apache License, Version 2.0
@@ -16,9 +16,9 @@ from .tools import draw_sg, get_network, log_me
 # Debug
 # from pdb import set_trace as st
 
-class ELBV2(AssetType):
+class ELB(AssetType):
     """
-    ELBv2 Asset Type
+    ELB Asset Type
     """
     def __init__(self, name: str, scheme: str, public: bool=False):
         super().__init__('ELB', name, public=public)
@@ -44,11 +44,11 @@ class ELBV2(AssetType):
                 asset_report['DnsRecord'] = self.dns_record
             if self.security_issues:
                 self.update_audit_report(asset_report)
-        if 'ELBv2' not in report[self.location.region][self.location.vpc][self.location.subnet]:
-            report[self.location.region][self.location.vpc][self.location.subnet]['ELBv2'] = \
+        if 'ELB' not in report[self.location.region][self.location.vpc][self.location.subnet]:
+            report[self.location.region][self.location.vpc][self.location.subnet]['ELB'] = \
                 { self.name: asset_report }
             return report
-        report[self.location.region][self.location.vpc][self.location.subnet]['ELBv2'].update(
+        report[self.location.region][self.location.vpc][self.location.subnet]['ELB'].update(
             { self.name: asset_report })
         return report
 
@@ -72,34 +72,34 @@ class ELBV2(AssetType):
 def get_raw_data(raw_data, authorizations, boto_session, _):
     """
     Get raw data from boto requests.
-    Return any ELBv2 findings and add a 'False' in authorizations in case of errors
+    Return any ELB findings and add a 'False' in authorizations in case of errors
     """
-    elbv2_client = boto_session.client('elbv2')
+    elb_client = boto_session.client('elbv2')
     try:
-        raw_data['elbv2_raw'] = elbv2_client.describe_load_balancers()['LoadBalancers']
+        raw_data['elb_raw'] = elb_client.describe_load_balancers()['LoadBalancers']
     except botocore.exceptions.ClientError:
-        raw_data['elbv2_raw'] = []
-        authorizations['elbv2'] = False
+        raw_data['elb_raw'] = []
+        authorizations['elb'] = False
     return raw_data, authorizations
 
-def scan(elbv2, sg_raw, subnets_raw, public_only):
+def scan(elb, sg_raw, subnets_raw, public_only):
     """
-    Scan ELBv2
+    Scan ELB
     """
-    if public_only and elbv2['Scheme'] == 'internal':
+    if public_only and elb['Scheme'] == 'internal':
         return None
-    elbv2_asset = ELBV2(
-        name=elbv2['DNSName'],
-        scheme=elbv2['Scheme'],
-        public=elbv2['Scheme'] != 'internal')
-    region, vpc, subnet = get_network(elbv2['AvailabilityZones'][0]['SubnetId'], subnets_raw)
-    elbv2_asset.location.region = region
-    elbv2_asset.location.vpc = vpc
-    elbv2_asset.location.subnet = subnet
-    if 'SecurityGroups' in elbv2:
-        for security_group in elbv2['SecurityGroups']:
-            elbv2_asset.security_groups[security_group] = draw_sg(security_group, sg_raw)
-    return elbv2_asset
+    elb_asset = ELB(
+        name=elb['DNSName'],
+        scheme=elb['Scheme'],
+        public=elb['Scheme'] != 'internal')
+    region, vpc, subnet = get_network(elb['AvailabilityZones'][0]['SubnetId'], subnets_raw)
+    elb_asset.location.region = region
+    elb_asset.location.vpc = vpc
+    elb_asset.location.subnet = subnet
+    if 'SecurityGroups' in elb:
+        for security_group in elb['SecurityGroups']:
+            elb_asset.security_groups[security_group] = draw_sg(security_group, sg_raw)
+    return elb_asset
 
 @log_me('Scanning Elastic Load Balancer...')
 def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, _):
@@ -107,8 +107,8 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, _
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
-    for elbv2 in raw_data['elbv2_raw']:
-        asset = scan(elbv2, raw_data['sg_raw'], raw_data['subnets_raw'], public_only)
+    for elb in raw_data['elb_raw']:
+        asset = scan(elb, raw_data['sg_raw'], raw_data['subnets_raw'], public_only)
         if asset is not None and name_filter.lower() in asset.name.lower():
             assets.append(asset)
     return assets, authorizations

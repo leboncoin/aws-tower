@@ -15,7 +15,7 @@ import libs.asset_type_apigw as apigw
 import libs.asset_type_cf as cf
 import libs.asset_type_ec2 as ec2
 import libs.asset_type_eks as eks
-import libs.asset_type_elbv2 as elbv2
+import libs.asset_type_elb as elb
 import libs.asset_type_iam_group as iam
 import libs.asset_type_rds as rds
 import libs.asset_type_route53 as r53
@@ -35,7 +35,7 @@ def get_raw_data(boto_session, meta_types, console):
         'cloudfront': True,
         'ec2': True,
         'eks': True,
-        'elbv2': True,
+        'elb': True,
         'iam': True,
         'rds': True,
         's3': True,
@@ -70,8 +70,8 @@ def get_raw_data(boto_session, meta_types, console):
             boto_session,
             console)
 
-    if 'ELBV2' in meta_types:
-        raw_data, authorizations = elbv2.get_raw_data(
+    if 'ELB' in meta_types:
+        raw_data, authorizations = elb.get_raw_data(
             raw_data,
             authorizations,
             boto_session,
@@ -91,7 +91,7 @@ def get_raw_data(boto_session, meta_types, console):
             boto_session,
             console)
 
-    if 'EC2' in meta_types or 'ELBV2' in meta_types:
+    if 'EC2' in meta_types or 'ELB' in meta_types:
         raw_data, authorizations = r53.get_raw_data(
             raw_data,
             authorizations,
@@ -162,8 +162,8 @@ def aws_scan(
             name_filter,
             console)
 
-    if 'ELBV2' in meta_types:
-        assets, authorizations = elbv2.parse_raw_data(
+    if 'ELB' in meta_types:
+        assets, authorizations = elb.parse_raw_data(
             assets,
             authorizations,
             raw_data,
@@ -199,7 +199,7 @@ def aws_scan(
             public_only,
             console)
 
-    if 'EC2' in meta_types or 'ELBV2' in meta_types:
+    if 'EC2' in meta_types or 'ELB' in meta_types:
         assets, authorizations = r53.parse_raw_data(
             assets,
             authorizations,

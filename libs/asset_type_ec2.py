@@ -90,14 +90,14 @@ def get_raw_data(raw_data, authorizations, boto_session, _):
     except botocore.exceptions.ClientError:
         raw_data['subnets_raw'] = []
         authorizations['ec2'] = False
-        authorizations['elbv2'] = False
+        authorizations['elb'] = False
         authorizations['rds'] = False
     try:
         raw_data['sg_raw'] = ec2_client.describe_security_groups()['SecurityGroups']
     except botocore.exceptions.ClientError:
         raw_data['sg_raw'] = []
         authorizations['ec2'] = False
-        authorizations['elbv2'] = False
+        authorizations['elb'] = False
     return raw_data, authorizations
 
 def scan(ec2, sg_raw, subnets_raw, boto_session, public_only):

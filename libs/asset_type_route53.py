@@ -32,7 +32,7 @@ def scan(assets, record_value, record):
         asset_type = asset.get_type()
         if asset_type == 'EC2' and record_value in (asset.public_ip, asset.private_ip):
             assets[i].dns_record = record['Name'].replace('\\052', '*')
-        elif asset_type == 'ELBV2' and record_value == f'{asset.name}.':
+        elif asset_type == 'ELB' and record_value == f'{asset.name}.':
             assets[i].dns_record = record['Name'].replace('\\052', '*')
     return assets
 
