@@ -22,11 +22,12 @@ class EC2(AssetType):
     """
     def __init__(self, name: str, private_ip: str, public: bool=False):
         super().__init__('EC2', name, public=public)
-        self.os = 'unknown'
+        self.operating_system = 'unknown'
         self.private_ip = private_ip
         self.public_ip = ''
         self.security_groups = {}
         self.dns_record = None
+        self.attached_ssh_key = False
 
     def report(self, report, brief=False):
         """
@@ -36,7 +37,7 @@ class EC2(AssetType):
             asset_report = self.report_brief()
         else:
             asset_report = {
-                'OS': self.os,
+                'OS': self.operating_system,
                 'PrivateIP': self.private_ip
             }
             if self.public:
@@ -47,6 +48,8 @@ class EC2(AssetType):
                 asset_report['SecurityGroups'] = self.security_groups
             if self.dns_record:
                 asset_report['DnsRecord'] = self.dns_record
+            if self.attached_ssh_key:
+                asset_report['SSHKey'] = self.attached_ssh_key
             if self.security_issues:
                 self.update_audit_report(asset_report)
         if 'EC2' not in report[self.location.region][self.location.vpc][self.location.subnet]:
@@ -119,7 +122,7 @@ def scan(ec2, sg_raw, subnets_raw, boto_session, public_only):
     ec2_asset.location.subnet = subnet
     if 'ImageId' in ec2:
         try:
-            ec2_asset.os = ec2_res.Image(ec2['ImageId']).platform_details
+            ec2_asset.operating_system = ec2_res.Image(ec2['ImageId']).platform_details
         except:
             pass
     if 'Tags' in ec2:
@@ -131,6 +134,7 @@ def scan(ec2, sg_raw, subnets_raw, boto_session, public_only):
             draw = draw_sg(security_group['GroupId'], sg_raw)
             if draw:
                 ec2_asset.security_groups[security_group['GroupId']] = draw
+    ec2_asset.attached_ssh_key = 'KeyName' in ec2
     return ec2_asset
 
 @log_me('Scanning EC2...')

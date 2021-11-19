@@ -136,8 +136,10 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, _
         try:
             region = raw_data['s3_client'].get_bucket_location(Bucket=s_three['Name'])['LocationConstraint']
         except botocore.exceptions.ClientError:
-            region = 'unknown'
             authorizations['s3'] = False
+        # S3 default region is US East 1
+        if region is None or region == 'unknown':
+            region = 'us-east-1'
         try:
             acls = raw_data['s3_client'].get_bucket_acl(Bucket=s_three['Name'])['Grants']
         except botocore.exceptions.ClientError:

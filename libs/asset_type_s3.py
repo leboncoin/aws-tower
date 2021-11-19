@@ -11,7 +11,6 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 from dataclasses import dataclass
 
 from .asset_type import AssetType
-from .tools import log_me
 
 # Debug
 # from pdb import set_trace as st

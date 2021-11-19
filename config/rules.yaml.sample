@@ -780,3 +780,41 @@ types:
               - type: attribute
                 name: attribute_value
                 value: aws_service
+      - message:
+          text: '[{service_name}] SSH Key attached'
+          args:
+            service_name:
+              type: attribute
+              key: name
+        severity: medium
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is an EC2
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: EC2
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
+          - type: has_attribute_equal
+            description: Check if attached_ssh_key is in the asset
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: attached_ssh_key
+          - type: has_attribute_not_equal
+            description: Check if the OS is not Windows
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: 'Windows'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: operating_system
