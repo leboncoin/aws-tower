@@ -20,6 +20,7 @@ from rich import console
 from libs.display import print_report, print_summary
 from libs.iam_scan import complete_source_arn, iam_display, iam_display_roles, iam_extract, iam_simulate
 from libs.scan import aws_scan
+from libs.tools import NoColor
 from config import variables
 
 # Debug
@@ -138,11 +139,14 @@ def main(verb, args):
     """
     Main function
     """
+    csl = CONSOLE
+    if args.no_color:
+        csl = NoColor()
     try:
         session = boto3.Session(profile_name=args.profile)
     except botocore.exceptions.ProfileNotFound:
-        CONSOLE.print(f'[red]The profile [bold]{args.profile}[/bold] can\'t be found...')
-        CONSOLE.print('[red]Take a look at the ~/.aws/config file.')
+        csl.print(f'[red]The profile [bold]{args.profile}[/bold] can\'t be found...')
+        csl.print('[red]Take a look at the ~/.aws/config file.')
         sys.exit(1)
     meta_types = []
     if not hasattr(args, 'type') or args.type is None:
@@ -155,12 +159,12 @@ def main(verb, args):
     try:
         identity = session.client("sts").get_caller_identity()['Arn']
     except:
-        CONSOLE.print('[red]Can\'t get the caller identity...')
+        csl.print('[red]Can\'t get the caller identity...')
     if session.region_name is None:
-        CONSOLE.print('[red]No region defined, take a look at the ~/.aws/config file')
+        csl.print('[red]No region defined, take a look at the ~/.aws/config file')
         sys.exit(1)
-    CONSOLE.print(f'[white]Welcome [bold]{identity}[/bold] !')
-    CONSOLE.print(f'[white]Scan type: [bold]{verb}[/bold], Profile: [bold]{args.profile}[/bold], Region: [bold]{session.region_name}')
+    csl.print(f'[white]Welcome [bold]{identity}[/bold] !')
+    csl.print(f'[white]Scan type: [bold]{verb}[/bold], Profile: [bold]{args.profile}[/bold], Region: [bold]{session.region_name}')
 
     if verb == 'audit':
         audit_handler(session, args, meta_types)
@@ -180,6 +184,7 @@ if __name__ == '__main__':
     SUBPARSERS = PARSER.add_subparsers(help='commands')
 
     PARSER.add_argument('--version', action='version', version=VERSION)
+    PARSER.add_argument('--no-color', action='store_true', help='Disable colors')
 
     # DISCOVER Arguments
     DISCOVER_PARSER = SUBPARSERS.add_parser(
@@ -298,4 +303,11 @@ if __name__ == '__main__':
     ARGS = PARSER.parse_args()
     if len(sys.argv) == 1:
         PARSER.print_help()
-    main(sys.argv[1], ARGS)
+    VERB = 'discover'
+    if hasattr(ARGS, 'min_severity'):
+        VERB = 'audit'
+    elif hasattr(ARGS, 'min_rights'):
+        VERB = 'iam'
+    if ARGS.no_color:
+        CONSOLE = None
+    main(VERB, ARGS)

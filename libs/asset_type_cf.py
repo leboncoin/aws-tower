@@ -69,7 +69,7 @@ class CloudFront(AssetType):
                 'AuthorizationTypes': self.authorization.types
             }
             if self.public:
-                asset_report['PubliclyAccessible'] = True
+                asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.security_issues:
                 self.update_audit_report(asset_report)
         if 'CloudFront' not in report[self.location.region]:

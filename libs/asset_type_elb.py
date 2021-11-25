@@ -37,7 +37,7 @@ class ELB(AssetType):
                 'Scheme': self.scheme
             }
             if self.public:
-                asset_report['PubliclyAccessible'] = True
+                asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.security_groups and not self.security_issues:
                 asset_report['SecurityGroups'] = self.security_groups
             if self.dns_record:
@@ -56,9 +56,10 @@ class ELB(AssetType):
         """
         Return the report in one line
         """
+        public = ''
         if self.public:
-            return f'<Public> {self.display_brief_audit()}'
-        return f'[{self.scheme}] {self.display_brief_audit()}'
+            public = '[red]<Public>[/red] '
+        return f'{public}[{self.scheme}] {self.display_brief_audit()}'
 
     def finding_description(self, _):
         """

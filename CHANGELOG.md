@@ -10,7 +10,7 @@ AWS-TOWER
 2021/10/28
 
 ### New feature
-  - Rich color for the CLI
+  - Rich color for the CLI and '--no-color' argument
   - Add EKS
   - Add RDS version alerting: mariadb, postgres, mysql, sqlserver-se (mssql)
   - lambda: Update finding 'updated_at', in Patrowl, at each iteration

@@ -110,7 +110,7 @@ class S3(AssetType):
                 'URL': self.url
             }
             if self.public:
-                asset_report['PubliclyAccessible'] = True
+                asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.security_issues:
                 self.update_audit_report(asset_report)
             else:
@@ -119,14 +119,14 @@ class S3(AssetType):
                 if not self.acls.block_public_policy:
                     asset_report['ACL: BlockPublicPolicy'] = False
                 if not self.acls.ignore_public_acls:
-                    asset_report['ACL: IgnorePublicAcls'] = False
+                    asset_report['ACL: IgnorePublicAcls'] = '[yellow]False[/yellow]'
                 if not self.acls.restrict_public_buckets:
                     asset_report['ACL: RestrictPublicBuckets'] = False
                 if self.acls.all_users_grants:
-                    asset_report['ACL: All Users'] = self.acls.all_users_grants
+                    asset_report['ACL: All Users'] = f'[red]{self.acls.all_users_grants}[/red]'
                 if self.acls.any_authenticated_users_grants:
                     asset_report['ACL: Any Authenticated Users'] = \
-                        self.acls.any_authenticated_users_grants
+                        f'[red]{self.acls.any_authenticated_users_grants}[/red]'
         if 'S3' not in report[self.location.region]:
             report[self.location.region]['S3'] = { self.name: asset_report }
             return report
@@ -139,12 +139,12 @@ class S3(AssetType):
         """
         important_acls = []
         if self.acls.all_users_grants:
-            important_acls.append(f'<ALL {self.acls.all_users_grants}>')
+            important_acls.append(f'[red]<ALL {self.acls.all_users_grants}>[/red]')
         if self.acls.any_authenticated_users_grants:
-            important_acls.append(f'<AWS Auth {self.acls.any_authenticated_users_grants}>')
+            important_acls.append(f'[red]<AWS Auth {self.acls.any_authenticated_users_grants}>[/red]')
         is_public = ''
         if self.public:
-            is_public = '<Public> '
+            is_public = '[red]<Public>[/red] '
         return f'{is_public}{self.url} {" ".join(important_acls)}{self.display_brief_audit()}'
 
     def finding_description(self, _):

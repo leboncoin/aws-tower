@@ -30,6 +30,7 @@ class IAMGroup(AssetType):
         Redefinition of audit
         """
         for asset in self.list:
+            asset.console = self.console
             asset.audit(security_config)
             self.security_issues = [*self.security_issues, *asset.security_issues]
 
@@ -59,7 +60,8 @@ class IAMGroup(AssetType):
         """
         result = ''
         for asset in self.list:
-            result += f'[{asset.resource_id}] {asset.report_brief()},'
+            asset.console = self.console
+            result += f'<{asset.resource_id}> {asset.report_brief()},'
         return result
 
     def finding_description(self, finding_title):

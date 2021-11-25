@@ -34,6 +34,7 @@ class AssetType:
         self.public = public
         self.location = Location()
         self.security_issues = []
+        self.console = None
 
     def audit(self, security_config):
         """
@@ -59,7 +60,7 @@ class AssetType:
         for issue in self.security_issues:
             if 'Audit' not in report:
                 report['Audit'] = []
-            report['Audit'].append(color_severity(issue["severity"], issue["title"]))
+            report['Audit'].append(color_severity(issue["severity"], issue["title"], self.console))
 
     def display_brief_audit(self):
         """
@@ -75,7 +76,7 @@ class AssetType:
             else:
                 report[issue['severity']] += 1
         for severity, message in report.items():
-            output += f'<{color_severity(severity, message)}>'
+            output += f'<{color_severity(severity, message, self.console)}>'
         return output
 
     def get_type(self):

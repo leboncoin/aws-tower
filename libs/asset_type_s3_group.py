@@ -30,6 +30,7 @@ class S3Group(AssetType):
         Redefinition of audit
         """
         for asset in self.list:
+            asset.console = self.console
             asset.audit(security_config)
             self.security_issues = [*self.security_issues, *asset.security_issues]
 
@@ -59,6 +60,7 @@ class S3Group(AssetType):
         """
         result = ''
         for asset in self.list:
+            asset.console = self.console
             result += f'[{asset.name}] {asset.report_brief()},'
         return result
 
@@ -136,6 +138,7 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, _
         try:
             region = raw_data['s3_client'].get_bucket_location(Bucket=s_three['Name'])['LocationConstraint']
         except botocore.exceptions.ClientError:
+            region = None
             authorizations['s3'] = False
         # S3 default region is US East 1
         if region is None or region == 'unknown':

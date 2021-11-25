@@ -42,7 +42,7 @@ class EKS(AssetType):
                 'Version': self.version
             }
             if self.public:
-                asset_report['PubliclyAccessible'] = True
+                asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.security_issues:
                 self.update_audit_report(asset_report)
         if 'EKS' not in report[self.location.region]:
@@ -55,9 +55,10 @@ class EKS(AssetType):
         """
         Return the report in one line
         """
+        public = '<Private>'
         if self.public:
-            return f'<Public> {self.endpoint} v{self.version}{self.display_brief_audit()}'
-        return f'<Private> {self.endpoint} v{self.version}{self.display_brief_audit()}'
+            public = '[red]<Public>[/red] '
+        return f'{public} {self.endpoint} v{self.version}{self.display_brief_audit()}'
 
     def finding_description(self, _):
         """

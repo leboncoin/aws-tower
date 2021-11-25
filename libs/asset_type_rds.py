@@ -36,7 +36,7 @@ class RDS(AssetType):
                 'Engine': self.engine
             }
             if self.public:
-                asset_report['PubliclyAccessible'] = True
+                asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.url:
                 asset_report['URL'] = self.url
             if self.security_issues:
@@ -53,9 +53,10 @@ class RDS(AssetType):
         """
         Return the report in one line
         """
+        public = ''
         if self.public:
-            return f'<Public> {self.url} {self.engine}{self.display_brief_audit()}'
-        return f'{self.engine}{self.display_brief_audit()}'
+            return f'[red]<Public>[/red] {self.url} '
+        return f'{public}{self.engine}{self.display_brief_audit()}'
 
     def finding_description(self, _):
         """

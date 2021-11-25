@@ -9,6 +9,7 @@ AWS Services monitored:
 - API Gateway
 - CloudFront
 - EC2
+- EKS
 - ALB/ELB
 - IAM
 - RDS
@@ -30,7 +31,7 @@ $ alias aws-tower='<path>/aws_tower_cli.py'
 
 ```bash
 $ aws-tower --help
-usage: aws_tower_cli.py [-h] [--version] {discover,audit,iam} ...
+usage: aws_tower_cli.py [-h] [--version] [--no-color] {discover,audit,iam} ...
 
 positional arguments:
   {discover,audit,iam}  commands
@@ -41,6 +42,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --version             show program's version number and exit
+  --no-color            Disable colors
 ```
 
 ```bash

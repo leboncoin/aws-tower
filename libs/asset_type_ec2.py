@@ -44,7 +44,7 @@ class EC2(AssetType):
                 'PrivateIP': self.private_ip
             }
             if self.public:
-                asset_report['PubliclyAccessible'] = True
+                asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.public_ip:
                 asset_report['PublicIP'] = self.public_ip
             if self.security_groups and not self.security_issues:
@@ -52,11 +52,11 @@ class EC2(AssetType):
             if self.dns_record:
                 asset_report['DnsRecord'] = self.dns_record
             if self.attached_ssh_key:
-                asset_report['SSHKey'] = self.attached_ssh_key
+                asset_report['SSHKey'] = f'[yellow]{self.attached_ssh_key}[/yellow]'
             if self.role_poweruser:
-                asset_report['Roles PowerUser'] = self.role_poweruser
+                asset_report['Roles PowerUser'] = f'[yellow]{self.role_poweruser}[/yellow]'
             if self.role_admin:
-                asset_report['Roles Admin'] = self.role_admin
+                asset_report['Roles Admin'] = f'[red]{self.role_admin}[/red]'
             if self.security_issues:
                 self.update_audit_report(asset_report)
         if 'EC2' not in report[self.location.region][self.location.vpc][self.location.subnet]:
@@ -71,9 +71,15 @@ class EC2(AssetType):
         """
         Return the report in one line
         """
+        public = ''
+        permissions = ''
         if self.public:
-            return f'<Public> {self.public_ip} {self.private_ip}{self.display_brief_audit()}'
-        return f'{self.private_ip}{self.display_brief_audit()}'
+            public = f'[red]<Public>[/red] {self.public_ip} '
+        if self.role_admin:
+            permissions = ' [red]Admin[/red]'
+        elif self.role_poweruser:
+            permissions = ' [yellow]PowerUser[/yellow]'
+        return f'{public}{self.private_ip}{permissions}{self.display_brief_audit()}'
 
     def finding_description(self, _):
         """

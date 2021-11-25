@@ -12,6 +12,8 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 import json
 import logging
 
+from .tools import NoColor, log_me
+
 # Debug
 # from pdb import set_trace as st
 
@@ -24,6 +26,8 @@ def print_report(assets, meta_types, console, brief=False, security_config=None)
     # Construct Region/VPC/subnet
     report = {}
     for asset in assets:
+        # Attach the console to the asset, for colors
+        asset.console = console
         if asset.get_type().upper() not in meta_types:
             continue
         if asset.location.region is None:
@@ -39,20 +43,28 @@ def print_report(assets, meta_types, console, brief=False, security_config=None)
         if asset.location.subnet not in report[asset.location.region][asset.location.vpc]:
             report[asset.location.region][asset.location.vpc][asset.location.subnet] = {}
 
-    with console.status('[bold green]Auditing the scan...'):
-        # Add asset in report
-        for asset in assets:
-            if security_config:
-                asset.audit(security_config)
-                if not asset.security_issues:
-                    continue
-                asset.remove_not_vulnerable_members()
-            report = asset.report(report, brief=brief)
+    report = scan_audit(assets, report, security_config, brief, console)
 
     str_report = json.dumps(report, sort_keys=True, indent=4)
 
+    if console is None:
+        console = NoColor()
     console.print(str_report)
     return True
+
+@log_me('Auditing the scan...')
+def scan_audit(assets, report, security_config, brief, _):
+    """
+    Add assets in report
+    """
+    for asset in assets:
+        if security_config:
+            asset.audit(security_config)
+            if not asset.security_issues:
+                continue
+            asset.remove_not_vulnerable_members()
+        report = asset.report(report, brief=brief)
+    return report
 
 def print_summary(assets, meta_types, console, security_config):
     """

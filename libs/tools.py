@@ -9,10 +9,12 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 
 # Standard library imports
 import logging
+import re
 
 # from pdb import set_trace as st
 
 LOGGER = logging.getLogger('aws-tower')
+COLOG_TAG_REGEX = '\[\/?[a-z ]+\]'
 
 def get_tag(tags, key):
     """ Returns a specific value in aws tags, from specified key
@@ -78,7 +80,7 @@ def get_network(subnet_id, subnets_raw):
             subnet = _subnet['SubnetId']
     return region, vpc, subnet
 
-def color_severity(severity, message):
+def color_severity(severity, message, console):
     """
     For a given severity, return the severity with the message
     in the suitable color
@@ -92,7 +94,10 @@ def color_severity(severity, message):
         color = 'bold yellow'
     if isinstance(message, str):
         message = message.replace('[', '<').replace(']', '>')
-    return f'[{color}]{severity}: {message}[/{color}]'
+    output = f'[{color}]{severity}: {message}[/{color}]'
+    if console is None:
+        output = re.sub(COLOG_TAG_REGEX, '', output)
+    return output
 
 def log_me(message):
     """
@@ -108,3 +113,14 @@ def log_me(message):
                 return func(*kwargs)
         return inner
     return decorator
+
+class NoColor:
+    """
+    Display log with LOGGER
+    """
+    def print(self, message):
+        """
+        Display message without console colors
+        """
+        message = re.sub(COLOG_TAG_REGEX, '', message)
+        LOGGER.warning(message)

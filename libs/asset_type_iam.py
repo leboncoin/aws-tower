@@ -160,9 +160,9 @@ class IAM(AssetType):
                 'Arn': self.arn
             }
             if self.admin_actions:
-                asset_report['Admin actions'] = self.admin_actions
+                asset_report['Admin actions'] = f'[red]{self.admin_actions}[/red]'
             if self.poweruser_actions:
-                asset_report['Poweruser actions'] = self.poweruser_actions
+                asset_report['Poweruser actions'] = f'[yellow]{self.poweruser_actions}[/yellow]'
             if self.security_issues:
                 self.update_audit_report(asset_report)
         if 'IAM' not in report:
@@ -178,9 +178,9 @@ class IAM(AssetType):
         """
         actions = ''
         if self.admin_actions:
-            actions += f'Admin actions: {self.admin_actions} '
+            actions += f'[red]Admin actions: {self.admin_actions}[/red] '
         if self.poweruser_actions:
-            actions += f'Poweruser actions: {self.poweruser_actions} '
+            actions += f'[yellow]Poweruser actions: {self.poweruser_actions}[/yellow] '
         return f'{actions}{self.display_brief_audit()}'
 
     def finding_description(self, _):
