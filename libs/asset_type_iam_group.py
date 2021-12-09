@@ -93,6 +93,7 @@ def parse_raw_data(
     iam_action_passlist,
     iam_rolename_passlist,
     name_filter,
+    cache,
     _):
     """
     Parsing the raw data to extracts assets,
@@ -103,7 +104,7 @@ def parse_raw_data(
     resource_iam = boto_session.resource('iam')
     try:
         for role in iam_get_roles(
-            client_iam, resource_iam,
+            client_iam, resource_iam, cache,
             iam_action_passlist=iam_action_passlist,
             iam_rolename_passlist=iam_rolename_passlist):
             if name_filter.lower() in role.arn.lower():

@@ -7,15 +7,16 @@ AWS-TOWER
 4.0.0
 ------
 
-2021/10/28
+2021/12/09
 
 ### New feature
-  - Rich color for the CLI and '--no-color' argument
+  - Rich color for the CLI and `--no-color` argument
   - Add EKS
   - Add RDS version alerting: mariadb, postgres, mysql, sqlserver-se (mssql)
   - lambda: Update finding 'updated_at', in Patrowl, at each iteration
   - lambda: Scan multiple regions
   - Add EC2 associated roles, if at least EC2 and IAM are selected
+  - Add cache \o/ (`--no-cache` and `--clean-cache` too)
 
 ### Changes
   - Remove not vuln members in assetgroup (IAM and S3)

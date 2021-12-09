@@ -9,6 +9,8 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 
 # Standard library imports
 import logging
+from pathlib import Path
+import pickle
 import re
 
 # from pdb import set_trace as st
@@ -124,3 +126,124 @@ class NoColor:
         """
         message = re.sub(COLOG_TAG_REGEX, '', message)
         LOGGER.warning(message)
+
+def rm_tree(pth):
+    """
+    This function is removing a directory with all files inside
+    """
+    pth = Path(pth)
+    for child in pth.glob('*'):
+        if child.is_file():
+            child.unlink()
+        else:
+            rm_tree(child)
+    pth.rmdir()
+
+class Cache:
+    """
+    Cache is a class to store and get cached objects
+    """
+    def __init__(self, cache_dir, prefix, purge=False):
+        self.prefix = prefix
+        self.enabled = prefix != ''
+        if self.enabled:
+            cache_dir = Path(cache_dir)
+            if purge:
+                rm_tree(cache_dir)
+            cache_dir.mkdir(parents=True, exist_ok=True)
+    def save_file(self, result, cache_file):
+        """
+        This function is saving the file on disk
+        """
+        if self.enabled:
+            try:
+                pickle.dump(result, cache_file.open(mode='wb'))
+            except:
+                cache_file.unlink()
+    def get(self, key, client, method, args=(), paginate=False):
+        """
+        Returns the value of the key, else do client.method() and save it
+        """
+        cache_file = Path(f'{self.prefix}_{key}')
+        if cache_file.exists() and self.enabled:
+            return pickle.load(cache_file.open(mode='rb'))
+        if not hasattr(client, method):
+            LOGGER.critical(f'Method {method} does not exists...')
+            return None
+        result = getattr(client, method)(*args)
+        if paginate:
+            paginator = result
+            result = []
+            for i in paginator.paginate():
+                result.append(i)
+        self.save_file(result, cache_file)
+        return result
+    def get_asset(self, key):
+        """
+        Get an asset from cache
+        """
+        cache_file = Path(f'{self.prefix}_{key}')
+        if cache_file.exists() and self.enabled:
+            return pickle.load(cache_file.open(mode='rb'))
+        return None
+    def save_asset(self, key, asset):
+        """
+        Save an asset in cache
+        """
+        cache_file = Path(f'{self.prefix}_{key}')
+        self.save_file(asset, cache_file)
+    def get_ec2_iam_raw(self, key, client, ip_name):
+        """
+        Custom cache method for ec2_iam_raw, piclkes not working with boto3.resources.factory.iam.*
+        """
+        cache_file = Path(f'{self.prefix}_{key}')
+        if cache_file.exists() and self.enabled:
+            return pickle.load(cache_file.open(mode='rb'))
+        ec2_ip = client.InstanceProfile(ip_name)
+        result = [role.name for role in ec2_ip.roles]
+        self.save_file(result, cache_file)
+        return result
+    def get_iam_policy_version(self, key, client, policy_arn, version_id):
+        """
+        Custom cache method for iam.get_policy_version
+        """
+        cache_file = Path(f'{self.prefix}_{key}')
+        if cache_file.exists() and self.enabled:
+            return pickle.load(cache_file.open(mode='rb'))
+        result = client.get_policy_version(
+            PolicyArn=policy_arn,
+            VersionId=version_id)
+        self.save_file(result, cache_file)
+        return result
+    def get_r53_list_resource_record_sets(self, key, client, hosted_zone_id):
+        """
+        Custom cache method for r53.list_resource_record_sets(HostedZoneId=hosted_zone_id)
+        """
+        cache_file = Path(f'{self.prefix}_{key}')
+        if cache_file.exists() and self.enabled:
+            return pickle.load(cache_file.open(mode='rb'))
+        result = client.list_resource_record_sets(
+            HostedZoneId=hosted_zone_id)
+        self.save_file(result, cache_file)
+        return result
+    def get_eks_describe_cluster(self, key, client, cluster_name):
+        """
+        Custom cache method for eks.describe_cluster(name=cluster_name)
+        """
+        cache_file = Path(f'{self.prefix}_{key}')
+        if cache_file.exists() and self.enabled:
+            return pickle.load(cache_file.open(mode='rb'))
+        result = client.describe_cluster(
+            name=cluster_name)
+        self.save_file(result, cache_file)
+        return result
+    def get_caller_identity(self, key, client):
+        """
+        Custom cache method for session.client('sts').get_caller_identity()
+        """
+        cache_file = Path(f'{self.prefix}_{key}')
+        if cache_file.exists() and self.enabled:
+            return pickle.load(cache_file.open(mode='rb'))
+        result = client.client('sts').get_caller_identity()
+        self.save_file(result, cache_file)
+        return result

@@ -96,14 +96,17 @@ class CloudFront(AssetType):
 
 
 @log_me('Getting Cloudfront raw data...')
-def get_raw_data(raw_data, authorizations, boto_session, _):
+def get_raw_data(raw_data, authorizations, boto_session, cache, _):
     """
     Get raw data from boto requests.
     Return any Cloudfront findings and add a 'False' in authorizations in case of errors
     """
     cf_client = boto_session.client('cloudfront')
     try:
-        raw_data['cf_raw'] = cf_client.list_distributions()['DistributionList']
+        raw_data['cf_raw'] = cache.get(
+            'cf_list_distributions',
+            cf_client,
+            'list_distributions')['DistributionList']
     except botocore.exceptions.ClientError:
         raw_data['cf_raw'] = []
         authorizations['cloudfront'] = False
@@ -137,14 +140,17 @@ def scan(cf_dist):
         public=True)
 
 @log_me('Scanning Cloudfront...')
-def parse_raw_data(assets, authorizations, raw_data, name_filter, _):
+def parse_raw_data(assets, authorizations, raw_data, name_filter, cache, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     if 'Items' in raw_data['cf_raw']:
         for cf_dist in raw_data['cf_raw']['Items']:
-            asset = scan(cf_dist)
+            asset = cache.get_asset(f'CF_{cf_dist["DomainName"]}')
+            if asset is None:
+                asset = scan(cf_dist)
+                cache.save_asset(f'CF_{cf_dist["DomainName"]}', asset)
             if asset is not None and name_filter.lower() in asset.name.lower():
                 assets.append(asset)
     return assets, authorizations

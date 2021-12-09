@@ -20,7 +20,7 @@ from rich import console
 from libs.display import print_report, print_summary
 from libs.iam_scan import complete_source_arn, iam_display, iam_display_roles, iam_extract, iam_simulate
 from libs.scan import aws_scan
-from libs.tools import NoColor
+from libs.tools import Cache, NoColor
 from config import variables
 
 # Debug
@@ -31,12 +31,13 @@ from config import variables
 CONSOLE = console.Console()
 VERSION = '4.0.0'
 
-def audit_handler(session, args, meta_types):
+def audit_handler(session, args, meta_types, cache):
     """
     Handle audit argument
     """
     assets = aws_scan(
         session,
+        cache,
         iam_action_passlist=variables.IAM_ACTION_PASSLIST,
         iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
         public_only=False,
@@ -72,12 +73,13 @@ def audit_handler(session, args, meta_types):
             security_config=security_config
         )
 
-def discover_handler(session, args, meta_types):
+def discover_handler(session, args, meta_types, cache):
     """
     Handle discover argument
     """
     assets = aws_scan(
         session,
+        cache,
         iam_action_passlist=variables.IAM_ACTION_PASSLIST,
         iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
         public_only=args.public_only,
@@ -101,7 +103,7 @@ def discover_handler(session, args, meta_types):
             security_config=None
         )
 
-def iam_handler(session, args):
+def iam_handler(session, args, cache):
     """
     Handle iam argument
     """
@@ -113,6 +115,7 @@ def iam_handler(session, args):
             client_iam,
             res_iam,
             args.source,
+            cache,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             verbose=args.verbose)
@@ -131,6 +134,7 @@ def iam_handler(session, args):
             args.source,
             args.min_rights,
             args.service,
+            cache,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             verbose=args.verbose)
@@ -155,9 +159,16 @@ def main(verb, args):
         for meta_type in args.type:
             if meta_type.upper() not in meta_types:
                 meta_types.append(meta_type.upper())
+
+    cache_dir = '/tmp/aws_tower_cache'
+    cache_prefix = f'{cache_dir}/{args.profile}_{session.region_name}'
+    if args.no_cache:
+        cache_prefix = ''
+    cache = Cache(cache_dir, cache_prefix, purge=args.clean_cache)
+
     identity = 'Unknown'
     try:
-        identity = session.client("sts").get_caller_identity()['Arn']
+        identity = cache.get_caller_identity('id', session)['Arn']
     except:
         csl.print('[red]Can\'t get the caller identity...')
     if session.region_name is None:
@@ -167,11 +178,11 @@ def main(verb, args):
     csl.print(f'[white]Scan type: [bold]{verb}[/bold], Profile: [bold]{args.profile}[/bold], Region: [bold]{session.region_name}')
 
     if verb == 'audit':
-        audit_handler(session, args, meta_types)
+        audit_handler(session, args, meta_types, cache)
     elif verb == 'discover':
-        discover_handler(session, args, meta_types)
+        discover_handler(session, args, meta_types, cache)
     elif verb == 'iam':
-        iam_handler(session, args)
+        iam_handler(session, args, cache)
     else:
         sys.exit(1)
     sys.exit(0)
@@ -185,6 +196,8 @@ if __name__ == '__main__':
 
     PARSER.add_argument('--version', action='version', version=VERSION)
     PARSER.add_argument('--no-color', action='store_true', help='Disable colors')
+    PARSER.add_argument('--no-cache', action='store_true', help='Disable cache')
+    PARSER.add_argument('--clean-cache', action='store_true', help='Erease current cache by a new one')
 
     # DISCOVER Arguments
     DISCOVER_PARSER = SUBPARSERS.add_parser(

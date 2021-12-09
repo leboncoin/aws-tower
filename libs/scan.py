@@ -26,7 +26,7 @@ import libs.asset_type_s3_group as s3
 
 LOGGER = logging.getLogger('aws-tower')
 
-def get_raw_data(boto_session, meta_types, console):
+def get_raw_data(boto_session, meta_types, cache, console):
     """
     Returned raw data and authorization failure for logging
     """
@@ -47,6 +47,7 @@ def get_raw_data(boto_session, meta_types, console):
         raw_data,
         authorizations,
         boto_session,
+        cache,
         console)
 
     if 'APIGW' in meta_types:
@@ -54,6 +55,7 @@ def get_raw_data(boto_session, meta_types, console):
             raw_data,
             authorizations,
             boto_session,
+            cache,
             console)
 
     if 'CLOUDFRONT' in meta_types:
@@ -61,6 +63,7 @@ def get_raw_data(boto_session, meta_types, console):
             raw_data,
             authorizations,
             boto_session,
+            cache,
             console)
 
     if 'EKS' in meta_types:
@@ -68,6 +71,7 @@ def get_raw_data(boto_session, meta_types, console):
             raw_data,
             authorizations,
             boto_session,
+            cache,
             console)
 
     if 'ELB' in meta_types:
@@ -75,6 +79,7 @@ def get_raw_data(boto_session, meta_types, console):
             raw_data,
             authorizations,
             boto_session,
+            cache,
             console)
 
     if 'RDS' in meta_types:
@@ -82,6 +87,7 @@ def get_raw_data(boto_session, meta_types, console):
             raw_data,
             authorizations,
             boto_session,
+            cache,
             console)
 
     if 'S3' in meta_types:
@@ -89,6 +95,7 @@ def get_raw_data(boto_session, meta_types, console):
             raw_data,
             authorizations,
             boto_session,
+            cache,
             console)
 
     if 'EC2' in meta_types or 'ELB' in meta_types:
@@ -96,6 +103,7 @@ def get_raw_data(boto_session, meta_types, console):
             raw_data,
             authorizations,
             boto_session,
+            cache,
             console)
 
     return raw_data, authorizations
@@ -113,6 +121,7 @@ def log_authorization_errors(authorizations, console):
 
 def aws_scan(
     boto_session,
+    cache,
     iam_action_passlist=[],
     iam_rolename_passlist=[],
     public_only=False,
@@ -122,7 +131,7 @@ def aws_scan(
     """
     SCAN AWS
     """
-    raw_data, authorizations = get_raw_data(boto_session, meta_types, console)
+    raw_data, authorizations = get_raw_data(boto_session, meta_types, cache, console)
 
     assets = []
 
@@ -134,6 +143,7 @@ def aws_scan(
             public_only,
             boto_session,
             name_filter,
+            cache,
             console)
 
     if 'CLOUDFRONT' in meta_types:
@@ -142,6 +152,7 @@ def aws_scan(
             authorizations,
             raw_data,
             name_filter,
+            cache,
             console)
 
     if 'EC2' in meta_types:
@@ -152,6 +163,7 @@ def aws_scan(
             name_filter,
             boto_session,
             public_only,
+            cache,
             console)
 
     if 'EKS' in meta_types:
@@ -160,6 +172,7 @@ def aws_scan(
             authorizations,
             raw_data,
             name_filter,
+            cache,
             console)
 
     if 'ELB' in meta_types:
@@ -169,6 +182,7 @@ def aws_scan(
             raw_data,
             name_filter,
             public_only,
+            cache,
             console)
 
     if 'IAM' in meta_types:
@@ -179,6 +193,7 @@ def aws_scan(
             iam_action_passlist,
             iam_rolename_passlist,
             name_filter,
+            cache,
             console)
 
     if 'RDS' in meta_types:
@@ -188,6 +203,7 @@ def aws_scan(
             raw_data,
             name_filter,
             public_only,
+            cache,
             console)
 
     if 'S3' in meta_types:
@@ -197,6 +213,7 @@ def aws_scan(
             raw_data,
             name_filter,
             public_only,
+            cache,
             console)
 
     if 'EC2' in meta_types or 'ELB' in meta_types:
@@ -204,6 +221,7 @@ def aws_scan(
             assets,
             authorizations,
             raw_data,
+            cache,
             console)
 
     if 'EC2' in meta_types and 'IAM' in meta_types:

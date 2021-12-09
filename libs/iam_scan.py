@@ -93,14 +93,16 @@ def get_actions_from_rolepolicy(rolepolicy):
     return actions
 
 
-def get_actions_from_policy(client, policy):
+def get_actions_from_policy(client, policy, cache):
     """
     Return actions associated to a Policy
     """
     actions = []
-    document = client.get_policy_version(
-        PolicyArn=policy.arn,
-        VersionId=policy.default_version_id)
+    document = cache.get_iam_policy_version(
+        f'iam_policy_version_{policy.policy_name}',
+        client,
+        policy.arn,
+        policy.default_version_id)
     for statement in document['PolicyVersion']['Document']['Statement']:
         if 'Action' not in statement:
             continue
@@ -203,8 +205,9 @@ def iam_display(
     client,
     resource,
     arn,
-    iam_action_passlist=list(),
-    iam_rolename_passlist=list(),
+    cache,
+    iam_action_passlist=[],
+    iam_rolename_passlist=[],
     verbose=False):
     """
     Display information about the ARN
@@ -227,7 +230,7 @@ def iam_display(
             for policy in role.attached_policies.all():
                 if verbose:
                     LOGGER.warning(f'Policy: {policy.arn}')
-                actions = [*actions, *get_actions_from_policy(client, policy)]
+                actions = [*actions, *get_actions_from_policy(client, policy, cache)]
             actions = filter_actions(actions, iam_action_passlist)
             print(f'Actions: {set(actions)}')
 
@@ -252,8 +255,9 @@ def get_role_services(role):
 def iam_get_roles(
     client,
     resource,
-    iam_action_passlist=list(),
-    iam_rolename_passlist=list(),
+    cache,
+    iam_action_passlist=[],
+    iam_rolename_passlist=[],
     arn=None,
     service=None):
     """
@@ -261,25 +265,33 @@ def iam_get_roles(
     Filter actions with the action_passlist
     """
     roles = []
-    paginator = client.get_paginator('list_roles')
-    for response in paginator.paginate():
+    paginator = cache.get(
+        'iam_paginator_list_roles',
+        client,
+        'get_paginator',
+        args=('list_roles',),
+        paginate=True)
+    for response in paginator:
         for role in response['Roles']:
-            if arn and role['Arn'] != arn:
-                continue
-            if service and service not in get_role_services(role):
-                continue
-            role_obj = IAM(arn=role['Arn'])
-            if role_obj.resource_id in ['aws-reserved', 'aws-service-role', 'service-role']:
-                continue
-            if role['RoleName'] in iam_rolename_passlist:
-                continue
-            actions = []
-            for rolepolicy in resource.Role(role['RoleName']).policies.all():
-                actions = [*actions, *get_actions_from_rolepolicy(rolepolicy)]
-            for policy in resource.Role(role['RoleName']).attached_policies.all():
-                actions = [*actions, *get_actions_from_policy(client, policy)]
-            role_obj.actions = filter_actions(actions, iam_action_passlist)
-            role_obj.simplify_actions()
+            role_obj = cache.get_asset(f'iam_{role["RoleName"]}')
+            if role_obj is None:
+                if arn and role['Arn'] != arn:
+                    continue
+                if service and service not in get_role_services(role):
+                    continue
+                role_obj = IAM(arn=role['Arn'])
+                if role_obj.resource_id in ['aws-reserved', 'aws-service-role', 'service-role']:
+                    continue
+                if role['RoleName'] in iam_rolename_passlist:
+                    continue
+                actions = []
+                for rolepolicy in resource.Role(role['RoleName']).policies.all():
+                    actions = [*actions, *get_actions_from_rolepolicy(rolepolicy)]
+                for policy in resource.Role(role['RoleName']).attached_policies.all():
+                    actions = [*actions, *get_actions_from_policy(client, policy, cache)]
+                role_obj.actions = filter_actions(actions, iam_action_passlist)
+                role_obj.simplify_actions()
+                cache.save_asset(f'iam_{role["RoleName"]}', role_obj)
             roles.append(role_obj)
     return roles
 
@@ -290,8 +302,9 @@ def iam_display_roles(
     arn,
     min_rights,
     service,
-    iam_action_passlist=list(),
-    iam_rolename_passlist=list(),
+    cache,
+    iam_action_passlist=[],
+    iam_rolename_passlist=[],
     verbose=False):
     """
     Display all roles actions
@@ -299,6 +312,7 @@ def iam_display_roles(
     roles = iam_get_roles(
         client,
         resource,
+        cache,
         iam_action_passlist=iam_action_passlist,
         iam_rolename_passlist=iam_rolename_passlist,
         arn=arn,

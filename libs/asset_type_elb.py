@@ -70,14 +70,17 @@ class ELB(AssetType):
         return f'<{self.scheme}> {self.dns_record}'
 
 @log_me('Getting Elastic Load Balancer raw data...')
-def get_raw_data(raw_data, authorizations, boto_session, _):
+def get_raw_data(raw_data, authorizations, boto_session, cache, _):
     """
     Get raw data from boto requests.
     Return any ELB findings and add a 'False' in authorizations in case of errors
     """
     elb_client = boto_session.client('elbv2')
     try:
-        raw_data['elb_raw'] = elb_client.describe_load_balancers()['LoadBalancers']
+        raw_data['elb_raw'] = cache.get(
+            'elb_describe_load_balancers',
+            elb_client,
+            'describe_load_balancers')['LoadBalancers']
     except botocore.exceptions.ClientError:
         raw_data['elb_raw'] = []
         authorizations['elb'] = False
@@ -103,13 +106,16 @@ def scan(elb, sg_raw, subnets_raw, public_only):
     return elb_asset
 
 @log_me('Scanning Elastic Load Balancer...')
-def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, _):
+def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, cache, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     for elb in raw_data['elb_raw']:
-        asset = scan(elb, raw_data['sg_raw'], raw_data['subnets_raw'], public_only)
+        asset = cache.get_asset(f'ELB_{elb["DNSName"]}')
+        if asset is None:
+            asset = scan(elb, raw_data['sg_raw'], raw_data['subnets_raw'], public_only)
+            cache.save_asset(f'ELB_{elb["DNSName"]}', asset)
         if asset is not None and name_filter.lower() in asset.name.lower():
             assets.append(asset)
     return assets, authorizations

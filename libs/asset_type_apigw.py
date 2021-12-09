@@ -97,14 +97,17 @@ class APIGW(AssetType):
         return f'<Private> {self.api_endpoint} Auth:{self.authorization.types}'
 
 @log_me('Getting API Gateway raw data...')
-def get_raw_data(raw_data, authorizations, boto_session, _):
+def get_raw_data(raw_data, authorizations, boto_session, cache, _):
     """
     Get raw data from boto requests.
     Return any API Gateway findings and add a 'False' in authorizations in case of errors
     """
     ag_client = boto_session.client('apigateway')
     try:
-        raw_data['ag_raw'] = ag_client.get_rest_apis()['items']
+        raw_data['ag_raw'] = cache.get(
+            'ag_get_rest_apis',
+            ag_client,
+            'get_rest_apis')['items']
     except botocore.exceptions.ClientError:
         raw_data['ag_raw'] = []
         authorizations['apigw'] = False
@@ -112,43 +115,52 @@ def get_raw_data(raw_data, authorizations, boto_session, _):
     agv2_client = boto_session.client('apigatewayv2')
     raw_data['agv2_client'] = agv2_client
     try:
-        raw_data['agv2_raw'] = agv2_client.get_apis()['Items']
+        raw_data['agv2_raw'] = cache.get(
+            'agv2_get_apis',
+            agv2_client,
+            'get_apis')['Items']
     except botocore.exceptions.ClientError:
         raw_data['agv2_raw'] = []
         authorizations['apigw'] = False
     return raw_data, authorizations
 
-# @log_me('Scanning API Gateway...')
-def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, name_filter, _):
+@log_me('Scanning API Gateway...')
+def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, name_filter, cache, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     for apigw in raw_data['ag_raw']:
-        is_public = 'REGIONAL' in apigw['endpointConfiguration']['types']
-        if public_only and not is_public:
-            continue
-        asset = APIGW(
-            apigw['name'],
-            apigw['id'],
-            boto_session.region_name,
-            [apigw['apiKeySource']],
-            public=is_public)
+        asset = cache.get_asset(f'APIGW_{apigw["Name"]}')
+        if asset is None:
+            is_public = 'REGIONAL' in apigw['endpointConfiguration']['types']
+            if public_only and not is_public:
+                continue
+            asset = APIGW(
+                apigw['name'],
+                apigw['id'],
+                boto_session.region_name,
+                [apigw['apiKeySource']],
+                public=is_public)
+            cache.save_asset(f'APIGW_{apigw["Name"]}', asset)
         if asset is not None and name_filter.lower() in asset.name.lower():
             assets.append(asset)
     for apigw in raw_data['agv2_raw']:
-        authorization_types = []
-        try:
-            for route in raw_data['agv2_client'].get_routes(ApiId=apigw['ApiId'])['Items']:
-                authorization_types.append(route['AuthorizationType'])
-        except botocore.exceptions.ClientError:
-            authorizations['apigw'] = False
-        asset = APIGW(
-            apigw['Name'],
-            apigw['ApiId'],
-            boto_session.region_name,
-            authorization_types,
-            public=True)
+        asset = cache.get_asset(f'APIGW_{apigw["Name"]}')
+        if asset is None:
+            authorization_types = []
+            try:
+                for route in raw_data['agv2_client'].get_routes(ApiId=apigw['ApiId'])['Items']:
+                    authorization_types.append(route['AuthorizationType'])
+            except botocore.exceptions.ClientError:
+                authorizations['apigw'] = False
+            asset = APIGW(
+                apigw['Name'],
+                apigw['ApiId'],
+                boto_session.region_name,
+                authorization_types,
+                public=True)
+            cache.save_asset(f'APIGW_{apigw["Name"]}', asset)
         if asset is not None and name_filter.lower() in asset.name.lower():
             assets.append(asset)
     return assets, authorizations

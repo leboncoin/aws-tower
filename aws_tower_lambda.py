@@ -25,6 +25,7 @@ from requests import Session
 from libs.patrowl import add_asset, add_finding, get_findings, update_finding
 from libs.scan import aws_scan
 from libs.session import get_session
+from libs.tools import Cache
 from config import variables
 
 # Debug
@@ -45,6 +46,8 @@ PATROWL_API = PatrowlManagerApi(
     url=PATROWL['private_endpoint'],
     auth_token=PATROWL['api_token']
 )
+
+NO_CACHE = Cache('', '')
 
 SESSION = Session()
 
@@ -80,6 +83,7 @@ def main(account):
     try:
         assets = aws_scan(
             session,
+            NO_CACHE,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             public_only=False,

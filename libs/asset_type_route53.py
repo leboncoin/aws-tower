@@ -13,7 +13,7 @@ import botocore
 from .tools import log_me
 
 @log_me('Getting Route53 raw data...')
-def get_raw_data(raw_data, authorizations, boto_session, _):
+def get_raw_data(raw_data, authorizations, boto_session, *_):
     """
     Get raw data from boto requests.
     Return any Route53 findings and add a 'False' in authorizations in case of errors
@@ -37,15 +37,20 @@ def scan(assets, record_value, record):
     return assets
 
 @log_me('Scanning Route53...')
-def parse_raw_data(assets, authorizations, raw_data, _):
+def parse_raw_data(assets, authorizations, raw_data, cache, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     try:
-        for hosted_zone in raw_data['route53_client'].list_hosted_zones()['HostedZones']:
-            for record in raw_data['route53_client'].list_resource_record_sets(
-                HostedZoneId=hosted_zone['Id'])['ResourceRecordSets']:
+        for hosted_zone in cache.get(
+            'r53_list_hosted_zones',
+            raw_data['route53_client'],
+            'list_hosted_zones')['HostedZones']:
+            for record in cache.get_r53_list_resource_record_sets(
+                f'r53_{hosted_zone["Name"]}',
+                raw_data['route53_client'],
+                hosted_zone['Id'])['ResourceRecordSets']:
                 if 'ResourceRecords' in record:
                     for record_ in record['ResourceRecords']:
                         if 'Value' not in record_:

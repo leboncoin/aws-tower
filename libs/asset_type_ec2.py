@@ -90,50 +90,75 @@ class EC2(AssetType):
         return f'<Private> {self.private_ip}'
 
 @log_me('Getting EC2 raw data...')
-def get_raw_data(raw_data, authorizations, boto_session, _):
+def get_raw_data(raw_data, authorizations, boto_session, cache, _):
     """
     Get raw data from boto requests.
     Return any EC2 findings and add a 'False' in authorizations in case of errors
     """
     ec2_client = boto_session.client('ec2')
     try:
-        raw_data['ec2_raw'] = ec2_client.describe_instances()['Reservations']
+        raw_data['ec2_raw'] = cache.get(
+            'ec2_describe_instances',
+            ec2_client,
+            'describe_instances')['Reservations']
     except botocore.exceptions.ClientError:
         raw_data['ec2_raw'] = []
         authorizations['ec2'] = False
     try:
-        raw_data['subnets_raw'] = ec2_client.describe_subnets()['Subnets']
+        raw_data['subnets_raw'] = cache.get(
+            'ec2_describe_subnets',
+            ec2_client,
+            'describe_subnets')['Subnets']
     except botocore.exceptions.ClientError:
         raw_data['subnets_raw'] = []
         authorizations['ec2'] = False
         authorizations['elb'] = False
         authorizations['rds'] = False
     try:
-        raw_data['sg_raw'] = ec2_client.describe_security_groups()['SecurityGroups']
+        raw_data['sg_raw'] = cache.get(
+            'ec2_describe_security_groups',
+            ec2_client,
+            'describe_security_groups')['SecurityGroups']
     except botocore.exceptions.ClientError:
         raw_data['sg_raw'] = []
         authorizations['ec2'] = False
         authorizations['elb'] = False
+    try:
+        raw_data['ec2_kp_raw'] = cache.get(
+            'ec2_describe_key_pairs',
+            ec2_client,
+            'describe_key_pairs')['KeyPairs']
+    except botocore.exceptions.ClientError:
+        raw_data['ec2_kp_raw'] = []
+        authorizations['ec2'] = False
     iam_res = boto_session.resource('iam')
     raw_data['ec2_iam_raw'] = {}
     try:
-        raw_data['ec2_iam_assoc_raw'] = ec2_client.describe_iam_instance_profile_associations()['IamInstanceProfileAssociations']
+        raw_data['ec2_iam_assoc_raw'] = cache.get(
+            'ec2_describe_iam_instance_profile_associations',
+            ec2_client,
+            'describe_iam_instance_profile_associations')['IamInstanceProfileAssociations']
     except botocore.exceptions.ClientError:
         raw_data['ec2_iam_assoc_raw'] = []
         authorizations['ec2'] = False
     for assoc in raw_data['ec2_iam_assoc_raw']:
         ip_name = assoc['IamInstanceProfile']['Arn'].split('/')[-1]
         try:
-            raw_data['ec2_iam_raw'][ip_name] = iam_res.InstanceProfile(ip_name).roles
+            raw_data['ec2_iam_raw'][ip_name] = cache.get_ec2_iam_raw(
+                f'iam_InstanceProfile_{ip_name}',
+                iam_res,
+                ip_name)
         except botocore.exceptions.ClientError:
             raw_data['ec2_iam_raw'][ip_name] = []
             authorizations['ec2'] = False
     return raw_data, authorizations
 
-def scan(ec2, sg_raw, subnets_raw, boto_session, public_only):
+def scan(ec2, sg_raw, subnets_raw, kp_raw, boto_session, public_only):
     """
     Scan EC2
     """
+    if ec2['State']['Name'] != 'running':
+        return None
     ec2_res = boto_session.resource('ec2')
     if 'VpcId' not in ec2 or 'SubnetId' not in ec2:
         return None
@@ -162,23 +187,27 @@ def scan(ec2, sg_raw, subnets_raw, boto_session, public_only):
             draw = draw_sg(security_group['GroupId'], sg_raw)
             if draw:
                 ec2_asset.security_groups[security_group['GroupId']] = draw
-    ec2_asset.attached_ssh_key = 'KeyName' in ec2
+    ec2_asset.attached_ssh_key = 'KeyName' in ec2 and ec2['KeyName'] in [ k['KeyName'] for k in kp_raw ]
     return ec2_asset
 
 @log_me('Scanning EC2...')
-def parse_raw_data(assets, authorizations, raw_data, name_filter, boto_session, public_only, _):
+def parse_raw_data(assets, authorizations, raw_data, name_filter, boto_session, public_only, cache, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     for ec2 in raw_data['ec2_raw']:
         for ec2_ in ec2['Instances']:
-            asset = scan(
-                ec2_,
-                raw_data['sg_raw'],
-                raw_data['subnets_raw'],
-                boto_session,
-                public_only)
+            asset = cache.get_asset(f'EC2_{ec2_["InstanceId"]}')
+            if asset is None:
+                asset = scan(
+                    ec2_,
+                    raw_data['sg_raw'],
+                    raw_data['subnets_raw'],
+                    raw_data['ec2_kp_raw'],
+                    boto_session,
+                    public_only)
+                cache.save_asset(f'EC2_{ec2_["InstanceId"]}', asset)
             if asset is not None and name_filter.lower() in asset.name.lower():
                 assets.append(asset)
     return assets, authorizations
@@ -205,17 +234,17 @@ def parse_iam_instance_profile(assets, authorizations, raw_data, _):
                     iam_group = asset
                     break
             # Loop on every IAM role associated to the IAM I.P.
-            for role in raw_data['ec2_iam_raw'][ip_name]:
+            for role_name in raw_data['ec2_iam_raw'][ip_name]:
                 # Loop on all IAM role of the AWS account
                 for iam in iam_group.list:
-                    if role.name != iam.arn.split('/')[-1]:
+                    if role_name != iam.arn.split('/')[-1]:
                         continue
                     if iam.poweruser_actions is not None:
                         if ec2.role_poweruser != '':
                             ec2.role_poweruser = ' '
-                        ec2.role_poweruser += f'{role.name}: {iam.poweruser_actions}'
+                        ec2.role_poweruser += f'{role_name}: {iam.poweruser_actions}'
                     if iam.admin_actions is not None:
                         if ec2.role_admin != '':
                             ec2.role_admin = ' '
-                        ec2.role_admin += f'{role.name}: {iam.admin_actions}'
+                        ec2.role_admin += f'{role_name}: {iam.admin_actions}'
     return assets, authorizations

@@ -67,14 +67,18 @@ class RDS(AssetType):
         return f'<Private> {self.engine}'
 
 @log_me('Getting RDS raw data...')
-def get_raw_data(raw_data, authorizations, boto_session, _):
+def get_raw_data(raw_data, authorizations, boto_session, cache, _):
     """
     Get raw data from boto requests.
     Return any RDS findings and add a 'False' in authorizations in case of errors
     """
     rds_client = boto_session.client('rds')
     try:
-        raw_data['rds_raw'] = rds_client.describe_db_instances()['DBInstances']
+        # raw_data['rds_raw'] = rds_client.describe_db_instances()['DBInstances']
+        raw_data['rds_raw'] = cache.get(
+            'rds_describe_db_instances',
+            rds_client,
+            'describe_db_instances')['DBInstances']
     except botocore.exceptions.ClientError:
         raw_data['rds_raw'] = []
         authorizations['rds'] = False
@@ -101,16 +105,19 @@ def scan(rds, subnets_raw, public_only):
     return rds_asset
 
 @log_me('Scanning RDS...')
-def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, _):
+def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, cache, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     for rds in raw_data['rds_raw']:
-        asset = scan(
-            rds,
-            raw_data['subnets_raw'],
-            public_only)
+        asset = cache.get_asset(f'RDS_{rds["DBInstanceIdentifier"]}')
+        if asset is None:
+            asset = scan(
+                rds,
+                raw_data['subnets_raw'],
+                public_only)
+            cache.save_asset(f'RDS_{rds["DBInstanceIdentifier"]}', asset)
         if asset is not None and name_filter.lower() in asset.name.lower():
             assets.append(asset)
     return assets, authorizations

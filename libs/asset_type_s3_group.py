@@ -86,7 +86,7 @@ class S3Group(AssetType):
         return True
 
 @log_me('Getting S3 raw data...')
-def get_raw_data(raw_data, authorizations, boto_session, _):
+def get_raw_data(raw_data, authorizations, boto_session, cache, _):
     """
     Get raw data from boto requests.
     Return any S3 findings and add a 'False' in authorizations in case of errors
@@ -94,7 +94,10 @@ def get_raw_data(raw_data, authorizations, boto_session, _):
     s3_client = boto_session.client('s3')
     raw_data['s3_client'] = s3_client
     try:
-        raw_data['s3_list_buckets'] = s3_client.list_buckets()['Buckets']
+        raw_data['s3_list_buckets'] = cache.get(
+            's3_list_buckets',
+            s3_client,
+            'list_buckets')['Buckets']
     except botocore.exceptions.ClientError:
         raw_data['s3_list_buckets'] = []
         authorizations['s3'] = False
@@ -122,38 +125,41 @@ def scan(s_three, configuration, region, acls, public_only):
     return s3_asset
 
 @log_me('Scanning S3...')
-def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, _):
+def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, cache, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     s3group = S3Group(name='S3 buckets')
     for s_three in raw_data['s3_list_buckets']:
-        try:
-            public_access_block_configuration = raw_data['s3_client'].get_public_access_block(
-                Bucket=s_three['Name'])['PublicAccessBlockConfiguration']
-        except botocore.exceptions.ClientError:
-            # Not really an error, the only way to know if it's a public bucket
-            public_access_block_configuration = None
-        try:
-            region = raw_data['s3_client'].get_bucket_location(Bucket=s_three['Name'])['LocationConstraint']
-        except botocore.exceptions.ClientError:
-            region = None
-            authorizations['s3'] = False
-        # S3 default region is US East 1
-        if region is None or region == 'unknown':
-            region = 'us-east-1'
-        try:
-            acls = raw_data['s3_client'].get_bucket_acl(Bucket=s_three['Name'])['Grants']
-        except botocore.exceptions.ClientError:
-            acls = []
-            authorizations['s3'] = False
-        s3bucket = scan(
-            s_three['Name'],
-            public_access_block_configuration,
-            region,
-            acls,
-            public_only)
+        s3bucket = cache.get_asset(f'S3_{s_three["Name"]}')
+        if s3bucket is None:
+            try:
+                public_access_block_configuration = raw_data['s3_client'].get_public_access_block(
+                    Bucket=s_three['Name'])['PublicAccessBlockConfiguration']
+            except botocore.exceptions.ClientError:
+                # Not really an error, the only way to know if it's a public bucket
+                public_access_block_configuration = None
+            try:
+                region = raw_data['s3_client'].get_bucket_location(Bucket=s_three['Name'])['LocationConstraint']
+            except botocore.exceptions.ClientError:
+                region = None
+                authorizations['s3'] = False
+            # S3 default region is US East 1
+            if region is None or region == 'unknown':
+                region = 'us-east-1'
+            try:
+                acls = raw_data['s3_client'].get_bucket_acl(Bucket=s_three['Name'])['Grants']
+            except botocore.exceptions.ClientError:
+                acls = []
+                authorizations['s3'] = False
+            s3bucket = scan(
+                s_three['Name'],
+                public_access_block_configuration,
+                region,
+                acls,
+                public_only)
+            cache.save_asset(f'S3_{s_three["Name"]}', s3bucket)
         if s3bucket is not None and name_filter.lower() in s3bucket.name.lower():
             s3group.list.append(s3bucket)
     assets.append(s3group)

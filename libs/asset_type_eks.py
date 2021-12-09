@@ -70,7 +70,7 @@ class EKS(AssetType):
 
 
 @log_me('Getting EKS raw data...')
-def get_raw_data(raw_data, authorizations, boto_session, _):
+def get_raw_data(raw_data, authorizations, boto_session, cache, _):
     """
     Get raw data from boto requests.
     Return any EKS findings and add a 'False' in authorizations in case of errors
@@ -78,33 +78,42 @@ def get_raw_data(raw_data, authorizations, boto_session, _):
     eks_client = boto_session.client('eks')
     raw_data['eks_raw'] = {}
     try:
-        clusters = eks_client.list_clusters()
+        clusters = cache.get(
+            'eks_list_clusters',
+            eks_client,
+            'list_clusters')
         if 'clusters' not in clusters:
             authorizations['eks'] = False
             return raw_data, authorizations
         for cluster_name in clusters['clusters']:
             raw_data['eks_raw'][cluster_name] = {}
         for cluster_name in clusters['clusters']:
-            raw_data['eks_raw'][cluster_name] = eks_client.describe_cluster(name=cluster_name)['cluster']
+            raw_data['eks_raw'][cluster_name] = cache.get_eks_describe_cluster(
+                f'eks_describe_cluster_{cluster_name}',
+                eks_client,
+                cluster_name)['cluster']
     except botocore.exceptions.ClientError:
         authorizations['eks'] = False
     return raw_data, authorizations
 
 @log_me('Scanning EKS...')
-def parse_raw_data(assets, authorizations, raw_data, name_filter, _):
+def parse_raw_data(assets, authorizations, raw_data, name_filter, cache, _):
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     for cluster_name in raw_data['eks_raw']:
-        public = 'endpointPublicAccess' in raw_data['eks_raw'][cluster_name] and raw_data['eks_raw'][cluster_name]['endpointPublicAccess']
-        endpoint = 'endpoint' in raw_data['eks_raw'][cluster_name] and raw_data['eks_raw'][cluster_name]['endpoint']
-        version = 'version' in raw_data['eks_raw'][cluster_name] and raw_data['eks_raw'][cluster_name]['version']
-        subnet = raw_data['eks_raw'][cluster_name]['resourcesVpcConfig']['subnetIds'][0]
-        region, vpc, _ = get_network(subnet, raw_data['subnets_raw'])
-        asset = EKS(name=cluster_name, public=public, endpoint=endpoint, version=version)
-        if asset is not None and name_filter.lower() in asset.name.lower():
+        asset = cache.get_asset(f'EKS_{cluster_name}')
+        if asset is None:
+            public = 'endpointPublicAccess' in raw_data['eks_raw'][cluster_name] and raw_data['eks_raw'][cluster_name]['endpointPublicAccess']
+            endpoint = 'endpoint' in raw_data['eks_raw'][cluster_name] and raw_data['eks_raw'][cluster_name]['endpoint']
+            version = 'version' in raw_data['eks_raw'][cluster_name] and raw_data['eks_raw'][cluster_name]['version']
+            subnet = raw_data['eks_raw'][cluster_name]['resourcesVpcConfig']['subnetIds'][0]
+            region, vpc, _ = get_network(subnet, raw_data['subnets_raw'])
+            asset = EKS(name=cluster_name, public=public, endpoint=endpoint, version=version)
             asset.location.region = region
             asset.location.vpc = vpc
+            cache.save_asset(f'EKS_{cluster_name}', asset)
+        if asset is not None and name_filter.lower() in asset.name.lower():
             assets.append(asset)
     return assets, authorizations
