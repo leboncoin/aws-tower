@@ -151,6 +151,9 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, cache, _):
             if asset is None:
                 asset = scan(cf_dist)
                 cache.save_asset(f'CF_{cf_dist["DomainName"]}', asset)
-            if asset is not None and name_filter.lower() in asset.name.lower():
+            name_in_aliases = False
+            for alias in asset.aliases:
+                name_in_aliases = name_in_aliases or name_filter.lower() in alias.lower()
+            if asset is not None and (name_filter.lower() in asset.name.lower() or name_in_aliases):
                 assets.append(asset)
     return assets, authorizations
