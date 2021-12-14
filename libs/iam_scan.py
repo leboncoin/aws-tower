@@ -303,6 +303,7 @@ def iam_display_roles(
     min_rights,
     service,
     cache,
+    console,
     iam_action_passlist=[],
     iam_rolename_passlist=[],
     verbose=False):
@@ -318,6 +319,8 @@ def iam_display_roles(
         arn=arn,
         service=service)
     for role in roles:
-        is_displayed = role.print_actions(min_rights)
-        if verbose and is_displayed:
-            LOGGER.warning(f'Actions: {role.actions}')
+        actions = role.print_actions(min_rights)
+        if actions:
+            console.print(actions)
+            if verbose:
+                console.print(f'Actions: {role.actions}')

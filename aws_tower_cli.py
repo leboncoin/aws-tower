@@ -135,6 +135,7 @@ def iam_handler(session, args, cache):
             args.min_rights,
             args.service,
             cache,
+            CONSOLE,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             verbose=args.verbose)

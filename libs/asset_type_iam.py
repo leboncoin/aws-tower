@@ -137,7 +137,7 @@ class IAM(AssetType):
             2: "reader"
         }
         if not self.actions:
-            return False
+            return ''
         if min_rights is None or min_rights not in action_category:
             min_rights = 'reader'
         filtered_actions = {}
@@ -145,8 +145,7 @@ class IAM(AssetType):
             if getattr(self, f'{action_id[i]}_actions') is None:
                 continue
             filtered_actions[action_id[i]] = getattr(self, f'{action_id[i]}_actions')
-        LOGGER.warning(f'{self.arn}: {filtered_actions}')
-        return True
+        return f'{self.arn}: {filtered_actions}'
 
 
     def report(self, report, brief=False):
