@@ -7,9 +7,6 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
-# Standard library imports
-import logging
-
 # Third party library imports
 import boto3
 
@@ -17,9 +14,6 @@ from .asset_type_iam import IAM
 
 # Debug
 # from pdb import set_trace as st
-
-LOGGER = logging.getLogger('aws-tower')
-
 
 def complete_source_arn(session, arn):
     """
@@ -139,7 +133,7 @@ def get_role_from_arn(client, arn):
     return None
 
 
-def iam_extract(arn, account_id, verbose=False):
+def iam_extract(arn, account_id, console, verbose=False):
     """
     This heavy function is extracting arn from the current profile
     """
@@ -163,7 +157,7 @@ def iam_extract(arn, account_id, verbose=False):
                 res_user = root_resource_iam.User(user['UserName'])
                 for group in res_user.groups.all():
                     if verbose:
-                        LOGGER.warning(f'Found group {group.name}: {group.arn}')
+                        console.print(f'Found group {group.name}: {group.arn}')
                     group_obj = IAM(arn=group.arn)
                     if group_obj.account_id == account_id:
                         arns.append(group.arn)
@@ -177,7 +171,7 @@ def iam_extract(arn, account_id, verbose=False):
     return arns
 
 
-def iam_simulate(client, resource, source_arn, action, verbose=False):
+def iam_simulate(client, resource, source_arn, action, console, verbose=False):
     """
     Return True if the ARN can do the action
     """
@@ -197,7 +191,7 @@ def iam_simulate(client, resource, source_arn, action, verbose=False):
             return IAM(arn=role_arn).is_allowed_action(client, action, verbose=verbose)
         return False
 
-    LOGGER.warning(f'Resource type not valid: {iam_obj.resource_type}')
+    console.print(f'Resource type not valid: {iam_obj.resource_type}')
     return False
 
 
@@ -206,6 +200,7 @@ def iam_display(
     resource,
     arn,
     cache,
+    console,
     iam_action_passlist=[],
     iam_rolename_passlist=[],
     verbose=False):
@@ -213,26 +208,26 @@ def iam_display(
     Display information about the ARN
     """
     iam_obj = IAM(arn=arn)
-    print(f'ARN: {arn}')
-    print(f'Resource type: {iam_obj.resource_type}')
+    console.print(f'ARN: {arn}')
+    console.print(f'Resource type: {iam_obj.resource_type}')
     if iam_obj.resource_type == 'role':
         role_info = get_role_from_arn(client, arn)
         if role_info is not None:
             if role_info['RoleName'] in iam_rolename_passlist:
                 return
-            print(f'Role Name: {role_info["RoleName"]}')
+            console.print(f'Role Name: {role_info["RoleName"]}')
             role = resource.Role(role_info['RoleName'])
             actions = []
             for policy in role.policies.all():
                 if verbose:
-                    LOGGER.warning(f'RolePolicy: {policy.name}')
+                    console.print(f'RolePolicy: {policy.name}')
                 actions = [*actions, *get_actions_from_rolepolicy(policy)]
             for policy in role.attached_policies.all():
                 if verbose:
-                    LOGGER.warning(f'Policy: {policy.arn}')
+                    console.print(f'Policy: {policy.arn}')
                 actions = [*actions, *get_actions_from_policy(client, policy, cache)]
             actions = filter_actions(actions, iam_action_passlist)
-            print(f'Actions: {set(actions)}')
+            console.print(f'Actions: {set(actions)}')
 
 
 def get_role_services(role):

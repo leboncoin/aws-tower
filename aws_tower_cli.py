@@ -26,8 +26,6 @@ from config import variables
 # Debug
 # from pdb import set_trace as st
 
-# pylint: disable=logging-fstring-interpolation
-
 CONSOLE = console.Console()
 VERSION = '4.0.0'
 
@@ -103,7 +101,7 @@ def discover_handler(session, args, meta_types, cache):
             security_config=None
         )
 
-def iam_handler(session, args, cache):
+def iam_handler(session, args, cache, console):
     """
     Handle iam argument
     """
@@ -116,17 +114,18 @@ def iam_handler(session, args, cache):
             res_iam,
             args.source,
             cache,
+            console,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             verbose=args.verbose)
     elif args.source and args.action:
         account_id = session.client('sts').get_caller_identity().get('Account')
-        arn_list = iam_extract(args.source, account_id, verbose=args.verbose)
+        arn_list = iam_extract(args.source, account_id, console, verbose=args.verbose)
         for arn in arn_list:
-            if iam_simulate(client_iam, res_iam, arn, args.action, verbose=args.verbose):
-                print(f'{args.source} -> {args.action}: Access Granted')
+            if iam_simulate(client_iam, res_iam, arn, args.action, console, verbose=args.verbose):
+                console.print(f'{args.source} -> {args.action}: Access Granted')
                 sys.exit(0)
-        print(f'{args.source} -> {args.action}: Not Authorized')
+        console.print(f'{args.source} -> {args.action}: Not Authorized')
     else:
         iam_display_roles(
             client_iam,
@@ -135,7 +134,7 @@ def iam_handler(session, args, cache):
             args.min_rights,
             args.service,
             cache,
-            CONSOLE,
+            console,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             verbose=args.verbose)
@@ -183,7 +182,7 @@ def main(verb, args):
     elif verb == 'discover':
         discover_handler(session, args, meta_types, cache)
     elif verb == 'iam':
-        iam_handler(session, args, cache)
+        iam_handler(session, args, cache, csl)
     else:
         sys.exit(1)
     sys.exit(0)
