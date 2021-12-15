@@ -131,7 +131,7 @@ def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, 
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     for apigw in raw_data['ag_raw']:
-        asset = cache.get_asset(f'APIGW_{apigw["Name"]}')
+        asset = cache.get_asset(f'APIGW_{apigw["name"]}')
         if asset is None:
             is_public = 'REGIONAL' in apigw['endpointConfiguration']['types']
             if public_only and not is_public:
@@ -142,7 +142,7 @@ def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, 
                 boto_session.region_name,
                 [apigw['apiKeySource']],
                 public=is_public)
-            cache.save_asset(f'APIGW_{apigw["Name"]}', asset)
+            cache.save_asset(f'APIGW_{apigw["name"]}', asset)
         if asset is not None and name_filter.lower() in asset.name.lower():
             assets.append(asset)
     for apigw in raw_data['agv2_raw']:
