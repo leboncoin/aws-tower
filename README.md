@@ -31,7 +31,7 @@ $ alias aws-tower='<path>/aws_tower_cli.py'
 
 ```bash
 $ aws-tower --help
-usage: aws_tower_cli.py [-h] [--version] [--no-color] {discover,audit,iam} ...
+usage: aws_tower_cli.py [-h] [--version] [--no-color] [--no-cache] [--clean-cache] {discover,audit,iam} ...
 
 positional arguments:
   {discover,audit,iam}  commands
@@ -43,13 +43,13 @@ optional arguments:
   -h, --help            show this help message and exit
   --version             show program's version number and exit
   --no-color            Disable colors
+  --no-cache            Disable cache
+  --clean-cache         Erease current cache by a new one
 ```
 
 ```bash
 $ aws-tower audit --help
-usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-n NAME] [-v]
-                              [-b] [-s]
-                              profile
+usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-n NAME] [-v] [-b] [-s] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
