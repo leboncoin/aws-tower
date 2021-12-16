@@ -12,7 +12,6 @@ import logging
 import re
 
 from .asset_type import AssetType
-from .tools import log_me
 
 # Debug
 # from pdb import set_trace as st
@@ -38,6 +37,7 @@ class IAM(AssetType):
         self.arn = arn
         self.actions = []
         self.admin_actions = None
+        self.dangerous_actions = None
         self.poweruser_actions = None
         self.reader_actions = None
         if self.is_valid():
@@ -76,6 +76,21 @@ class IAM(AssetType):
             LOGGER.warning(f'Match for {self.arn}')
         return is_allowed
 
+    def add_dangerous_actions(self, service, action):
+        """
+        Append list of dangerous_actions if exists
+        """
+        dangerous_actions = [
+            'iam:PassRole'
+        ]
+        for dangerous_action in dangerous_actions:
+            if service == dangerous_action.split(':', maxsplit=1)[0] and \
+                action in ['*', dangerous_action.split(':')[1]]:
+                if self.dangerous_actions is None:
+                    self.dangerous_actions = []
+                if dangerous_action not in self.dangerous_actions:
+                    self.dangerous_actions.append(dangerous_action)
+
     def simplify_actions(self):
         """
         Simplify the actions and regroupe in a way to understand actions
@@ -106,6 +121,7 @@ class IAM(AssetType):
                 is_poweruser = False
                 is_reader = False
                 for action in types[service]:
+                    self.add_dangerous_actions(service, action)
                     verb = re.search('^[A-Z][a-z]+', action)
                     is_poweruser = is_poweruser or \
                         (verb and verb.group(0) not in readers_verb) or \
@@ -120,7 +136,6 @@ class IAM(AssetType):
                     if self.reader_actions is None:
                         self.reader_actions = []
                     self.reader_actions.append(service)
-
 
     def print_actions(self, min_rights):
         """
@@ -160,6 +175,8 @@ class IAM(AssetType):
             }
             if self.admin_actions:
                 asset_report['Admin actions'] = f'[red]{self.admin_actions}[/red]'
+            if self.dangerous_actions:
+                asset_report['Dangerous actions'] = f'[red]{self.dangerous_actions}[/red]'
             if self.poweruser_actions:
                 asset_report['Poweruser actions'] = f'[yellow]{self.poweruser_actions}[/yellow]'
             if self.security_issues:
@@ -178,6 +195,8 @@ class IAM(AssetType):
         actions = ''
         if self.admin_actions:
             actions += f'[red]Admin actions: {self.admin_actions}[/red] '
+        if self.dangerous_actions:
+            actions += f'[red]Dangerous actions: {self.dangerous_actions}[/red] '
         if self.poweruser_actions:
             actions += f'[yellow]Poweruser actions: {self.poweruser_actions}[/yellow] '
         return f'{actions}{self.display_brief_audit()}'

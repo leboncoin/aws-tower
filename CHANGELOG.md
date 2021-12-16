@@ -17,6 +17,7 @@ AWS-TOWER
   - lambda: Scan multiple regions
   - Add EC2 associated roles, if at least EC2 and IAM are selected
   - Add cache \o/ (`--no-cache` and `--clean-cache` too)
+  - Add IAM 'dangerous roles' detection
 
 ### Changes
   - Remove not vuln members in assetgroup (IAM and S3)
