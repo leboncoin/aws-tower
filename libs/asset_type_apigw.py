@@ -7,9 +7,14 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
+# Standard library imports
 from dataclasses import dataclass
 
+# Third party library imports
+import botocore
+
 from .asset_type import AssetType
+from .tools import log_me
 
 # Debug
 # from pdb import set_trace as st
@@ -66,7 +71,7 @@ class APIGW(AssetType):
                 'AuthorizationTypes': self.authorization.types
             }
             if self.public:
-                asset_report['PubliclyAccessible'] = True
+                asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.security_issues:
                 self.update_audit_report(asset_report)
         if 'APIGW' not in report[self.location.region]:
@@ -80,7 +85,7 @@ class APIGW(AssetType):
         Return the report in one line
         """
         if self.public:
-            return f'[Public] {self.api_endpoint} Auth:{self.authorization.types}{self.display_brief_audit()}'
+            return f'<Public> {self.api_endpoint} Auth:{self.authorization.types}{self.display_brief_audit()}'
         return f'{self.api_endpoint} Auth:{self.authorization.types}{self.display_brief_audit()}'
 
     def finding_description(self, _):
@@ -88,5 +93,74 @@ class APIGW(AssetType):
         Return a description of the finding
         """
         if self.public:
-            return f'[Public] {self.api_endpoint} Auth:{self.authorization.types}'
-        return f'[Private] {self.api_endpoint} Auth:{self.authorization.types}'
+            return f'<Public> {self.api_endpoint} Auth:{self.authorization.types}'
+        return f'<Private> {self.api_endpoint} Auth:{self.authorization.types}'
+
+@log_me('Getting API Gateway raw data...')
+def get_raw_data(raw_data, authorizations, boto_session, cache, _):
+    """
+    Get raw data from boto requests.
+    Return any API Gateway findings and add a 'False' in authorizations in case of errors
+    """
+    ag_client = boto_session.client('apigateway')
+    try:
+        raw_data['ag_raw'] = cache.get(
+            'ag_get_rest_apis',
+            ag_client,
+            'get_rest_apis')['items']
+    except botocore.exceptions.ClientError:
+        raw_data['ag_raw'] = []
+        authorizations['apigw'] = False
+
+    agv2_client = boto_session.client('apigatewayv2')
+    raw_data['agv2_client'] = agv2_client
+    try:
+        raw_data['agv2_raw'] = cache.get(
+            'agv2_get_apis',
+            agv2_client,
+            'get_apis')['Items']
+    except botocore.exceptions.ClientError:
+        raw_data['agv2_raw'] = []
+        authorizations['apigw'] = False
+    return raw_data, authorizations
+
+@log_me('Scanning API Gateway...')
+def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, name_filter, cache, _):
+    """
+    Parsing the raw data to extracts assets,
+    enrich the assets list and add a 'False' in authorizations in case of errors
+    """
+    for apigw in raw_data['ag_raw']:
+        asset = cache.get_asset(f'APIGW_{apigw["name"]}')
+        if asset is None:
+            is_public = 'REGIONAL' in apigw['endpointConfiguration']['types']
+            if public_only and not is_public:
+                continue
+            asset = APIGW(
+                apigw['name'],
+                apigw['id'],
+                boto_session.region_name,
+                [apigw['apiKeySource']],
+                public=is_public)
+            cache.save_asset(f'APIGW_{apigw["name"]}', asset)
+        if asset is not None and name_filter.lower() in asset.name.lower():
+            assets.append(asset)
+    for apigw in raw_data['agv2_raw']:
+        asset = cache.get_asset(f'APIGW_{apigw["Name"]}')
+        if asset is None:
+            authorization_types = []
+            try:
+                for route in raw_data['agv2_client'].get_routes(ApiId=apigw['ApiId'])['Items']:
+                    authorization_types.append(route['AuthorizationType'])
+            except botocore.exceptions.ClientError:
+                authorizations['apigw'] = False
+            asset = APIGW(
+                apigw['Name'],
+                apigw['ApiId'],
+                boto_session.region_name,
+                authorization_types,
+                public=True)
+            cache.save_asset(f'APIGW_{apigw["Name"]}', asset)
+        if asset is not None and name_filter.lower() in asset.name.lower():
+            assets.append(asset)
+    return assets, authorizations

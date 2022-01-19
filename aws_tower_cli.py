@@ -10,37 +10,38 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 
 # Standard library imports
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-import logging
 import sys
 
 # Third party library imports
 import boto3
 import botocore
+from rich import console
 
 from libs.display import print_report, print_summary
 from libs.iam_scan import complete_source_arn, iam_display, iam_display_roles, iam_extract, iam_simulate
 from libs.scan import aws_scan
+from libs.tools import Cache, NoColor
 from config import variables
 
 # Debug
 # from pdb import set_trace as st
 
-# pylint: disable=logging-fstring-interpolation
+CONSOLE = console.Console()
+VERSION = '4.0.0'
 
-LOGGER = logging.getLogger('aws-tower')
-VERSION = '3.11.0'
-
-def audit_handler(session, args, meta_types):
+def audit_handler(session, args, meta_types, cache):
     """
     Handle audit argument
     """
     assets = aws_scan(
         session,
+        cache,
         iam_action_passlist=variables.IAM_ACTION_PASSLIST,
         iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
         public_only=False,
         meta_types=meta_types,
-        name_filter=args.name
+        name_filter=args.name,
+        console=CONSOLE
     )
     min_severity = list(variables.SEVERITY_LEVELS.keys())[0]
     max_severity = list(variables.SEVERITY_LEVELS.keys())[-1]
@@ -58,43 +59,49 @@ def audit_handler(session, args, meta_types):
         print_summary(
             assets,
             variables.META_TYPES,
+            CONSOLE,
             security_config
         )
     else:
         print_report(
             assets,
             variables.META_TYPES,
+            CONSOLE,
             brief=args.brief,
             security_config=security_config
         )
 
-def discover_handler(session, args, meta_types):
+def discover_handler(session, args, meta_types, cache):
     """
     Handle discover argument
     """
     assets = aws_scan(
         session,
+        cache,
         iam_action_passlist=variables.IAM_ACTION_PASSLIST,
         iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
         public_only=args.public_only,
         meta_types=meta_types,
-        name_filter=args.name
+        name_filter=args.name,
+        console=CONSOLE
     )
     if args.summary:
         print_summary(
             assets,
             variables.META_TYPES,
+            CONSOLE,
             None
         )
     else:
         print_report(
             assets,
             variables.META_TYPES,
+            CONSOLE,
             brief=args.brief,
             security_config=None
         )
 
-def iam_handler(session, args):
+def iam_handler(session, args, cache, console):
     """
     Handle iam argument
     """
@@ -106,17 +113,19 @@ def iam_handler(session, args):
             client_iam,
             res_iam,
             args.source,
+            cache,
+            console,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             verbose=args.verbose)
     elif args.source and args.action:
         account_id = session.client('sts').get_caller_identity().get('Account')
-        arn_list = iam_extract(args.source, account_id, verbose=args.verbose)
+        arn_list = iam_extract(args.source, account_id, console, verbose=args.verbose)
         for arn in arn_list:
-            if iam_simulate(client_iam, res_iam, arn, args.action, verbose=args.verbose):
-                print(f'{args.source} -> {args.action}: Access Granted')
+            if iam_simulate(client_iam, res_iam, arn, args.action, console, verbose=args.verbose):
+                console.print(f'{args.source} -> {args.action}: Access Granted')
                 sys.exit(0)
-        print(f'{args.source} -> {args.action}: Not Authorized')
+        console.print(f'{args.source} -> {args.action}: Not Authorized')
     else:
         iam_display_roles(
             client_iam,
@@ -124,6 +133,8 @@ def iam_handler(session, args):
             args.source,
             args.min_rights,
             args.service,
+            cache,
+            console,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             verbose=args.verbose)
@@ -132,31 +143,46 @@ def main(verb, args):
     """
     Main function
     """
+    csl = CONSOLE
+    if args.no_color:
+        csl = NoColor()
     try:
         session = boto3.Session(profile_name=args.profile)
     except botocore.exceptions.ProfileNotFound:
-        LOGGER.critical(f'The profile "{args.profile}" can\'t be found...')
-        LOGGER.critical('Take a look at the ~/.aws/config file.')
+        csl.print(f'[red]The profile [bold]{args.profile}[/bold] can\'t be found...')
+        csl.print('[red]Take a look at the ~/.aws/config file.')
         sys.exit(1)
-    meta_types = list()
+    meta_types = []
     if not hasattr(args, 'type') or args.type is None:
         meta_types = variables.META_TYPES
     else:
         for meta_type in args.type:
-            if meta_type.upper() not in variables.META_TYPES:
-                LOGGER.critical(f'Unable to find meta type "{meta_type}" in {variables.META_TYPES}')
-                sys.exit(1)
             if meta_type.upper() not in meta_types:
                 meta_types.append(meta_type.upper())
-    LOGGER.warning(f'Welcome "{session.client("sts").get_caller_identity()["Arn"]}" !')
-    LOGGER.warning(f'Scan type: {verb}, Profile: {args.profile}, Region: {session.region_name}')
+
+    cache_dir = '/tmp/aws_tower_cache'
+    cache_prefix = f'{cache_dir}/{args.profile}_{session.region_name}'
+    if args.no_cache:
+        cache_prefix = ''
+    cache = Cache(cache_dir, cache_prefix, purge=args.clean_cache)
+
+    identity = 'Unknown'
+    try:
+        identity = cache.get_caller_identity('id', session)['Arn']
+    except:
+        csl.print('[red]Can\'t get the caller identity...')
+    if session.region_name is None:
+        csl.print('[red]No region defined, take a look at the ~/.aws/config file')
+        sys.exit(1)
+    csl.print(f'[white]Welcome [bold]{identity}[/bold] !')
+    csl.print(f'[white]Scan type: [bold]{verb}[/bold], Profile: [bold]{args.profile}[/bold], Region: [bold]{session.region_name}')
 
     if verb == 'audit':
-        audit_handler(session, args, meta_types)
+        audit_handler(session, args, meta_types, cache)
     elif verb == 'discover':
-        discover_handler(session, args, meta_types)
+        discover_handler(session, args, meta_types, cache)
     elif verb == 'iam':
-        iam_handler(session, args)
+        iam_handler(session, args, cache, csl)
     else:
         sys.exit(1)
     sys.exit(0)
@@ -169,6 +195,9 @@ if __name__ == '__main__':
     SUBPARSERS = PARSER.add_subparsers(help='commands')
 
     PARSER.add_argument('--version', action='version', version=VERSION)
+    PARSER.add_argument('--no-color', action='store_true', help='Disable colors')
+    PARSER.add_argument('--no-cache', action='store_true', help='Disable cache')
+    PARSER.add_argument('--clean-cache', action='store_true', help='Erease current cache by a new one')
 
     # DISCOVER Arguments
     DISCOVER_PARSER = SUBPARSERS.add_parser(
@@ -287,4 +316,11 @@ if __name__ == '__main__':
     ARGS = PARSER.parse_args()
     if len(sys.argv) == 1:
         PARSER.print_help()
-    main(sys.argv[1], ARGS)
+    VERB = 'discover'
+    if hasattr(ARGS, 'min_severity'):
+        VERB = 'audit'
+    elif hasattr(ARGS, 'min_rights'):
+        VERB = 'iam'
+    if ARGS.no_color:
+        CONSOLE = None
+    main(VERB, ARGS)

@@ -37,6 +37,7 @@ class IAM(AssetType):
         self.arn = arn
         self.actions = []
         self.admin_actions = None
+        self.dangerous_actions = None
         self.poweruser_actions = None
         self.reader_actions = None
         if self.is_valid():
@@ -75,12 +76,27 @@ class IAM(AssetType):
             LOGGER.warning(f'Match for {self.arn}')
         return is_allowed
 
+    def add_dangerous_actions(self, service, action):
+        """
+        Append list of dangerous_actions if exists
+        """
+        dangerous_actions = [
+            'iam:PassRole'
+        ]
+        for dangerous_action in dangerous_actions:
+            if service == dangerous_action.split(':', maxsplit=1)[0] and \
+                action in ['*', dangerous_action.split(':')[1]]:
+                if self.dangerous_actions is None:
+                    self.dangerous_actions = []
+                if dangerous_action not in self.dangerous_actions:
+                    self.dangerous_actions.append(dangerous_action)
+
     def simplify_actions(self):
         """
         Simplify the actions and regroupe in a way to understand actions
         admin > poweruser (write|delete|update) > reader > lister
         """
-        types = dict()
+        types = {}
         poweruser_multi_verbs = ['GitPush']
         readers_verb = [
             'Batch', 'Check', 'Compare', 'Count', 'Describe', 'Detect', 'Discover',
@@ -105,6 +121,7 @@ class IAM(AssetType):
                 is_poweruser = False
                 is_reader = False
                 for action in types[service]:
+                    self.add_dangerous_actions(service, action)
                     verb = re.search('^[A-Z][a-z]+', action)
                     is_poweruser = is_poweruser or \
                         (verb and verb.group(0) not in readers_verb) or \
@@ -119,7 +136,6 @@ class IAM(AssetType):
                     if self.reader_actions is None:
                         self.reader_actions = []
                     self.reader_actions.append(service)
-
 
     def print_actions(self, min_rights):
         """
@@ -136,7 +152,7 @@ class IAM(AssetType):
             2: "reader"
         }
         if not self.actions:
-            return False
+            return ''
         if min_rights is None or min_rights not in action_category:
             min_rights = 'reader'
         filtered_actions = {}
@@ -144,8 +160,7 @@ class IAM(AssetType):
             if getattr(self, f'{action_id[i]}_actions') is None:
                 continue
             filtered_actions[action_id[i]] = getattr(self, f'{action_id[i]}_actions')
-        LOGGER.warning(f'{self.arn}: {filtered_actions}')
-        return True
+        return f'{self.arn}: {filtered_actions}'
 
 
     def report(self, report, brief=False):
@@ -159,9 +174,11 @@ class IAM(AssetType):
                 'Arn': self.arn
             }
             if self.admin_actions:
-                asset_report['Admin actions'] = self.admin_actions
+                asset_report['Admin actions'] = f'[red]{self.admin_actions}[/red]'
+            if self.dangerous_actions:
+                asset_report['Dangerous actions'] = f'[red]{self.dangerous_actions}[/red]'
             if self.poweruser_actions:
-                asset_report['Poweruser actions'] = self.poweruser_actions
+                asset_report['Poweruser actions'] = f'[yellow]{self.poweruser_actions}[/yellow]'
             if self.security_issues:
                 self.update_audit_report(asset_report)
         if 'IAM' not in report:
@@ -177,9 +194,11 @@ class IAM(AssetType):
         """
         actions = ''
         if self.admin_actions:
-            actions += f'Admin actions: {self.admin_actions} '
+            actions += f'[red]Admin actions: {self.admin_actions}[/red] '
+        if self.dangerous_actions:
+            actions += f'[red]Dangerous actions: {self.dangerous_actions}[/red] '
         if self.poweruser_actions:
-            actions += f'Poweruser actions: {self.poweruser_actions} '
+            actions += f'[yellow]Poweruser actions: {self.poweruser_actions}[/yellow] '
         return f'{actions}{self.display_brief_audit()}'
 
     def finding_description(self, _):

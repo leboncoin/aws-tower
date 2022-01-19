@@ -60,9 +60,9 @@ class Patterns:
     :param max_severity: Maximum level of severity (critical for example) to check
     :type max_severity: str
     """
-    _patterns = list()
+    _patterns = []
     _ports_range = re.compile(r'^(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])(?:-(?:[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5]))?$')
-    _severity_levels = dict()
+    _severity_levels = {}
     _min_severity = 0
     _max_severity = 0
     _rules_definitions = {
@@ -107,7 +107,7 @@ class Patterns:
             'conditions': ['is_ports']
         },
         'engine_deprecated_version': {
-            'data_sources': ['engine'],
+            'data_sources': ['attribute_value'],
             'conditions': ['engine_name', 'versions']
         }
     }
@@ -146,7 +146,7 @@ class Patterns:
             self._max_severity = 0
         if self._max_severity < self._min_severity:
             raise Exception(f'Error: min severity ({min_severity}) higher than max severity ({max_severity})')
-        self.subnet_allow_list = list()
+        self.subnet_allow_list = []
         allow_list_path = Path('config/subnet_allow_list.txt')
         if allow_list_path.exists():
             with allow_list_path.open() as allow_list:
@@ -166,7 +166,7 @@ class Patterns:
         :rtype: dict, bool
         """
         self._logger.debug(f'Preparing arguments: {arguments}')
-        prepared_arguments = dict()
+        prepared_arguments = {}
         for argument in arguments:
             if argument['type'] == 'constant':
                 prepared_arguments[argument['name']] = argument['value']
@@ -444,41 +444,63 @@ class Patterns:
         return False
 
     def _check_rule_engine_deprecated_version(self, data_sources, conditions):
-        """Check if the engine version is not deprecated.
-        Compare the engine version if it's smaller than the minimum version allowed in list
+        """Check if the version is not deprecated.
+        Compare the version if it's smaller than the minimum version allowed in list
         If there is multiple versions,
         it only checks the major version for the other listed versions
         Check rule "engine_deprecated_version"
 
-        :param metadata: RDS metadata
+        :param metadata: RDS (engine==version) or EKS (version) metadata
         :type metadata: dict
-        :param min_version_allowed: Minimum DBMS version allowed
+        :param min_version_allowed: Minimum version allowed
         :type list_min_version_allowed: string representation of list
-        :return: True if the engine version is deprecated
+        :return: True if the version is deprecated
         :rtype: bool
         """
-        if len(data_sources['engine'].split('==')) < 2:
-            self._logger.debug(f'Wrong format for {data_sources["engine"]}')
-            return False
-        engine_name, current_version = data_sources['engine'].split('==')
-        if conditions['engine_name'] != engine_name:
-            return False
+        # Check engine_name if in version
+        current_version = data_sources['attribute_value']
+        if '==' in data_sources['attribute_value']:
+            engine_name, current_version = data_sources['attribute_value'].split('==')
+            if conditions['engine_name'] != engine_name:
+                return False
         current_version = LooseVersion(current_version)
-        min_version = None
-        versions = list()
-        for min_version_allowed in conditions['versions']:
-            version = LooseVersion(min_version_allowed)
-            if min_version is None:
-                min_version = version
-            elif version < min_version:
-                min_version = version
-            else:
-                versions.append(version)
-        # Compare only if major version match
-        for version in versions:
-            if version.version[0] == current_version.version[0]:
-                return current_version < version
-        return current_version < min_version
+        previous_version = LooseVersion('0')
+        next_version = LooseVersion('999')
+        # Get previous and next version
+        for i in conditions['versions']:
+            version = LooseVersion(i)
+            # If this is the perfect match, it's not deprecated
+            if version == current_version:
+                return False
+            if next_version > version > current_version:
+                next_version = version
+            elif previous_version < version < current_version:
+                previous_version = version
+
+        # There is no previous version, it's deprecated
+        if previous_version == LooseVersion('0'):
+            return True
+
+        # Check how much sub version matches, longest is closest
+        for i in range(min(len(previous_version.version), len(current_version.version), len(next_version.version))):
+            # Undetermine, but the current version could be latest
+            if previous_version.version[i] != current_version.version[i] != next_version.version[i]:
+                if next_version == LooseVersion('999'):
+                    return False
+                self._logger.error(f'Unable to determine the version to compare...{previous_version=}{current_version=}{next_version=}')
+                return False
+            if previous_version.version[i] == current_version.version[i] == next_version.version[i]:
+                continue
+            # The only option, is to have a version that is closest to the current version
+            # This case, the previous version can be compared,
+            # and is below our current version, not deprecated
+            if previous_version.version[i] == current_version.version[i]:
+                return False
+            # At the opposite, the next version is the closest, but the current version
+            # is below, this is deprecated
+            return True
+        self._logger.error(f'Unable to determine the version to compare...{previous_version=}{current_version=}{next_version=}')
+        return False
 
     def _generate_report_message(self, message, severity, kwargs):
         """Generate a message for the report
@@ -491,7 +513,7 @@ class Patterns:
         :return: Message generated
         :rtype: dict
         """
-        report_message = dict()
+        report_message = {}
         if isinstance(message, str):
             report_message = {
                 'title': f'{message}',
@@ -499,7 +521,7 @@ class Patterns:
             }
             return report_message
         try:
-            args = dict()
+            args = {}
             for key, value in message['args'].items():
                 if value['type'] == 'dict':
                     if value['variable'] in kwargs:
@@ -558,7 +580,7 @@ class Patterns:
         if findings_rules is False:
             self._logger.debug(f'Unable to find findings rules for {findings_type}')
             return False
-        report = list()
+        report = []
         for finding in findings_rules:
             finding_found = False
             if finding['severity'] in self._severity_levels and \
@@ -616,7 +638,7 @@ class Patterns:
         """
         if len(self._patterns) == 0:
             return list()
-        report = list()
+        report = []
         if hasattr(asset, 'security_groups'):
             for sg_name, sg_rules in asset.security_groups.items():
                 for ports, sources in sg_rules.items():
@@ -644,7 +666,7 @@ class Patterns:
         :return: Report generated
         :rtype: list()
         """
-        report = list()
+        report = []
         report += self.extract_findings_from_security_groups(asset)
         return report
 

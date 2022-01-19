@@ -1,4 +1,4 @@
-version: 3.9.0
+version: 4.0.0
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -190,7 +190,7 @@ types:
             dns_record:
               type: attribute
               key: dns_record
-        severity: medium
+        severity: low
         rules:
           - type: has_attribute
             description: Check if dns_record attribute exists
@@ -553,72 +553,362 @@ types:
               - type: attribute
                 name: attribute_value
                 value: authorization.has_no_auth_endpoint
-  #     - message:
-  #         text: Deprecated mysql engine version ({current_version})
-  #         args:
-  #           current_version:
-  #             type: dict
-  #             key: Engine
-  #             variable: metadata
-  #       severity: high
-  #       rules:
-  #         - type: in
-  #           description: Check if Engine is in metadata
-  #           conditions:
-  #             - type: constant
-  #               name: data_element
-  #               value: Engine
-  #           data_sources:
-  #             - type: variable
-  #               name: data_list
-  #               value: metadata
-  #         - type: engine_deprecated_version
-  #           description: Check if mysql engine is not deprecated
-  #           conditions:
-  #             - type: constant
-  #               name: engine_name
-  #               value: mysql
-  #             - type: constant
-  #               name: versions
-  #               value:
-  #                 - 5.2.0
-  #           data_sources:
-  #             - type: dict
-  #               name: engine
-  #               value: metadata
-  #               key: Engine
-  #     - message:
-  #         text: Deprecated postgres engine version ({current_version})
-  #         args:
-  #           current_version:
-  #             type: dict
-  #             key: Engine
-  #             variable: metadata
-  #       severity: high
-  #       rules:
-  #         - type: in
-  #           description: Check if Engine is in metadata
-  #           conditions:
-  #             - type: constant
-  #               name: data_element
-  #               value: Engine
-  #           data_sources:
-  #             - type: variable
-  #               name: data_list
-  #               value: metadata
-  #         - type: engine_deprecated_version
-  #           description: Check if postgres engine is not deprecated
-  #           conditions:
-  #             - type: constant
-  #               name: engine_name
-  #               value: postgres
-  #             - type: constant
-  #               name: versions
-  #               value:
-  #                 - '10.10'
-  #                 - '11.4'
-  #           data_sources:
-  #             - type: dict
-  #               name: engine
-  #               value: metadata
-  #               key: Engine
+      - message:
+          text: '[{service_name}] Deprecated mysql engine version ({current_version})'
+          args:
+            service_name:
+              type: attribute
+              key: name
+            current_version:
+              type: attribute
+              key: engine
+        severity: high
+        rules:
+          - type: has_attribute
+            description: Check if engine exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: engine
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: engine_deprecated_version
+            description: Check if mysql engine is not deprecated
+            conditions:
+              - type: constant
+                name: engine_name
+                value: mysql
+              - type: constant
+                name: versions
+                value:
+                  - '5.7.33'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: engine
+# https://mariadb.com/kb/en/security/
+      - message:
+          text: '[{service_name}] Deprecated mariadb engine version ({current_version})'
+          args:
+            service_name:
+              type: attribute
+              key: name
+            current_version:
+              type: attribute
+              key: engine
+        severity: high
+        rules:
+          - type: has_attribute
+            description: Check if engine exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: engine
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: engine_deprecated_version
+            description: Check if mariadb engine is not deprecated
+            conditions:
+              - type: constant
+                name: engine_name
+                value: mariadb
+              - type: constant
+                name: versions
+                value:
+                  - '10.2.41'
+                  - '10.3.32'
+                  - '10.4.22'
+                  - '10.5.13'
+                  - '10.6.4'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: engine
+# https://www.postgresql.org/support/security/10/
+      - message:
+          text: '[{service_name}] Deprecated postgres engine version ({current_version})'
+          args:
+            service_name:
+              type: attribute
+              key: name
+            current_version:
+              type: attribute
+              key: engine
+        severity: high
+        rules:
+          - type: has_attribute
+            description: Check if engine exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: engine
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: engine_deprecated_version
+            description: Check if postgres engine is not deprecated
+            conditions:
+              - type: constant
+                name: engine_name
+                value: postgres
+              - type: constant
+                name: versions
+                value:
+                  - '10.17'
+                  - '11.12'
+                  - '12.7'
+                  - '13.3'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: engine
+# https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_SQLServer.html
+      - message:
+          text: '[{service_name}] Deprecated sqlserver-se (mssql) engine version ({current_version})'
+          args:
+            service_name:
+              type: attribute
+              key: name
+            current_version:
+              type: attribute
+              key: engine
+        severity: high
+        rules:
+          - type: has_attribute
+            description: Check if engine exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: engine
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: engine_deprecated_version
+            description: Check if sqlserver-se engine is not deprecated
+            conditions:
+              - type: constant
+                name: engine_name
+                value: sqlserver-se
+              - type: constant
+                name: versions
+                value:
+                  - '12.00.5571.0.v1'
+                  - '13.00.5820.21.v1'
+                  - '14.00.3294.2.v1'
+                  - '15.00.4043.16.v1'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: engine
+# https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
+      - message:
+          text: '[{service_name}] Deprecated EKS Kubernetes version ({current_version})'
+          args:
+            service_name:
+              type: attribute
+              key: name
+            current_version:
+              type: attribute
+              key: version
+        severity: high
+        rules:
+          - type: has_attribute
+            description: Check if version exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: version
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_equal
+            description: Check if the asset is a EKS cluster
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: EKS
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
+          - type: engine_deprecated_version
+            description: Check if k8s version is not deprecated
+            conditions:
+              - type: constant
+                name: engine_name
+                value: kubernetes
+              - type: constant
+                name: versions
+                value:
+                  - '1.18'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: version
+      - message:
+          text: '[{service_name}] Public EKS cluster'
+          args:
+            service_name:
+              type: attribute
+              key: name
+        severity: high
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is public
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
+          - type: has_attribute_equal
+            description: Check if the asset is a EKS cluster
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: EKS
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
+      - message:
+          text: '[{service_name}] SSH Key attached'
+          args:
+            service_name:
+              type: attribute
+              key: name
+        severity: medium
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is an EC2
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: EC2
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
+          - type: has_attribute_equal
+            description: Check if attached_ssh_key is in the asset
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: attached_ssh_key
+          - type: has_attribute_not_equal
+            description: Check if the OS is not Windows
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: 'Windows'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: operating_system
+          - type: has_attribute_not_equal
+            description: Check if the OS is not Windows with SQL Server Standard
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: 'Windows with SQL Server Standard'
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: operating_system
+      - message:
+          text: '[{service_name}] EC2 with an Admin role'
+          args:
+            service_name:
+              type: attribute
+              key: name
+        severity: high
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is an EC2
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: EC2
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
+          - type: has_attribute_not_equal
+            description: Check if role_admin is in the asset
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: ''
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: role_admin
+      - message:
+          text: '[{service_name}] EC2 with an PowerUser role'
+          args:
+            service_name:
+              type: attribute
+              key: name
+        severity: medium
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is an EC2
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: EC2
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
+          - type: has_attribute_not_equal
+            description: Check if role_poweruser is in the asset
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: ''
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: role_poweruser
+      - message:
+          text: '[{role_name}] IAM dangerous role'
+          args:
+            role_name:
+              type: attribute
+              key: name
+        severity: high
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is an IAM role
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: IAM role
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
+          - type: in
+            description: Check if 'iam:PassRole' is defined
+            conditions:
+              - type: constant
+                name: data_element
+                value: 'iam:PassRole'
+            data_sources:
+              - type: attribute
+                name: data_list
+                value: actions

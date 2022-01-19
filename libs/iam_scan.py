@@ -7,9 +7,6 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
-# Standard library imports
-import logging
-
 # Third party library imports
 import boto3
 
@@ -17,9 +14,6 @@ from .asset_type_iam import IAM
 
 # Debug
 # from pdb import set_trace as st
-
-LOGGER = logging.getLogger('aws-tower')
-
 
 def complete_source_arn(session, arn):
     """
@@ -71,6 +65,7 @@ def get_actions_from_rolepolicy(rolepolicy):
     Return actions associated to a RolePolicy
     Do not return:
         - Resource != '*'
+        - NotResource
     """
     actions = []
     statements = rolepolicy.policy_document['Statement']
@@ -78,6 +73,9 @@ def get_actions_from_rolepolicy(rolepolicy):
         statements = [statements]
     for statement in statements:
         if 'Action' not in statement:
+            continue
+        # Hide NotResource type
+        if 'Resource' not in statement:
             continue
         # Hide non-global actions
         if statement['Resource'] != '*':
@@ -89,14 +87,16 @@ def get_actions_from_rolepolicy(rolepolicy):
     return actions
 
 
-def get_actions_from_policy(client, policy):
+def get_actions_from_policy(client, policy, cache):
     """
     Return actions associated to a Policy
     """
     actions = []
-    document = client.get_policy_version(
-        PolicyArn=policy.arn,
-        VersionId=policy.default_version_id)
+    document = cache.get_iam_policy_version(
+        f'iam_policy_version_{policy.policy_name}',
+        client,
+        policy.arn,
+        policy.default_version_id)
     for statement in document['PolicyVersion']['Document']['Statement']:
         if 'Action' not in statement:
             continue
@@ -133,7 +133,7 @@ def get_role_from_arn(client, arn):
     return None
 
 
-def iam_extract(arn, account_id, verbose=False):
+def iam_extract(arn, account_id, console, verbose=False):
     """
     This heavy function is extracting arn from the current profile
     """
@@ -157,7 +157,7 @@ def iam_extract(arn, account_id, verbose=False):
                 res_user = root_resource_iam.User(user['UserName'])
                 for group in res_user.groups.all():
                     if verbose:
-                        LOGGER.warning(f'Found group {group.name}: {group.arn}')
+                        console.print(f'Found group {group.name}: {group.arn}')
                     group_obj = IAM(arn=group.arn)
                     if group_obj.account_id == account_id:
                         arns.append(group.arn)
@@ -171,7 +171,7 @@ def iam_extract(arn, account_id, verbose=False):
     return arns
 
 
-def iam_simulate(client, resource, source_arn, action, verbose=False):
+def iam_simulate(client, resource, source_arn, action, console, verbose=False):
     """
     Return True if the ARN can do the action
     """
@@ -191,7 +191,7 @@ def iam_simulate(client, resource, source_arn, action, verbose=False):
             return IAM(arn=role_arn).is_allowed_action(client, action, verbose=verbose)
         return False
 
-    LOGGER.warning(f'Resource type not valid: {iam_obj.resource_type}')
+    console.print(f'Resource type not valid: {iam_obj.resource_type}')
     return False
 
 
@@ -199,33 +199,35 @@ def iam_display(
     client,
     resource,
     arn,
-    iam_action_passlist=list(),
-    iam_rolename_passlist=list(),
+    cache,
+    console,
+    iam_action_passlist=[],
+    iam_rolename_passlist=[],
     verbose=False):
     """
     Display information about the ARN
     """
     iam_obj = IAM(arn=arn)
-    print(f'ARN: {arn}')
-    print(f'Resource type: {iam_obj.resource_type}')
+    console.print(f'ARN: {arn}')
+    console.print(f'Resource type: {iam_obj.resource_type}')
     if iam_obj.resource_type == 'role':
         role_info = get_role_from_arn(client, arn)
         if role_info is not None:
             if role_info['RoleName'] in iam_rolename_passlist:
                 return
-            print(f'Role Name: {role_info["RoleName"]}')
+            console.print(f'Role Name: {role_info["RoleName"]}')
             role = resource.Role(role_info['RoleName'])
             actions = []
             for policy in role.policies.all():
                 if verbose:
-                    LOGGER.warning(f'RolePolicy: {policy.name}')
+                    console.print(f'RolePolicy: {policy.name}')
                 actions = [*actions, *get_actions_from_rolepolicy(policy)]
             for policy in role.attached_policies.all():
                 if verbose:
-                    LOGGER.warning(f'Policy: {policy.arn}')
-                actions = [*actions, *get_actions_from_policy(client, policy)]
+                    console.print(f'Policy: {policy.arn}')
+                actions = [*actions, *get_actions_from_policy(client, policy, cache)]
             actions = filter_actions(actions, iam_action_passlist)
-            print(f'Actions: {set(actions)}')
+            console.print(f'Actions: {set(actions)}')
 
 
 def get_role_services(role):
@@ -248,8 +250,9 @@ def get_role_services(role):
 def iam_get_roles(
     client,
     resource,
-    iam_action_passlist=list(),
-    iam_rolename_passlist=list(),
+    cache,
+    iam_action_passlist=[],
+    iam_rolename_passlist=[],
     arn=None,
     service=None):
     """
@@ -257,25 +260,33 @@ def iam_get_roles(
     Filter actions with the action_passlist
     """
     roles = []
-    paginator = client.get_paginator('list_roles')
-    for response in paginator.paginate():
+    paginator = cache.get(
+        'iam_paginator_list_roles',
+        client,
+        'get_paginator',
+        args=('list_roles',),
+        paginate=True)
+    for response in paginator:
         for role in response['Roles']:
-            if arn and role['Arn'] != arn:
-                continue
-            if service and service not in get_role_services(role):
-                continue
-            role_obj = IAM(arn=role['Arn'])
-            if role_obj.resource_id in ['aws-reserved', 'aws-service-role', 'service-role']:
-                continue
-            if role['RoleName'] in iam_rolename_passlist:
-                continue
-            actions = []
-            for rolepolicy in resource.Role(role['RoleName']).policies.all():
-                actions = [*actions, *get_actions_from_rolepolicy(rolepolicy)]
-            for policy in resource.Role(role['RoleName']).attached_policies.all():
-                actions = [*actions, *get_actions_from_policy(client, policy)]
-            role_obj.actions = filter_actions(actions, iam_action_passlist)
-            role_obj.simplify_actions()
+            role_obj = cache.get_asset(f'iam_{role["RoleName"]}')
+            if role_obj is None:
+                if arn and role['Arn'] != arn:
+                    continue
+                if service and service not in get_role_services(role):
+                    continue
+                role_obj = IAM(arn=role['Arn'])
+                if role_obj.resource_id in ['aws-reserved', 'aws-service-role', 'service-role']:
+                    continue
+                if role['RoleName'] in iam_rolename_passlist:
+                    continue
+                actions = []
+                for rolepolicy in resource.Role(role['RoleName']).policies.all():
+                    actions = [*actions, *get_actions_from_rolepolicy(rolepolicy)]
+                for policy in resource.Role(role['RoleName']).attached_policies.all():
+                    actions = [*actions, *get_actions_from_policy(client, policy, cache)]
+                role_obj.actions = filter_actions(actions, iam_action_passlist)
+                role_obj.simplify_actions()
+                cache.save_asset(f'iam_{role["RoleName"]}', role_obj)
             roles.append(role_obj)
     return roles
 
@@ -286,8 +297,10 @@ def iam_display_roles(
     arn,
     min_rights,
     service,
-    iam_action_passlist=list(),
-    iam_rolename_passlist=list(),
+    cache,
+    console,
+    iam_action_passlist=[],
+    iam_rolename_passlist=[],
     verbose=False):
     """
     Display all roles actions
@@ -295,11 +308,14 @@ def iam_display_roles(
     roles = iam_get_roles(
         client,
         resource,
+        cache,
         iam_action_passlist=iam_action_passlist,
         iam_rolename_passlist=iam_rolename_passlist,
         arn=arn,
         service=service)
     for role in roles:
-        is_displayed = role.print_actions(min_rights)
-        if verbose and is_displayed:
-            LOGGER.warning(f'Actions: {role.actions}')
+        actions = role.print_actions(min_rights)
+        if actions:
+            console.print(actions)
+            if verbose:
+                console.print(f'Actions: {role.actions}')

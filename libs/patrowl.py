@@ -34,7 +34,7 @@ def get_assets(patrowl_api, assetgroup_id):
     Get assets from AssetGroup
     """
     assets_list = []
-    assets = list()
+    assets = []
     assetgroup = patrowl_api.get_assetgroup_by_id(assetgroup_id)
     assets += sorted(assetgroup['assets'], key=lambda k: k['id'], reverse=True)
     for asset in assets:
@@ -89,4 +89,13 @@ def get_findings(patrowl_api, asset_id):
         return patrowl_api.get_asset_findings_by_id(asset_id)
     except Exception as err_msg:
         LOGGER.critical(f'{err_msg=}')
-    return list()
+    return None
+
+def update_finding(patrowl_api, finding_id):
+    """
+    Update the finding 'updated_at'
+    """
+    try:
+        patrowl_api.update_finding(finding_id)
+    except Exception as err_msg:
+        LOGGER.critical(f'{err_msg=}')

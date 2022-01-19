@@ -26,9 +26,9 @@ from config import variables
 
 LOGGER = logging.getLogger('aws-tower-launcher')
 
-VERSION = '3.11.0'
+VERSION = '4.0.0'
 
-PATROWL = dict()
+PATROWL = {}
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
 PATROWL['assetgroup_dev'] = int(os.environ['PATROWL_DEV_ASSETGROUP'])
 PATROWL['assetgroup_pre'] = int(os.environ['PATROWL_PRE_ASSETGROUP'])
@@ -50,10 +50,10 @@ def organize_assetgroups(config):
     A Patrowl call is long and add latencies in every lambdas...
     """
     patrowl_assets = PATROWL_API.get_assets()
-    assetgroup = dict()
-    assetgroup['dev'] = list()
-    assetgroup['pre'] = list()
-    assetgroup['pro'] = list()
+    assetgroup = {}
+    assetgroup['dev'] = []
+    assetgroup['pre'] = []
+    assetgroup['pro'] = []
     for asset in patrowl_assets:
         for profile in config.sections():
             if not is_config_ok(config, profile):
@@ -106,18 +106,23 @@ def main():
     config = ConfigParser(strict=False)
     config.read('config/lambda.config')
     organize_assetgroups(config)
+    # A lambda per profile
     for profile in config.sections():
         if not is_config_ok(config, profile):
             continue
         aws_account_name = profile.split()[1]
+        # ... and per aws service
         for meta_type in variables.META_TYPES:
             payload = {
                 aws_account_name: config[profile]['role_arn'],
                 'env': config[profile]['env'],
                 'meta_types': [meta_type]
             }
-            LOGGER.warning(payload)
-            call_lambda(payload)
+            # ... and per region
+            for region in variables.LAMBDA_SCAN_REGION_LIST:
+                payload['region_name'] = region
+                LOGGER.warning(payload)
+                call_lambda(payload)
 
 
 def handler(event, context):

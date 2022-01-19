@@ -7,9 +7,14 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
+# Standard library imports
 from dataclasses import dataclass
 
+# Third party library imports
+import botocore
+
 from .asset_type import AssetType
+from .tools import log_me
 
 # Debug
 # from pdb import set_trace as st
@@ -64,7 +69,7 @@ class CloudFront(AssetType):
                 'AuthorizationTypes': self.authorization.types
             }
             if self.public:
-                asset_report['PubliclyAccessible'] = True
+                asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.security_issues:
                 self.update_audit_report(asset_report)
         if 'CloudFront' not in report[self.location.region]:
@@ -78,7 +83,7 @@ class CloudFront(AssetType):
         Return the report in one line
         """
         if self.public:
-            return f'[Public] {self.aliases} Auth:{self.authorization.types}{self.display_brief_audit()}'
+            return f'<Public> {self.aliases} Auth:{self.authorization.types}{self.display_brief_audit()}'
         return f'{self.aliases} Auth:{self.authorization.types}{self.display_brief_audit()}'
 
     def finding_description(self, _):
@@ -86,5 +91,69 @@ class CloudFront(AssetType):
         Return a description of the finding
         """
         if self.public:
-            return f'[Public] {self.aliases} Auth:{self.authorization.types}'
-        return f'[Private] {self.aliases} Auth:{self.authorization.types}'
+            return f'<Public> {self.aliases} Auth:{self.authorization.types}'
+        return f'<Private> {self.aliases} Auth:{self.authorization.types}'
+
+
+@log_me('Getting Cloudfront raw data...')
+def get_raw_data(raw_data, authorizations, boto_session, cache, _):
+    """
+    Get raw data from boto requests.
+    Return any Cloudfront findings and add a 'False' in authorizations in case of errors
+    """
+    cf_client = boto_session.client('cloudfront')
+    try:
+        raw_data['cf_raw'] = cache.get(
+            'cf_list_distributions',
+            cf_client,
+            'list_distributions')['DistributionList']
+    except botocore.exceptions.ClientError:
+        raw_data['cf_raw'] = []
+        authorizations['cloudfront'] = False
+    return raw_data, authorizations
+
+def scan(cf_dist):
+    """
+    Scan CloudFront
+    """
+    if not cf_dist['Enabled']:
+        return None
+    aliases = []
+    if 'Aliases' in cf_dist and 'Items' in cf_dist['Aliases']:
+        aliases = cf_dist['Aliases']['Items']
+    authorization_types = []
+    if 'WebACLId' in cf_dist and cf_dist['WebACLId']:
+        authorization_types.append('WebACL')
+    if 'DefaultCacheBehavior' in cf_dist and \
+        'LambdaFunctionAssociations' in cf_dist['DefaultCacheBehavior'] and \
+        'Items' in cf_dist['DefaultCacheBehavior']['LambdaFunctionAssociations']:
+        for l_edge in cf_dist['DefaultCacheBehavior']['LambdaFunctionAssociations']['Items']:
+            # Suppose that an authentication lambda has "auth" in its name...
+            if 'auth' in l_edge['LambdaFunctionARN']:
+                authorization_types.append('Lambda')
+    if not authorization_types:
+        authorization_types = ['NONE']
+    return CloudFront(
+        cf_dist['DomainName'],
+        aliases,
+        authorization_types,
+        public=True)
+
+@log_me('Scanning Cloudfront...')
+def parse_raw_data(assets, authorizations, raw_data, name_filter, cache, _):
+    """
+    Parsing the raw data to extracts assets,
+    enrich the assets list and add a 'False' in authorizations in case of errors
+    """
+    if 'Items' in raw_data['cf_raw']:
+        for cf_dist in raw_data['cf_raw']['Items']:
+            asset = cache.get_asset(f'CF_{cf_dist["DomainName"]}')
+            if asset is None:
+                asset = scan(cf_dist)
+                cache.save_asset(f'CF_{cf_dist["DomainName"]}', asset)
+            name_in_aliases = False
+            for alias in asset.aliases:
+                name_in_aliases = name_in_aliases or name_filter.lower() in alias.lower()
+            if asset is not None and (name_filter.lower() in asset.name.lower() or name_in_aliases):
+                assets.append(asset)
+    return assets, authorizations

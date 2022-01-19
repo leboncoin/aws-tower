@@ -4,6 +4,34 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.0.0
+------
+
+2021/12/09
+
+### New feature
+  - Rich color for the CLI and `--no-color` argument
+  - Add EKS
+  - Add RDS version alerting: mariadb, postgres, mysql, sqlserver-se (mssql)
+  - lambda: Update finding 'updated_at', in Patrowl, at each iteration
+  - lambda: Scan multiple regions
+  - Add EC2 associated roles, if at least EC2 and IAM are selected
+  - Add cache \o/ (`--no-cache` and `--clean-cache` too)
+  - Add IAM 'dangerous roles' detection
+
+### Changes
+  - Remove not vuln members in assetgroup (IAM and S3)
+  - DnsRecord severity changes from medium to low
+  - Remove 'support' IAM permission by default
+  - Rename ELBV2 to ELB
+
+### Fixture
+  - Avoid crash if sts get caller identity fails
+  - Avoid crash if S3 Acls and permissions fails
+  - Avoid crash if Route53 permissions fails
+  - Don't scan Route53 if it's EC2 or ELB are not selected
+  - Avoid crash when 'Resource' is not present in RolePolicy (NotResource is ignored)
+
 3.11.0
 -----
 

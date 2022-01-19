@@ -22,9 +22,10 @@ from patrowl4py.api import PatrowlManagerApi
 from requests import Session
 
 # Own library and config files
-from libs.patrowl import add_asset, add_finding, get_findings
+from libs.patrowl import add_asset, add_finding, get_findings, update_finding
 from libs.scan import aws_scan
 from libs.session import get_session
+from libs.tools import Cache
 from config import variables
 
 # Debug
@@ -32,9 +33,9 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '3.11.0'
+VERSION = '4.0.0'
 
-PATROWL = dict()
+PATROWL = {}
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
 PATROWL['private_endpoint'] = os.environ['PATROWL_PRIVATE_ENDPOINT']
 PATROWL['public_endpoint'] = os.environ['PATROWL_PUBLIC_ENDPOINT']
@@ -45,6 +46,8 @@ PATROWL_API = PatrowlManagerApi(
     url=PATROWL['private_endpoint'],
     auth_token=PATROWL['api_token']
 )
+
+NO_CACHE = Cache('', '')
 
 SESSION = Session()
 
@@ -80,6 +83,7 @@ def main(account):
     try:
         assets = aws_scan(
             session,
+            NO_CACHE,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             public_only=False,
@@ -122,10 +126,15 @@ def main(account):
             # Get Patrowl findings only if we have a match
             if not is_new_asset:
                 findings = get_findings(PATROWL_API, asset_id)
+                if findings is None:
+                    LOGGER.critical(f'Error during get_findings of {asset_id=} ...')
+                    continue
                 for finding in findings:
                     if finding['title'] == new_finding['title'] and \
                         finding['severity'] == new_finding['severity']:
                         is_new_finding = False
+                        # Update the field 'updated_at'
+                        update_finding(PATROWL_API, finding['id'])
 
             if is_new_finding:
                 if is_new_asset:

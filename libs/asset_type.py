@@ -9,6 +9,7 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 
 from dataclasses import dataclass
 
+from .tools import color_severity
 from .patterns import Patterns
 
 # Debug
@@ -33,6 +34,7 @@ class AssetType:
         self.public = public
         self.location = Location()
         self.security_issues = []
+        self.console = None
 
     def audit(self, security_config):
         """
@@ -57,23 +59,24 @@ class AssetType:
         """
         for issue in self.security_issues:
             if 'Audit' not in report:
-                report['Audit'] = list()
-            report['Audit'].append(f'[{issue["severity"]}] {issue["title"]}')
+                report['Audit'] = []
+            report['Audit'].append(color_severity(issue["severity"], issue["title"], self.console))
 
     def display_brief_audit(self):
         """
         Return a brief output of the audit
         """
-        output = ''
-        if self.security_issues:
-            report = dict()
-            for issue in self.security_issues:
-                if issue['severity'] not in report:
-                    report[issue['severity']] = 1
-                else:
-                    report[issue['severity']] += 1
-            for issue_type in report:
-                output += f' [{issue_type}: {report[issue_type]}]'
+        if not self.security_issues:
+            return ''
+        output = ' '
+        report = {}
+        for issue in self.security_issues:
+            if issue['severity'] not in report:
+                report[issue['severity']] = 1
+            else:
+                report[issue['severity']] += 1
+        for severity, message in report.items():
+            output += f'<{color_severity(severity, message, self.console)}>'
         return output
 
     def get_type(self):
@@ -81,3 +84,11 @@ class AssetType:
         Return the asset type
         """
         return type(self).__name__
+
+    def remove_not_vulnerable_members(self):
+        """
+        If it's an AssetGroup (IAMGroup or S3Group or else), remove the
+        non vulnerable members.
+        This is a nutshell, check the ASsetGroup override function.
+        """
+        return True
