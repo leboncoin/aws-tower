@@ -1,4 +1,4 @@
-Patrowl4py>=1.1.1
-requests>=2.25.1
-python-slugify>=4.0.1
-ruamel.yaml>=0.16.12
+Patrowl4py>=1.1.7
+requests>=2.27.1
+python-slugify>=5.0.2
+ruamel.yaml>=0.17.20
