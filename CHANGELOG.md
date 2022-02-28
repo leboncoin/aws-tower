@@ -4,6 +4,14 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.0.1
+------
+
+2022/02/28
+
+### Changes
+  - Move lambda code to `monitoring/aws_lambda/` directory
+
 4.0.0
 ------
 

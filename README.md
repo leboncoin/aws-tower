@@ -119,7 +119,7 @@ $ export PATROWL_DEV_ASSETGROUP=3
 $ export PATROWL_PRIVATE_ENDPOINT=http://localhost/
 $ export PATROWL_PUBLIC_ENDPOINT=http://localhost/
 
-$ python -c 'import aws_tower_lambda; aws_tower_lambda.main()'
+$ python -c 'from monitoring.aws_lambda import aws_tower_child; aws_tower_child.main({ "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly", "env": "pro|pre|dev", "region_name": "eu-west-1", "meta_types": ["S3"] })'
 ```
 
 ## Findings

@@ -33,7 +33,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '4.0.0'
+VERSION = '4.0.1'
 
 PATROWL = {}
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
