@@ -1,4 +1,4 @@
-version: 4.0.0
+version: 4.0.1
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -315,7 +315,7 @@ types:
             bucket_name:
               type: attribute
               key: name
-        severity: medium
+        severity: low
         rules:
           - type: has_attribute
             description: Check if acls exists
