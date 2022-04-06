@@ -23,7 +23,7 @@ FINDING_RULES_PATH = ROOT_PATH / 'config' / 'rules.yaml'
 
 META_TYPES = ['APIGW', 'CLOUDFRONT', 'EC2', 'EKS', 'ELB', 'IAM', 'RDS', 'S3']
 
-IAM_ACTION_PASSLIST = ['ec2messages', 'logs', 'ssm', 'ssmmessages', 'support']
+IAM_ACTION_PASSLIST = ['autoscaling', 'ec2messages', 'elasticloadbalancing', 'logs', 'ssmmessages', 'support', 'xray']
 
 IAM_ROLENAME_PASSLIST = [
     'AccountManagementRole',

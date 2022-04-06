@@ -81,7 +81,23 @@ class IAM(AssetType):
         Append list of dangerous_actions if exists
         """
         dangerous_actions = [
-            'iam:PassRole'
+            'iam:PassRole',
+            # SSM everywhere
+            'ssm:SendCommand',
+            'ssm:StartSession',
+            # https://sra.io/blog/aws-iam-exploitation/
+            'iam:PutGroupPolicy',
+            'iam:PutRolePolicy',
+            'iam:PutUserPolicy',
+            'iam:AttachGroupPolicy',
+            'iam:AttachRolePolicy',
+            'iam:AttachUserPolicy',
+            'iam:CreatePolicyVersion',
+            'iam:SetDefaultPolicyVersion',
+            'iam:AddUserToGroup',
+            'iam:CreateLoginProfile',
+            'iam:UpdateLoginProfile',
+            'iam:CreateAccessKey'
         ]
         for dangerous_action in dangerous_actions:
             if service == dangerous_action.split(':', maxsplit=1)[0] and \
