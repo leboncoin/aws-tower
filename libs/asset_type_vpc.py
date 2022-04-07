@@ -26,14 +26,18 @@ class VPC(AssetType):
         self,
         name: str,
         is_peering: bool=False,
+        is_endpoint_service: bool=False,
         public: bool=False):
         super().__init__('VPC', name, public=public)
+        # VPC Peering
         self.is_peering = is_peering
         self.is_trusted_peering = False
         self.src_account_id = 'unknown'
         self.src_region_id = ''
         self.dst_account_id = 'unknown'
         self.dst_region_id = ''
+        # VPC Endpoint Services
+        self.is_endpoint_service = is_endpoint_service
 
     def report(self, report, brief=False):
         """
@@ -46,6 +50,8 @@ class VPC(AssetType):
             if self.is_peering:
                 asset_report['Link'] = \
                     f'{self.src_account_id}:{self.src_region_id} <-> {self.dst_account_id}:{self.dst_region_id}'
+            elif self.is_endpoint_service and self.public:
+                asset_report['Public'] = '[red]True[/red]'
             if self.security_issues:
                 self.update_audit_report(asset_report)
         if 'VPC' not in report:
@@ -58,8 +64,14 @@ class VPC(AssetType):
         """
         Return the report in one line
         """
-        return f'{self.src_account_id}:{self.src_region_id} <-> {self.dst_account_id}:{self.dst_region_id}{self.display_brief_audit()}'
-
+        message = ''
+        if self.is_peering:
+            message = f'{self.src_account_id}:{self.src_region_id} <-> {self.dst_account_id}:{self.dst_region_id}{self.display_brief_audit()}'
+        elif self.is_endpoint_service:
+            message = '<Private>'
+            if self.public:
+                message = '[red]<Public>[/red]'
+        return message
     def finding_description(self, _):
         """
         Return a description of the finding
@@ -76,11 +88,18 @@ def get_raw_data(raw_data, authorizations, boto_session, cache, _):
         ec2 = boto_session.client('ec2')
         vpc_peering_describe = cache.get('vpc_peering_describe', ec2, 'describe_vpc_peering_connections')
         raw_data['vpc_peering_raw'] = vpc_peering_describe['VpcPeeringConnections']
+        endpoint_services = cache.get('vpc_endpoint_services_describe', ec2, 'describe_vpc_endpoint_services')
+        raw_data['vpc_endpoint_services_raw'] = [ i for i in endpoint_services['ServiceDetails'] if  i['Owner'] != 'amazon']
+        raw_data['vpc_endpoint_services_perm_raw'] = {}
+        for endpoint_service in raw_data['vpc_endpoint_services_raw']:
+            raw_data['vpc_endpoint_services_perm_raw'][endpoint_service['ServiceId']] = \
+                cache.get_vpc_endpoint_services_permission(
+                f'vpc_es_perm_{endpoint_service["ServiceId"]}', ec2, endpoint_service['ServiceId'])
     except botocore.exceptions.ClientError:
         authorizations['vpc'] = False
     return raw_data, authorizations
 
-# @log_me('Scanning VPC...')
+@log_me('Scanning VPC...')
 def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, cache, _):
     """
     Parsing the raw data to extracts assets,
@@ -96,7 +115,7 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
         if asset is None:
             asset_name = f'peering:{get_tag(vpc_peering["Tags"], "Name")}'
             if asset_name == 'peering:':
-                asset_name = vpc_peering['VpcPeeringConnectionId']
+                asset_name = f'peering:{vpc_peering["VpcPeeringConnectionId"]}'
             asset = VPC(name=asset_name, is_peering=True)
             asset.src_account_id = vpc_peering['AccepterVpcInfo']['OwnerId']
             asset.src_region_id = vpc_peering['AccepterVpcInfo']['Region']
@@ -105,7 +124,20 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
             asset.is_trusted_peering = \
                 asset.src_account_id in trusted_accounts_list and \
                 asset.dst_account_id in trusted_accounts_list
-            cache.save_asset(f'VPC_{vpc_peering["VpcPeeringConnectionId"]}', asset)
+            cache.save_asset(f'VPC_P_{vpc_peering["VpcPeeringConnectionId"]}', asset)
+        if asset is not None and name_filter.lower() in asset.name.lower():
+            assets.append(asset)
+    for vpc_endpoint_service in raw_data['vpc_endpoint_services_raw']:
+        asset = cache.get_asset(f'VPC_ES_{vpc_endpoint_service["ServiceId"]}')
+        if asset is None:
+            asset_name = f'endpoint_service:{get_tag(vpc_endpoint_service["Tags"], "Name")}'
+            if asset_name == 'endpoint_service:':
+                asset_name = f'endpoint_service:{vpc_endpoint_service["ServiceId"]}'
+            asset = VPC(name=asset_name, is_endpoint_service=True)
+            asset.public = True in [ '*' in i['Principal'] for i in raw_data['vpc_endpoint_services_perm_raw'][vpc_endpoint_service['ServiceId']]['AllowedPrincipals']]
+            cache.save_asset(f'VPC_ES_{vpc_endpoint_service["ServiceId"]}', asset)
+            if public_only and not asset.public:
+                asset = None
         if asset is not None and name_filter.lower() in asset.name.lower():
             assets.append(asset)
     return assets, authorizations

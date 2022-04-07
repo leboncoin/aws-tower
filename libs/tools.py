@@ -247,3 +247,14 @@ class Cache:
         result = client.client('sts').get_caller_identity()
         self.save_file(result, cache_file)
         return result
+    def get_vpc_endpoint_services_permission(self, key, client, service_id):
+        """
+        Custom cache method for ec2.describe_vpc_endpoint_service_permissions(ServiceId=service_id)
+        """
+        cache_file = Path(f'{self.prefix}_{key}')
+        if cache_file.exists() and self.enabled:
+            return pickle.load(cache_file.open(mode='rb'))
+        result = client.describe_vpc_endpoint_service_permissions(
+            ServiceId=service_id)
+        self.save_file(result, cache_file)
+        return result
