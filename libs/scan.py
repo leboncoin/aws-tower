@@ -20,6 +20,7 @@ import libs.asset_type_iam_group as iam
 import libs.asset_type_rds as rds
 import libs.asset_type_route53 as r53
 import libs.asset_type_s3_group as s3
+import libs.asset_type_vpc as vpc
 
 # Debug
 # from pdb import set_trace as st
@@ -39,7 +40,8 @@ def get_raw_data(boto_session, meta_types, cache, console):
         'iam': True,
         'rds': True,
         's3': True,
-        'route53': True
+        'route53': True,
+        'vpc': True
     }
     raw_data = {}
 
@@ -92,6 +94,14 @@ def get_raw_data(boto_session, meta_types, cache, console):
 
     if 'S3' in meta_types:
         raw_data, authorizations = s3.get_raw_data(
+            raw_data,
+            authorizations,
+            boto_session,
+            cache,
+            console)
+
+    if 'VPC' in meta_types:
+        raw_data, authorizations = vpc.get_raw_data(
             raw_data,
             authorizations,
             boto_session,
@@ -208,6 +218,16 @@ def aws_scan(
 
     if 'S3' in meta_types:
         assets, authorizations = s3.parse_raw_data(
+            assets,
+            authorizations,
+            raw_data,
+            name_filter,
+            public_only,
+            cache,
+            console)
+
+    if 'VPC' in meta_types:
+        assets, authorizations = vpc.parse_raw_data(
             assets,
             authorizations,
             raw_data,

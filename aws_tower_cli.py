@@ -27,7 +27,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.0.1'
+VERSION = '4.1.0'
 
 def audit_handler(session, args, meta_types, cache):
     """
