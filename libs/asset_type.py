@@ -7,6 +7,7 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
+# Standard library imports
 from dataclasses import dataclass
 
 from .tools import color_severity

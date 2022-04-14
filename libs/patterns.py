@@ -21,11 +21,14 @@ import re
 import ruamel.yaml
 from ruamel.yaml.error import YAMLError
 
+from config import variables
+
 # Debug
 # from pdb import set_trace as st
 
 # pylint: disable=logging-fstring-interpolation,no-self-use
 
+LOGGER = logging.getLogger('aws-tower')
 yaml = ruamel.yaml.YAML()
 
 class OrderlyJSONEncoder(json.JSONEncoder):
@@ -43,7 +46,8 @@ def yaml_2_json(patterns_content):
     """
     try:
         datamap = yaml.load(patterns_content)
-    except YAMLError:
+    except YAMLError as err_msg:
+        LOGGER.error(f'Cannot read rules.yml: {err_msg}')
         return None
     return OrderlyJSONEncoder(indent=2).encode(datamap)
 
@@ -147,7 +151,7 @@ class Patterns:
         if self._max_severity < self._min_severity:
             raise Exception(f'Error: min severity ({min_severity}) higher than max severity ({max_severity})')
         self.subnet_allow_list = []
-        allow_list_path = Path('config/subnet_allow_list.txt')
+        allow_list_path = variables.SUBNET_ALLOW_LIST_PATH
         if allow_list_path.exists():
             with allow_list_path.open() as allow_list:
                 for line in allow_list.readlines():

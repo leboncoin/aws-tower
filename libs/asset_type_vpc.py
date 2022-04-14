@@ -12,6 +12,7 @@ from pathlib import Path
 # Third party library imports
 import botocore
 
+from config import variables
 from .asset_type import AssetType
 from .tools import get_tag, log_me
 
@@ -105,7 +106,7 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
-    trusted_accounts_list_path = Path('config/trusted_accounts_list.txt')
+    trusted_accounts_list_path = variables.TRUSTED_ACCOUNTS_LIST_PATH
     if trusted_accounts_list_path.exists():
         trusted_accounts_list = trusted_accounts_list_path.read_text(
             encoding='ascii', errors='ignore').split('\n')

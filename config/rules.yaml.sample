@@ -1,11 +1,11 @@
+---
 version: 4.1.0
 types:
   security_group:
     description: Check each rule on each security group and on each source
     findings:
       - message:
-          text: '[{name}] Allow connection to specific port (or range) from public
-            network ({source}=>{ports})'
+          text: '[{name}] Allow connection to specific port (or range) from public network ({source}=>{ports})'
           args:
             name:
               type: variable
@@ -574,6 +574,7 @@ types:
               - type: attribute
                 name: attribute_value
                 value: authorization.has_no_auth_endpoint
+# https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MySQL.html
       - message:
           text: '[{service_name}] Deprecated mysql engine version ({current_version})'
           args:
@@ -604,12 +605,15 @@ types:
               - type: constant
                 name: versions
                 value:
-                  - '5.7.33'
+                  - '5.6.34'
+                  - '5.7.16'
+                  - '8.0.11'
             data_sources:
               - type: attribute
                 name: attribute_value
                 value: engine
 # https://mariadb.com/kb/en/security/
+# https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MariaDB.html
       - message:
           text: '[{service_name}] Deprecated mariadb engine version ({current_version})'
           args:
@@ -640,16 +644,18 @@ types:
               - type: constant
                 name: versions
                 value:
-                  - '10.2.41'
-                  - '10.3.32'
-                  - '10.4.22'
-                  - '10.5.13'
-                  - '10.6.4'
+                  - '10.2.43'
+                  - '10.3.34'
+                  - '10.4.24'
+                  - '10.5.15'
+                  - '10.6.7'
+                  - '10.7.3'
+                  - '10.8.1'
             data_sources:
               - type: attribute
                 name: attribute_value
                 value: engine
-# https://www.postgresql.org/support/security/10/
+# https://www.postgresql.org/support/security/
       - message:
           text: '[{service_name}] Deprecated postgres engine version ({current_version})'
           args:
