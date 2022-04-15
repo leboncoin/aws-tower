@@ -33,7 +33,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '4.0.1'
+VERSION = '4.1.0'
 
 PATROWL = {}
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -146,6 +146,7 @@ def main(account):
                     if not created_asset or 'id' not in created_asset:
                         LOGGER.critical(f'Error during asset {asset_patrowl_name} creation...')
                         continue
+                    asset_id = created_asset['id']
                     is_new_asset = False
                     if 'info' in variables.ALERTING_SEVERITIES:
                         add_finding(
