@@ -4,6 +4,24 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.1.0
+------
+
+2022/04/21
+
+### New feature
+  - Add VPC Peering
+  - Add VPC Endpoint services
+  - Add VPC VPN
+  - Add multiple dangerous actions
+
+### Changes
+  - Lower severity for S3 IgnorePublicACLs `medium -> low`
+
+### Fixtures
+  - Fix missing asset_id in lambda monitoring
+  - Factorize Pattern compilation for audit
+
 4.0.1
 ------
 

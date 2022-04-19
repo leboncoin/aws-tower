@@ -14,6 +14,7 @@ AWS Services monitored:
 - IAM
 - RDS
 - S3
+- VPC
 
 ## Prerequisites
 
@@ -49,14 +50,16 @@ optional arguments:
 
 ```bash
 $ aws-tower audit --help
-usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-n NAME] [-v] [-b] [-s] profile
+usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-m {info,low,medium,high,critical}]
+                              [-M {info,low,medium,high,critical}] [-n NAME] [-v] [-b] [-s]
+                              profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 optional arguments:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}
                         Types to display (default: display everything)
   -m {info,low,medium,high,critical}, --min-severity {info,low,medium,high,critical}
                         min severity level to report when security is enabled (default: medium)
@@ -70,14 +73,14 @@ optional arguments:
 
 ```bash
 $ aws-tower discover --help
-usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3}] [-p] [-n NAME] [-v] [-b] [-s] profile
+usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-p] [-n NAME] [-v] [-b] [-s] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 optional arguments:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}
                         Types to display (default: display everything)
   -p, --public-only     Display public assets only
   -n NAME, --name NAME  Filter this asset name
