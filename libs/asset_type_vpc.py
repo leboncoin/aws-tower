@@ -141,6 +141,8 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
     if trusted_accounts_list_path.exists():
         trusted_accounts_list = trusted_accounts_list_path.read_text(
             encoding='ascii', errors='ignore').split('\n')
+    # Remove account name comment
+    trusted_accounts_list = [ i.split(':')[0] for i in trusted_accounts_list ]
 
     # VPC Peering
     for vpc_peering in raw_data['vpc_peering_raw']:
