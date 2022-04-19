@@ -14,7 +14,6 @@ from distutils.version import LooseVersion
 import ipaddress
 import json
 import logging
-from pathlib import Path
 import re
 
 # ThirdParty
@@ -28,7 +27,6 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation,no-self-use
 
-LOGGER = logging.getLogger('aws-tower')
 yaml = ruamel.yaml.YAML()
 
 class OrderlyJSONEncoder(json.JSONEncoder):
@@ -40,17 +38,16 @@ class OrderlyJSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
-def yaml_2_json(patterns_content):
+def yaml_to_json(patterns_content, logger):
     """
     Transform a Yaml into JSON
     """
     try:
         datamap = yaml.load(patterns_content)
     except YAMLError as err_msg:
-        LOGGER.error(f'Cannot read rules.yml: {err_msg}')
+        logger.error(f'Cannot read rules.yml: {err_msg}')
         return None
     return OrderlyJSONEncoder(indent=2).encode(datamap)
-
 
 class Patterns:
     """Get findings from patterns
@@ -119,7 +116,7 @@ class Patterns:
     def __init__(
         self,
         patterns_path,
-        severity_levels={'info': 0, 'critical': 1},
+        severity_levels={'info': 0, 'low': 1, 'medium': 2, 'high': 3, 'critical': 4},
         min_severity='info',
         max_severity='critical'):
         """Constructor method
@@ -128,28 +125,28 @@ class Patterns:
         """
         self._logger = logging.getLogger('aws-tower_patterns')
         # self._logger.setLevel(logging.DEBUG)
+        # Define severity
+        self._severity_levels = severity_levels
+        if min_severity not in self._severity_levels:
+            raise Exception(f'Unable to found severity {min_severity} in {list(self._severity_levels.keys())}')
+        if max_severity not in self._severity_levels:
+            raise Exception(f'Unable to found severity {max_severity} in {list(self._severity_levels.keys())}')
+        self._min_severity = max(self._severity_levels[min_severity], 0)
+        self._max_severity = max(self._severity_levels[max_severity], 0)
+        if self._max_severity < self._min_severity:
+            raise Exception(f'Error: min severity ({min_severity}) higher than max severity ({max_severity})')
+        # Define rules
         try:
             patterns = patterns_path.read_text()
         except Exception as err_msg:
             raise Exception(f'Unable to read patterns from file {patterns_path.absolute()}: {err_msg}')
         else:
             try:
-                self._patterns = json.loads(yaml_2_json(patterns))
+                self._patterns = json.loads(yaml_to_json(patterns, self._logger))
             except Exception as err_msg:
                 raise Exception(f'Unable to load yaml data: {err_msg}')
-        self._severity_levels = severity_levels
-        if min_severity not in self._severity_levels:
-            raise Exception(f'Unable to found severity {min_severity} in {list(self._severity_levels.keys())}')
-        if max_severity not in self._severity_levels:
-            raise Exception(f'Unable to found severity {max_severity} in {list(self._severity_levels.keys())}')
-        self._min_severity = self._severity_levels[min_severity]
-        self._max_severity = self._severity_levels[max_severity]
-        if self._min_severity < 0:
-            self._min_severity = 0
-        if self._max_severity < 0:
-            self._max_severity = 0
-        if self._max_severity < self._min_severity:
-            raise Exception(f'Error: min severity ({min_severity}) higher than max severity ({max_severity})')
+        self._remove_useless_pattern()
+        # Define exceptions
         self.subnet_allow_list = []
         allow_list_path = variables.SUBNET_ALLOW_LIST_PATH
         if allow_list_path.exists():
@@ -160,6 +157,22 @@ class Patterns:
                         self.subnet_allow_list.append(ipaddress.ip_network(cidr))
                     except ValueError:
                         pass
+
+    def _remove_useless_pattern(self):
+        """
+        Remove useless rules that are not matching any severity
+        """
+        allowed_severities = []
+        for severity in self._severity_levels:
+            if self._min_severity <= self._severity_levels[severity] <= self._max_severity:
+                allowed_severities.append(severity)
+        for rules_type in self._patterns['types']:
+            removed = 0
+            findings_copy = self._patterns['types'][rules_type]['findings'].copy()
+            for i, rule in enumerate(findings_copy):
+                if rule['severity'] not in allowed_severities:
+                    del self._patterns['types'][rules_type]['findings'][i - removed]
+                    removed += 1
 
     def _prepare_arguments(self, arguments, kwargs):
         """Prepare arguments to use them in rule methods
@@ -641,7 +654,7 @@ class Patterns:
         :rtype: list
         """
         if len(self._patterns) == 0:
-            return list()
+            return []
         report = []
         if hasattr(asset, 'security_groups'):
             for sg_name, sg_rules in asset.security_groups.items():
@@ -668,7 +681,7 @@ class Patterns:
         :param asset: aws asset
         :type asset: AssetType
         :return: Report generated
-        :rtype: list()
+        :rtype: []
         """
         report = []
         report += self.extract_findings_from_security_groups(asset)
@@ -676,8 +689,8 @@ class Patterns:
 
     def _check_arguments_definitions(self, arguments, name):
         errors = {
-            'critical': list(),
-            'warning': list()
+            'critical': [],
+            'warning': []
         }
         for argument in arguments:
             if 'name' not in argument or 'type' in argument or 'value' in argument:
@@ -692,8 +705,8 @@ class Patterns:
 
     def _check_rules_definitions(self, rule):
         errors = {
-            'critical': list(),
-            'warning': list(),
+            'critical': [],
+            'warning': [],
         }
         bad_format = False
         if 'type' not in rule:

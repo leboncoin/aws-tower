@@ -26,6 +26,7 @@ from libs.patrowl import add_asset, add_finding, get_findings, update_finding
 from libs.scan import aws_scan
 from libs.session import get_session
 from libs.tools import Cache
+from libs.patterns import Patterns
 from config import variables
 
 # Debug
@@ -61,12 +62,12 @@ def main(account):
     """
     Main function
     """
-    security_config = {
-        'findings_rules_path': variables.FINDING_RULES_PATH,
-        'severity_levels': variables.SEVERITY_LEVELS,
-        'min_severity': list(variables.SEVERITY_LEVELS.keys())[0],
-        'max_severity': list(variables.SEVERITY_LEVELS.keys())[-1]
-    }
+    patterns = Patterns(
+        variables.FINDING_RULES_PATH,
+        variables.SEVERITY_LEVELS,
+        list(variables.SEVERITY_LEVELS.keys())[0],
+        list(variables.SEVERITY_LEVELS.keys())[-1]
+    )
 
     aws_account_name = list(account.keys())[0]
     env = account['env']
@@ -99,7 +100,7 @@ def main(account):
     for asset in assets:
         count += 1
         LOGGER.warning(f'Checking asset {count}/{len(assets)}: {asset.name}')
-        asset.audit(security_config)
+        asset.audit(patterns)
         asset_id = None
         asset_patrowl_name = f'[{aws_account_name}] {asset.name}'
 

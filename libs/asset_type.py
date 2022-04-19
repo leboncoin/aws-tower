@@ -11,7 +11,6 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 from dataclasses import dataclass
 
 from .tools import color_severity
-from .patterns import Patterns
 
 # Debug
 # from pdb import set_trace as st
@@ -37,21 +36,11 @@ class AssetType:
         self.security_issues = []
         self.console = None
 
-    def audit(self, security_config):
+    def audit(self, patterns):
         """
         This function is returning an asset_report with security findings,
         it handles the brief mode output
         """
-        try:
-            patterns = Patterns(
-                security_config['findings_rules_path'],
-                security_config['severity_levels'],
-                security_config['min_severity'],
-                security_config['max_severity']
-            )
-        except Exception:
-            return
-
         self.security_issues = patterns.extract_findings(self)
 
     def update_audit_report(self, report):
