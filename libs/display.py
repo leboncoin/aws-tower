@@ -58,16 +58,17 @@ def scan_audit(assets, report, security_config, brief, _):
     """
     Add assets in report
     """
-    try:
-        patterns = Patterns(
-            security_config['findings_rules_path'],
-            security_config['severity_levels'],
-            security_config['min_severity'],
-            security_config['max_severity']
-        )
-    except Exception as err_msg:
-        LOGGER.critical(err_msg)
-        return report
+    if security_config:
+        try:
+            patterns = Patterns(
+                security_config['findings_rules_path'],
+                security_config['severity_levels'],
+                security_config['min_severity'],
+                security_config['max_severity']
+            )
+        except Exception as err_msg:
+            LOGGER.critical(f'[CRITICAL] Auditing the scan: {err_msg}')
+            return report
     for asset in assets:
         if security_config:
             asset.audit(patterns)
