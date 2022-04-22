@@ -12,7 +12,7 @@ import botocore
 
 from config import variables
 from .asset_type import AssetType
-from .tools import get_tag, log_me
+from .tools import get_tag, log_me, search_filter_in
 
 # Debug
 # from pdb import set_trace as st
@@ -160,7 +160,7 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
                 asset.src_account_id in trusted_accounts_list and \
                 asset.dst_account_id in trusted_accounts_list
             cache.save_asset(f'VPC_P_{vpc_peering["VpcPeeringConnectionId"]}', asset)
-        if asset is not None and name_filter.lower() in asset.name.lower():
+        if search_filter_in(asset, name_filter):
             assets.append(asset)
     # VPC Endpoint Services
     for vpc_endpoint_service in raw_data['vpc_endpoint_services_raw']:
@@ -174,7 +174,7 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
             cache.save_asset(f'VPC_ES_{vpc_endpoint_service["ServiceId"]}', asset)
             if public_only and not asset.public:
                 asset = None
-        if asset is not None and name_filter.lower() in asset.name.lower():
+        if search_filter_in(asset, name_filter):
             assets.append(asset)
     # VPC VPN Endpoints
     for vpc_vpn in raw_data['vpc_vpn_endpoints']:
@@ -189,6 +189,6 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
             cache.save_asset(f'VPC_VPN_{vpc_vpn["ClientVpnEndpointId"]}', asset)
             if public_only and not asset.public:
                 asset = None
-        if asset is not None and name_filter.lower() in asset.name.lower():
+        if search_filter_in(asset, name_filter):
             assets.append(asset)
     return assets, authorizations

@@ -12,7 +12,7 @@ import botocore
 
 from .asset_type import AssetType
 from .asset_type_s3 import S3
-from .tools import log_me
+from .tools import log_me, search_filter_in
 
 # Debug
 # from pdb import set_trace as st
@@ -160,7 +160,7 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
                 acls,
                 public_only)
             cache.save_asset(f'S3_{s_three["Name"]}', s3bucket)
-        if s3bucket is not None and name_filter.lower() in s3bucket.name.lower():
+        if search_filter_in(s3bucket, name_filter):
             s3group.list.append(s3bucket)
     assets.append(s3group)
     return assets, authorizations

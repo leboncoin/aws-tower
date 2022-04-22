@@ -118,6 +118,8 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
                 raw_data['subnets_raw'],
                 public_only)
             cache.save_asset(f'RDS_{rds["DBInstanceIdentifier"]}', asset)
-        if asset is not None and name_filter.lower() in asset.name.lower():
+        if asset is not None and (\
+            name_filter.lower() in asset.name.lower() or \
+            name_filter.lower() in asset.engine.lower()):
             assets.append(asset)
     return assets, authorizations

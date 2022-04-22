@@ -11,7 +11,7 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 import botocore
 
 from .asset_type import AssetType
-from .tools import get_network, log_me
+from .tools import get_network, log_me, search_filter_in
 
 # Debug
 # from pdb imports set_trace as st
@@ -114,6 +114,6 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, cache, _):
             asset.location.region = region
             asset.location.vpc = vpc
             cache.save_asset(f'EKS_{cluster_name}', asset)
-        if asset is not None and name_filter.lower() in asset.name.lower():
+        if search_filter_in(asset, name_filter):
             assets.append(asset)
     return assets, authorizations

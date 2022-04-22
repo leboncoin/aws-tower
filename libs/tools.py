@@ -258,3 +258,29 @@ class Cache:
             ServiceId=service_id)
         self.save_file(result, cache_file)
         return result
+
+def search_filter_in(asset, filter_str):
+    """
+    Return True if the filter_str is in the asset
+    - by default -> asset.name
+        optional: aliases, api_endpoint, arn, dns_record, endpoint, engine, url
+    - port:xxx -> asset.security_groups
+    """
+    filter_str = filter_str.lower()
+    if asset is None:
+        return False
+    if filter_str.startswith('port:') and hasattr(asset, 'security_groups'):
+        port = filter_str.split(':')[1]
+        for security_group in asset.security_groups:
+            if port in asset.security_groups[security_group].keys():
+                return True
+    else:
+        if filter_str in asset.name.lower():
+            return True
+        for attribute in [
+            'aliases', 'api_endpoint', 'arn',
+            'dns_record', 'dst_account_id', 'endpoint',
+            'engine', 'src_account_id', 'url']:
+            if hasattr(asset, attribute) and filter_str in getattr(asset, attribute).lower():
+                return True
+    return False
