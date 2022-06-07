@@ -151,6 +151,9 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, cache, _):
             if asset is None:
                 asset = scan(cf_dist)
                 cache.save_asset(f'CF_{cf_dist["DomainName"]}', asset)
+            # If the CloudFront is disabled
+            if asset is None:
+                continue
             name_in_aliases = False
             for alias in asset.aliases:
                 name_in_aliases = name_in_aliases or name_filter.lower() in alias.lower()

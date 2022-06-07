@@ -50,8 +50,8 @@ optional arguments:
 
 ```bash
 $ aws-tower audit --help
-usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-m {info,low,medium,high,critical}]
-                              [-M {info,low,medium,high,critical}] [-n NAME] [-v] [-b] [-s]
+usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-n NAME]
+                              [-f FILTER] [-v] [-b] [-s]
                               profile
 
 positional arguments:
@@ -65,7 +65,9 @@ optional arguments:
                         min severity level to report when security is enabled (default: medium)
   -M {info,low,medium,high,critical}, --max-severity {info,low,medium,high,critical}
                         max severity level to report when security is enabled (default: high)
-  -n NAME, --name NAME  Filter this asset name
+  -n NAME, --name NAME  [DEPRECATED] Filter this asset name
+  -f FILTER, --filter FILTER
+                        Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets
@@ -73,7 +75,7 @@ optional arguments:
 
 ```bash
 $ aws-tower discover --help
-usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-p] [-n NAME] [-v] [-b] [-s] profile
+usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-p] [-n NAME] [-f FILTER] [-v] [-b] [-s] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
@@ -83,7 +85,9 @@ optional arguments:
   -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}
                         Types to display (default: display everything)
   -p, --public-only     Display public assets only
-  -n NAME, --name NAME  Filter this asset name
+  -n NAME, --name NAME  [DEPRECATED] Filter this asset name
+  -f FILTER, --filter FILTER
+                        Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets
