@@ -11,7 +11,7 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 import botocore
 
 from .asset_type import AssetType
-from .tools import draw_sg, get_network, log_me
+from .tools import draw_sg, get_network, log_me, search_filter_in
 
 # Debug
 # from pdb import set_trace as st
@@ -116,6 +116,6 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
         if asset is None:
             asset = scan(elb, raw_data['sg_raw'], raw_data['subnets_raw'], public_only)
             cache.save_asset(f'ELB_{elb["DNSName"]}', asset)
-        if asset is not None and name_filter.lower() in asset.name.lower():
+        if search_filter_in(asset, name_filter):
             assets.append(asset)
     return assets, authorizations

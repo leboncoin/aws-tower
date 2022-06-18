@@ -27,7 +27,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.1.0'
+VERSION = '4.2.0'
 
 def audit_handler(session, args, meta_types, cache):
     """
@@ -40,7 +40,7 @@ def audit_handler(session, args, meta_types, cache):
         iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
         public_only=False,
         meta_types=meta_types,
-        name_filter=args.name,
+        name_filter=args.filter,
         console=CONSOLE
     )
     min_severity = list(variables.SEVERITY_LEVELS.keys())[0]
@@ -82,7 +82,7 @@ def discover_handler(session, args, meta_types, cache):
         iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
         public_only=args.public_only,
         meta_types=meta_types,
-        name_filter=args.name,
+        name_filter=args.filter,
         console=CONSOLE
     )
     if args.summary:
@@ -220,7 +220,12 @@ if __name__ == '__main__':
         '-n', '--name',
         action='store',
         default='',
-        help='Filter this asset name')
+        help='[DEPRECATED] Filter this asset name')
+    DISCOVER_PARSER.add_argument(
+        '-f', '--filter',
+        action='store',
+        default='',
+        help='Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"')
     DISCOVER_PARSER.add_argument(
         '-v', '--verbose',
         action='store_true',
@@ -261,7 +266,12 @@ if __name__ == '__main__':
         '-n', '--name',
         action='store',
         default='',
-        help='Filter this asset name')
+        help='[DEPRECATED] Filter this asset name')
+    AUDIT_PARSER.add_argument(
+        '-f', '--filter',
+        action='store',
+        default='',
+        help='Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"')
     AUDIT_PARSER.add_argument(
         '-v', '--verbose',
         action='store_true',
@@ -316,6 +326,10 @@ if __name__ == '__main__':
     ARGS = PARSER.parse_args()
     if len(sys.argv) == 1:
         PARSER.print_help()
+    if ARGS.name:
+        CONSOLE.print('[red][DEPRECATED] The option -n/--name is replaced by -f/--filter')
+        # Temporary
+        ARGS.filter = ARGS.name
     VERB = 'discover'
     if hasattr(ARGS, 'min_severity'):
         VERB = 'audit'

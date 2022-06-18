@@ -14,7 +14,7 @@ from dataclasses import dataclass
 import botocore
 
 from .asset_type import AssetType
-from .tools import log_me
+from .tools import log_me, search_filter_in
 
 # Debug
 # from pdb import set_trace as st
@@ -161,6 +161,6 @@ def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, 
                 authorization_types,
                 public=True)
             cache.save_asset(f'APIGW_{apigw["Name"]}', asset)
-        if asset is not None and name_filter.lower() in asset.name.lower():
+        if search_filter_in(asset, name_filter):
             assets.append(asset)
     return assets, authorizations

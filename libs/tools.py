@@ -258,3 +258,39 @@ class Cache:
             ServiceId=service_id)
         self.save_file(result, cache_file)
         return result
+
+def search_filter_in(asset, filter_str):
+    """
+    Return True if the filter_str is in the asset
+    - by default -> asset.name and a lot of asset attributes
+    - port:xxx -> asset.security_groups (ELB, EC2)
+    - engine:xxx -> asset.engine (RDS)
+    - version:xxx -> asset.version (EKS, RDS)
+    """
+    filter_str = filter_str.lower()
+    if asset is None:
+        return False
+    is_found = False
+    if filter_str.startswith('port:') and hasattr(asset, 'security_groups'):
+        port = filter_str.split(':')[1]
+        for security_group in asset.security_groups:
+            is_found |= port in asset.security_groups[security_group].keys()
+    elif filter_str.startswith('engine:') and hasattr(asset, 'engine'):
+        is_found = asset.engine.startswith(filter_str.split(':')[1])
+    elif filter_str.startswith('version:'):
+        version = filter_str.split(':')[1]
+        if asset.get_type() == 'EKS':
+            is_found = asset.version.startswith(version)
+        if asset.get_type() == 'RDS' and '==' in asset.engine:
+            is_found = asset.engine.split('==')[1].startswith(version)
+    else:
+        if filter_str in asset.name.lower():
+            return True
+        for attribute in [
+            'aliases', 'api_endpoint', 'arn',
+            'dns_record', 'dst_account_id', 'endpoint',
+            'engine', 'private_ip', 'public_ip', 'src_account_id', 'url']:
+            is_found |= hasattr(asset, attribute) and \
+                isinstance(getattr(asset, attribute), str) and \
+                filter_str in getattr(asset, attribute).lower()
+    return is_found

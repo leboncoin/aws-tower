@@ -26,7 +26,7 @@ from config import variables
 
 LOGGER = logging.getLogger('aws-tower-launcher')
 
-VERSION = '4.1.0'
+VERSION = '4.2.0'
 
 PATROWL = {}
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']

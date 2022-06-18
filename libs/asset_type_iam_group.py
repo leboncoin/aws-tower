@@ -12,7 +12,7 @@ import botocore
 
 from .asset_type import AssetType
 from .iam_scan import iam_get_roles
-from .tools import log_me
+from .tools import log_me, search_filter_in
 
 # Debug
 # from pdb import set_trace as st
@@ -25,13 +25,13 @@ class IAMGroup(AssetType):
         super().__init__('IAM roles', name)
         self.list = []
 
-    def audit(self, security_config):
+    def audit(self, patterns):
         """
         Redefinition of audit
         """
         for asset in self.list:
             asset.console = self.console
-            asset.audit(security_config)
+            asset.audit(patterns)
             self.security_issues = [*self.security_issues, *asset.security_issues]
 
     def get_type(self):
@@ -107,7 +107,7 @@ def parse_raw_data(
             client_iam, resource_iam, cache,
             iam_action_passlist=iam_action_passlist,
             iam_rolename_passlist=iam_rolename_passlist):
-            if name_filter.lower() in role.arn.lower():
+            if search_filter_in(role, name_filter):
                 iamgroup.list.append(role)
     except botocore.exceptions.ClientError:
         authorizations['iam'] = False

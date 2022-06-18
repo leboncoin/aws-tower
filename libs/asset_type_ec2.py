@@ -11,7 +11,7 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 import botocore
 
 from .asset_type import AssetType
-from .tools import draw_sg, get_tag, get_network, log_me
+from .tools import draw_sg, get_tag, get_network, log_me, search_filter_in
 
 # Debug
 # from pdb import set_trace as st
@@ -208,7 +208,7 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, boto_session, 
                     boto_session,
                     public_only)
                 cache.save_asset(f'EC2_{ec2_["InstanceId"]}', asset)
-            if asset is not None and name_filter.lower() in asset.name.lower():
+            if search_filter_in(asset, name_filter):
                 assets.append(asset)
     return assets, authorizations
 
