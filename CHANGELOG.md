@@ -4,6 +4,21 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.2.0
+------
+
+2022/06/18
+
+### New feature
+  - Improve filtering: add option `-f|--filter` (see README)
+
+### Changes
+  - Deprecate of `-n|--name`, use `-f|--filter` instead
+
+### Fixtures
+  - Disabled cloudfront no longer appear in result
+
+
 4.1.0
 ------
 
