@@ -145,50 +145,59 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
     trusted_accounts_list = [ i.split(':')[0] for i in trusted_accounts_list ]
 
     # VPC Peering
-    for vpc_peering in raw_data['vpc_peering_raw']:
-        asset = cache.get_asset(f'VPC_P_{vpc_peering["VpcPeeringConnectionId"]}')
-        if asset is None:
-            asset_name = f'peering:{get_tag(vpc_peering["Tags"], "Name")}'
-            if asset_name == 'peering:':
-                asset_name = f'peering:{vpc_peering["VpcPeeringConnectionId"]}'
-            asset = VPC(name=asset_name, is_peering=True)
-            asset.src_account_id = vpc_peering['AccepterVpcInfo']['OwnerId']
-            asset.src_region_id = vpc_peering['AccepterVpcInfo']['Region']
-            asset.dst_account_id = vpc_peering['RequesterVpcInfo']['OwnerId']
-            asset.dst_region_id = vpc_peering['RequesterVpcInfo']['Region']
-            asset.is_trusted_peering = \
-                asset.src_account_id in trusted_accounts_list and \
-                asset.dst_account_id in trusted_accounts_list
-            cache.save_asset(f'VPC_P_{vpc_peering["VpcPeeringConnectionId"]}', asset)
-        if search_filter_in(asset, name_filter):
-            assets.append(asset)
+    if 'vpc_peering_raw' not in raw_data:
+        authorizations['vpc'] = False
+    else:
+        for vpc_peering in raw_data['vpc_peering_raw']:
+            asset = cache.get_asset(f'VPC_P_{vpc_peering["VpcPeeringConnectionId"]}')
+            if asset is None:
+                asset_name = f'peering:{get_tag(vpc_peering["Tags"], "Name")}'
+                if asset_name == 'peering:':
+                    asset_name = f'peering:{vpc_peering["VpcPeeringConnectionId"]}'
+                asset = VPC(name=asset_name, is_peering=True)
+                asset.src_account_id = vpc_peering['AccepterVpcInfo']['OwnerId']
+                asset.src_region_id = vpc_peering['AccepterVpcInfo']['Region']
+                asset.dst_account_id = vpc_peering['RequesterVpcInfo']['OwnerId']
+                asset.dst_region_id = vpc_peering['RequesterVpcInfo']['Region']
+                asset.is_trusted_peering = \
+                    asset.src_account_id in trusted_accounts_list and \
+                    asset.dst_account_id in trusted_accounts_list
+                cache.save_asset(f'VPC_P_{vpc_peering["VpcPeeringConnectionId"]}', asset)
+            if search_filter_in(asset, name_filter):
+                assets.append(asset)
     # VPC Endpoint Services
-    for vpc_endpoint_service in raw_data['vpc_endpoint_services_raw']:
-        asset = cache.get_asset(f'VPC_ES_{vpc_endpoint_service["ServiceId"]}')
-        if asset is None:
-            asset_name = f'endpoint_service:{get_tag(vpc_endpoint_service["Tags"], "Name")}'
-            if asset_name == 'endpoint_service:':
-                asset_name = f'endpoint_service:{vpc_endpoint_service["ServiceId"]}'
-            asset = VPC(name=asset_name, is_endpoint_service=True)
-            asset.public = True in [ '*' in i['Principal'] for i in raw_data['vpc_endpoint_services_perm_raw'][vpc_endpoint_service['ServiceId']]['AllowedPrincipals']]
-            cache.save_asset(f'VPC_ES_{vpc_endpoint_service["ServiceId"]}', asset)
-            if public_only and not asset.public:
-                asset = None
-        if search_filter_in(asset, name_filter):
-            assets.append(asset)
+    if 'vpc_endpoint_services_raw' not in raw_data:
+        authorizations['vpc'] = False
+    else:
+        for vpc_endpoint_service in raw_data['vpc_endpoint_services_raw']:
+            asset = cache.get_asset(f'VPC_ES_{vpc_endpoint_service["ServiceId"]}')
+            if asset is None:
+                asset_name = f'endpoint_service:{get_tag(vpc_endpoint_service["Tags"], "Name")}'
+                if asset_name == 'endpoint_service:':
+                    asset_name = f'endpoint_service:{vpc_endpoint_service["ServiceId"]}'
+                asset = VPC(name=asset_name, is_endpoint_service=True)
+                asset.public = True in [ '*' in i['Principal'] for i in raw_data['vpc_endpoint_services_perm_raw'][vpc_endpoint_service['ServiceId']]['AllowedPrincipals']]
+                cache.save_asset(f'VPC_ES_{vpc_endpoint_service["ServiceId"]}', asset)
+                if public_only and not asset.public:
+                    asset = None
+            if search_filter_in(asset, name_filter):
+                assets.append(asset)
     # VPC VPN Endpoints
-    for vpc_vpn in raw_data['vpc_vpn_endpoints']:
-        asset = cache.get_asset(f'VPC_VPN_{vpc_vpn["ClientVpnEndpointId"]}')
-        if asset is None:
-            asset_name = f'vpn:{get_tag(vpc_vpn["Tags"], "Name")}'
-            if asset_name == 'vpn:':
-                asset_name = f'vpn:{vpc_vpn["ClientVpnEndpointId"]}'
-            asset = VPC(name=asset_name, is_vpn=True, public=True)
-            asset.endpoint = vpc_vpn['DnsName'].replace('*.', '')
-            asset.port = f'{vpc_vpn["TransportProtocol"].upper()}/{vpc_vpn["VpnPort"]}'
-            cache.save_asset(f'VPC_VPN_{vpc_vpn["ClientVpnEndpointId"]}', asset)
-            if public_only and not asset.public:
-                asset = None
-        if search_filter_in(asset, name_filter):
-            assets.append(asset)
+    if 'vpc_vpn_endpoints' not in raw_data:
+        authorizations['vpc'] = False
+    else:
+        for vpc_vpn in raw_data['vpc_vpn_endpoints']:
+            asset = cache.get_asset(f'VPC_VPN_{vpc_vpn["ClientVpnEndpointId"]}')
+            if asset is None:
+                asset_name = f'vpn:{get_tag(vpc_vpn["Tags"], "Name")}'
+                if asset_name == 'vpn:':
+                    asset_name = f'vpn:{vpc_vpn["ClientVpnEndpointId"]}'
+                asset = VPC(name=asset_name, is_vpn=True, public=True)
+                asset.endpoint = vpc_vpn['DnsName'].replace('*.', '')
+                asset.port = f'{vpc_vpn["TransportProtocol"].upper()}/{vpc_vpn["VpnPort"]}'
+                cache.save_asset(f'VPC_VPN_{vpc_vpn["ClientVpnEndpointId"]}', asset)
+                if public_only and not asset.public:
+                    asset = None
+            if search_filter_in(asset, name_filter):
+                assets.append(asset)
     return assets, authorizations
