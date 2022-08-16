@@ -233,11 +233,6 @@ if __name__ == '__main__':
         action='store_true',
         help='Display public assets only')
     DISCOVER_PARSER.add_argument(
-        '-n', '--name',
-        action='store',
-        default='',
-        help='[DEPRECATED] Filter this asset name')
-    DISCOVER_PARSER.add_argument(
         '-f', '--filter',
         action='store',
         default='',
@@ -278,11 +273,6 @@ if __name__ == '__main__':
         default='high',
         choices=variables.SEVERITY_LEVELS,
         help='max severity level to report when security is enabled (default: high)')
-    AUDIT_PARSER.add_argument(
-        '-n', '--name',
-        action='store',
-        default='',
-        help='[DEPRECATED] Filter this asset name')
     AUDIT_PARSER.add_argument(
         '-f', '--filter',
         action='store',
@@ -345,10 +335,6 @@ if __name__ == '__main__':
     if ARGS.layer:
         generate_layer(variables.FINDING_RULES_PATH)
         sys.exit(0)
-    if 'name' in ARGS:
-        CONSOLE.print('[red][DEPRECATED] The option -n/--name is replaced by -f/--filter')
-        # Temporary
-        ARGS.filter = ARGS.name
     VERB = 'discover'
     if hasattr(ARGS, 'min_severity'):
         VERB = 'audit'
