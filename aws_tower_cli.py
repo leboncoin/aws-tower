@@ -33,16 +33,20 @@ def audit_handler(session, args, meta_types, cache):
     """
     Handle audit argument
     """
-    assets = aws_scan(
-        session,
-        cache,
-        iam_action_passlist=variables.IAM_ACTION_PASSLIST,
-        iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
-        public_only=False,
-        meta_types=meta_types,
-        name_filter=args.filter,
-        console=CONSOLE
-    )
+    try:
+        assets = aws_scan(
+            session,
+            cache,
+            iam_action_passlist=variables.IAM_ACTION_PASSLIST,
+            iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
+            public_only=False,
+            meta_types=meta_types,
+            name_filter=args.filter,
+            console=CONSOLE
+        )
+    except botocore.exceptions.UnauthorizedSSOTokenError as err_msg:
+        CONSOLE.print(f'[red]{err_msg}')
+        sys.exit(1)
     min_severity = list(variables.SEVERITY_LEVELS.keys())[0]
     max_severity = list(variables.SEVERITY_LEVELS.keys())[-1]
     if args.min_severity in variables.SEVERITY_LEVELS:
@@ -75,16 +79,20 @@ def discover_handler(session, args, meta_types, cache):
     """
     Handle discover argument
     """
-    assets = aws_scan(
-        session,
-        cache,
-        iam_action_passlist=variables.IAM_ACTION_PASSLIST,
-        iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
-        public_only=args.public_only,
-        meta_types=meta_types,
-        name_filter=args.filter,
-        console=CONSOLE
-    )
+    try:
+        assets = aws_scan(
+            session,
+            cache,
+            iam_action_passlist=variables.IAM_ACTION_PASSLIST,
+            iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
+            public_only=args.public_only,
+            meta_types=meta_types,
+            name_filter=args.filter,
+            console=CONSOLE
+        )
+    except botocore.exceptions.UnauthorizedSSOTokenError as err_msg:
+        CONSOLE.print(f'[red]{err_msg}')
+        sys.exit(1)
     if args.summary:
         print_summary(
             assets,
@@ -105,7 +113,11 @@ def iam_handler(session, args, cache, console):
     """
     Handle iam argument
     """
-    args.source = complete_source_arn(session, args.source)
+    try:
+        args.source = complete_source_arn(session, args.source)
+    except botocore.exceptions.UnauthorizedSSOTokenError as err_msg:
+        CONSOLE.print(f'[red]{err_msg}')
+        sys.exit(1)
     client_iam = session.client('iam')
     res_iam = session.resource('iam')
     if args.display:
@@ -333,7 +345,7 @@ if __name__ == '__main__':
     if ARGS.layer:
         generate_layer(variables.FINDING_RULES_PATH)
         sys.exit(0)
-    if ARGS.name:
+    if 'name' in ARGS:
         CONSOLE.print('[red][DEPRECATED] The option -n/--name is replaced by -f/--filter')
         # Temporary
         ARGS.filter = ARGS.name
