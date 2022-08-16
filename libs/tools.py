@@ -8,10 +8,15 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
 # Standard library imports
+import json
 import logging
 from pathlib import Path
 import pickle
 import re
+
+# ThirdParty
+import ruamel.yaml
+from ruamel.yaml.error import YAMLError
 
 # from pdb import set_trace as st
 
@@ -67,6 +72,90 @@ def draw_sg(security_group, sg_raw):
                             if value not in result[key_ports]:
                                 result[key_ports].append(value)
     return result
+
+def generate_layer(rules_path):
+    """
+    Generate a layer for the ATT&CK navigator
+    """
+    yaml = ruamel.yaml.YAML()
+    layer = {
+        "name": "AWS Tower",
+        "versions": {
+            "attack": "11",
+            "navigator": "4.6.4",
+            "layer": "4.3"
+        },
+        "domain": "enterprise-attack",
+        "description": "AWS Tower layer",
+        "filters": {
+            "platforms": [
+                "PRE",
+                "IaaS"
+            ]
+        },
+        "sorting": 0,
+        "layout": {
+            "layout": "flat",
+            "aggregateFunction": "average",
+            "showID": False,
+            "showName": True,
+            "showAggregateScores": True,
+            "countUnscored": False
+        },
+        "hideDisabled": False,
+        "techniques": [],
+        "gradient": {
+            "colors": [
+                "#ffe766ff",
+                "#8ec843ff"
+            ],
+            "minValue": 0,
+            "maxValue": 3
+        },
+        "metadata": [],
+        "links": [
+            {
+                "label": "AWS Tower GitHub",
+                "url": "https://github.com/leboncoin/aws-tower"
+            }
+        ],
+        "showTacticRowBackground": False,
+        "tacticRowBackground": "#dddddd",
+        "selectTechniquesAcrossTactics": True,
+        "selectSubtechniquesWithParent": False
+    }
+    try:
+        rules = yaml.load(rules_path)
+    except YAMLError as err_msg:
+        print(f'Cannot read rules.yml: {err_msg}')
+        return
+    for i in ['visibility', 'detection', 'protection']:
+        tech_ids = set()
+        for rule in [
+            *rules['types']['security_group']['findings'],
+            *rules['types']['attributes']['findings']]:
+            if 'techniques' not in rule or i not in rule['techniques']:
+                continue
+            for tech_id in rule['techniques'][i]:
+                tech_ids.add(tech_id)
+        for tech_id in tech_ids:
+            # Check if technique is not already in the layer
+            if not sum([ t['techniqueID'] == tech_id for t in layer['techniques'] ]):
+                layer['techniques'].append({
+                    "techniqueID": tech_id,
+                    "score": 1,
+                    "color": "",
+                    "comment": "",
+                    "enabled": True,
+                    "metadata": [],
+                    "links": [],
+                    "showSubtechniques": False
+                })
+            else:
+                for t in layer['techniques']:
+                    if t['techniqueID'] == tech_id:
+                        t['score'] += 1
+    print(json.dumps(layer))
 
 def get_network(subnet_id, subnets_raw):
     """

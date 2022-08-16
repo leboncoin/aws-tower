@@ -1,5 +1,5 @@
 ---
-version: 4.1.0
+version: 4.2.1
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -48,6 +48,10 @@ types:
                 name: source
                 value: source
         severity: high
+        techniques:
+          visibility: ['T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1040', 'T1046', 'T1190', 'T1590.005', 'T1595.001']
       - message:
           text: '[{name}] Allow connection to all port from public network ({source}=>{ports})'
           args:
@@ -92,6 +96,10 @@ types:
                 name: source
                 value: source
         severity: high
+        techniques:
+          visibility: ['T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1040', 'T1046', 'T1190', 'T1590.005', 'T1595.001']
       - message:
           text: '[{name}] Allow connection to all port from private network ({source}=>{ports})'
           args:
@@ -136,6 +144,10 @@ types:
                 name: source
                 value: source
         severity: medium
+        techniques:
+          visibility: ['T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1040', 'T1046']
       - message:
           text: '[{name}] Allow connection to specific port (or range) from private
             network ({source}=>{ports})'
@@ -181,6 +193,10 @@ types:
                 name: source
                 value: source
         severity: low
+        techniques:
+          visibility: ['T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1040', 'T1046']
   attributes:
     description: Check each rule on asset attributes
     findings:
@@ -202,6 +218,10 @@ types:
               - type: variable
                 name: asset
                 value: asset
+        techniques:
+          visibility: ['T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1590.002', 'T1596.001']
       - message:
           text: '[{resource_id}] Admin actions: {admin_actions}'
           args:
@@ -223,6 +243,10 @@ types:
               - type: variable
                 name: asset
                 value: asset
+        techniques:
+          visibility: ['T1136.003', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1136.003', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1078.001', 'T1078.004']
       - message:
           text: '[{resource_id}] Dangerous actions: {dangerous_actions}'
           args:
@@ -244,6 +268,10 @@ types:
               - type: variable
                 name: asset
                 value: asset
+        techniques:
+          visibility: ['T1136.003', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1136.003', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1078.001', 'T1078.004']
       - message:
           text: '[{resource_id}] Poweruser actions: {poweruser_actions}'
           args:
@@ -265,6 +293,10 @@ types:
               - type: variable
                 name: asset
                 value: asset
+        techniques:
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1190', 'T1530', 'T1580', 'T1619']
       - message:
           text: '[{bucket_name}] ACL BlockPublicAcls set to {attribute_value}'
           args:
@@ -296,6 +328,10 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.block_public_acls
+        techniques:
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1190', 'T1530', 'T1580', 'T1619']
       - message:
           text: '[{bucket_name}] ACL BlockPublicPolicy set to {attribute_value}'
           args:
@@ -327,6 +363,10 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.block_public_policy
+        techniques:
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1190', 'T1530', 'T1580', 'T1619']
       - message:
           text: '[{bucket_name}] ACL IgnorePublicAcls set to {attribute_value}'
           args:
@@ -358,6 +398,10 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.ignore_public_acls
+        techniques:
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1190', 'T1530', 'T1580', 'T1619']
       - message:
           text: '[{bucket_name}] ACL RestrictPublicBuckets set to {attribute_value}'
           args:
@@ -389,6 +433,10 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.restrict_public_buckets
+        techniques:
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1190', 'T1530', 'T1580', 'T1619']
       - message:
           text: '[{bucket_name}] ACL: All Users: {rights}'
           args:
@@ -420,6 +468,10 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.all_users_grants
+        techniques:
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1190', 'T1530', 'T1580', 'T1619']
       - message:
           text: '[{bucket_name}] ACL: Any Authenticated Users: {rights}'
           args:
@@ -451,6 +503,10 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.any_authenticated_users_grants
+        techniques:
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1190', 'T1530', 'T1580', 'T1619']
       - message:
           text: '[{service_name}] Public {service_type} with authentication'
           args:
@@ -492,6 +548,10 @@ types:
               - type: attribute
                 name: attribute_value
                 value: authorization.has_no_auth_endpoint
+        techniques:
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1190']
       - message:
           text: '[{service_name}] Public {service_type} without authentication'
           args:
@@ -533,6 +593,10 @@ types:
               - type: attribute
                 name: attribute_value
                 value: authorization.has_no_auth_endpoint
+        techniques:
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1190']
       - message:
           text: '[{service_name}] Private {service_type} without authentication'
           args:
@@ -574,7 +638,13 @@ types:
               - type: attribute
                 name: attribute_value
                 value: authorization.has_no_auth_endpoint
+        techniques:
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1040', 'T1046']
 # https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MySQL.html
+# https://dev.mysql.com/doc/relnotes/mysql/8.0/en/
+# https://dev.mysql.com/doc/relnotes/mysql/5.7/en/
       - message:
           text: '[{service_name}] Deprecated mysql engine version ({current_version})'
           args:
@@ -735,6 +805,34 @@ types:
                 name: attribute_value
                 value: engine
 # https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
+      - message:
+          text: '[{service_name}] Public RDS database'
+          args:
+            service_name:
+              type: attribute
+              key: name
+        severity: high
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is public
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
+          - type: has_attribute_equal
+            description: Check if the asset is a RDS database
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: RDS
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
       - message:
           text: '[{service_name}] Deprecated EKS Kubernetes version ({current_version})'
           args:
