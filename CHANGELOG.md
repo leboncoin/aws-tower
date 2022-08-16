@@ -11,7 +11,7 @@ AWS-TOWER
 
 ### New feature
   - Add 'Public RDS database' rule
-  - Add `-l|--layer` to generate a layer for the ATT&CK navigator
+  - [BETA] Add `-l|--layer` to generate a layer for the ATT&CK navigator
 
 4.2.0
 ------

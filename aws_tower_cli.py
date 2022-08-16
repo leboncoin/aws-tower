@@ -197,11 +197,11 @@ if __name__ == '__main__':
     PARSER.add_argument('--version', action='version', version=VERSION)
     PARSER.add_argument('--no-color', action='store_true', help='Disable colors')
     PARSER.add_argument('--no-cache', action='store_true', help='Disable cache')
-    PARSER.add_argument('--clean-cache', action='store_true', help='Erease current cache by a new one')
+    PARSER.add_argument('--clean-cache', action='store_true', help='Erase current cache by a new one')
     PARSER.add_argument(
         '-l', '--layer',
         action='store_true',
-        help='Generate a layer for the ATT&CK navigator')
+        help='[BETA] Generate a layer for the ATT&CK navigator')
 
     # DISCOVER Arguments
     DISCOVER_PARSER = SUBPARSERS.add_parser(
