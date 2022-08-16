@@ -20,14 +20,14 @@ from rich import console
 from libs.display import print_report, print_summary
 from libs.iam_scan import complete_source_arn, iam_display, iam_display_roles, iam_extract, iam_simulate
 from libs.scan import aws_scan
-from libs.tools import Cache, NoColor
+from libs.tools import Cache, NoColor, generate_layer
 from config import variables
 
 # Debug
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.2.0'
+VERSION = '4.2.1'
 
 def audit_handler(session, args, meta_types, cache):
     """
@@ -198,6 +198,10 @@ if __name__ == '__main__':
     PARSER.add_argument('--no-color', action='store_true', help='Disable colors')
     PARSER.add_argument('--no-cache', action='store_true', help='Disable cache')
     PARSER.add_argument('--clean-cache', action='store_true', help='Erease current cache by a new one')
+    PARSER.add_argument(
+        '-l', '--layer',
+        action='store_true',
+        help='Generate a layer for the ATT&CK navigator')
 
     # DISCOVER Arguments
     DISCOVER_PARSER = SUBPARSERS.add_parser(
@@ -326,6 +330,9 @@ if __name__ == '__main__':
     ARGS = PARSER.parse_args()
     if len(sys.argv) == 1:
         PARSER.print_help()
+    if ARGS.layer:
+        generate_layer(variables.FINDING_RULES_PATH)
+        sys.exit(0)
     if ARGS.name:
         CONSOLE.print('[red][DEPRECATED] The option -n/--name is replaced by -f/--filter')
         # Temporary

@@ -99,6 +99,8 @@ def scan(rds, subnets_raw, public_only):
         subnets_raw)
     rds_asset.location.region = region
     rds_asset.location.vpc = vpc
+    if not 'AvailabilityZone' in rds:
+        return None
     rds_asset.location.subnet = rds['AvailabilityZone']
     if 'Endpoint' in rds and 'Address' in rds['Endpoint']:
         rds_asset.url = rds['Endpoint']['Address']

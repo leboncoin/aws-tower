@@ -4,6 +4,15 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.2.1
+-----
+
+2022/06/22
+
+### New feature
+  - Add 'Public RDS database' rule
+  - Add `-l|--layer` to generate a layer for the ATT&CK navigator
+
 4.2.0
 ------
 
