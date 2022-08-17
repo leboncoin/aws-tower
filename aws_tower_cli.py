@@ -33,20 +33,17 @@ def audit_handler(session, args, meta_types, cache):
     """
     Handle audit argument
     """
-    try:
-        assets = aws_scan(
-            session,
-            cache,
-            iam_action_passlist=variables.IAM_ACTION_PASSLIST,
-            iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
-            public_only=False,
-            meta_types=meta_types,
-            name_filter=args.filter,
-            console=CONSOLE
-        )
-    except botocore.exceptions.UnauthorizedSSOTokenError as err_msg:
-        CONSOLE.print(f'[red]{err_msg}')
-        sys.exit(1)
+    assets = aws_scan(
+        session,
+        cache,
+        iam_action_passlist=variables.IAM_ACTION_PASSLIST,
+        iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
+        public_only=False,
+        meta_types=meta_types,
+        name_filter=args.filter,
+        console=CONSOLE
+    )
+
     min_severity = list(variables.SEVERITY_LEVELS.keys())[0]
     max_severity = list(variables.SEVERITY_LEVELS.keys())[-1]
     if args.min_severity in variables.SEVERITY_LEVELS:
@@ -79,20 +76,16 @@ def discover_handler(session, args, meta_types, cache):
     """
     Handle discover argument
     """
-    try:
-        assets = aws_scan(
-            session,
-            cache,
-            iam_action_passlist=variables.IAM_ACTION_PASSLIST,
-            iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
-            public_only=args.public_only,
-            meta_types=meta_types,
-            name_filter=args.filter,
-            console=CONSOLE
-        )
-    except botocore.exceptions.UnauthorizedSSOTokenError as err_msg:
-        CONSOLE.print(f'[red]{err_msg}')
-        sys.exit(1)
+    assets = aws_scan(
+        session,
+        cache,
+        iam_action_passlist=variables.IAM_ACTION_PASSLIST,
+        iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
+        public_only=args.public_only,
+        meta_types=meta_types,
+        name_filter=args.filter,
+        console=CONSOLE
+    )
     if args.summary:
         print_summary(
             assets,
@@ -113,11 +106,7 @@ def iam_handler(session, args, cache, console):
     """
     Handle iam argument
     """
-    try:
-        args.source = complete_source_arn(session, args.source)
-    except botocore.exceptions.UnauthorizedSSOTokenError as err_msg:
-        CONSOLE.print(f'[red]{err_msg}')
-        sys.exit(1)
+    args.source = complete_source_arn(session, args.source)
     client_iam = session.client('iam')
     res_iam = session.resource('iam')
     if args.display:
@@ -181,6 +170,9 @@ def main(verb, args):
     identity = 'Unknown'
     try:
         identity = cache.get_caller_identity('id', session)['Arn']
+    except (botocore.exceptions.UnauthorizedSSOTokenError, botocore.exceptions.EndpointConnectionError, botocore.exceptions.ClientError) as err_msg:
+        CONSOLE.print(f'[red]{err_msg}')
+        sys.exit(1)
     except:
         csl.print('[red]Can\'t get the caller identity...')
     if session.region_name is None:
@@ -214,6 +206,10 @@ if __name__ == '__main__':
         '-l', '--layer',
         action='store_true',
         help='[BETA] Generate a layer for the ATT&CK navigator')
+    PARSER.add_argument(
+        '-p', '--list-profiles',
+        action='store_true',
+        help='List available profiles')
 
     # DISCOVER Arguments
     DISCOVER_PARSER = SUBPARSERS.add_parser(
@@ -334,6 +330,10 @@ if __name__ == '__main__':
         PARSER.print_help()
     if ARGS.layer:
         generate_layer(variables.FINDING_RULES_PATH)
+        sys.exit(0)
+    if ARGS.list_profiles:
+        for profile in boto3.session.Session().available_profiles:
+            print(profile)
         sys.exit(0)
     VERB = 'discover'
     if hasattr(ARGS, 'min_severity'):

@@ -32,7 +32,7 @@ $ alias aws-tower='<path>/aws_tower_cli.py'
 
 ```bash
 $ aws-tower --help
-usage: aws_tower_cli.py [-h] [--version] [--no-color] [--no-cache] [--clean-cache] [-l] {discover,audit,iam} ...
+usage: aws_tower_cli.py [-h] [--version] [--no-color] [--no-cache] [--clean-cache] [-l] [-p] {discover,audit,iam} ...
 
 positional arguments:
   {discover,audit,iam}  commands
@@ -47,6 +47,7 @@ optional arguments:
   --no-cache            Disable cache
   --clean-cache         Erase current cache by a new one
   -l, --layer           [BETA] Generate a layer for the ATT&CK navigator
+  -p, --list-profiles   List available profiles
 ```
 
 ```bash
