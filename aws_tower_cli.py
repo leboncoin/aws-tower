@@ -18,7 +18,8 @@ import botocore
 from rich import console
 
 from libs.display import print_report, print_summary
-from libs.iam_scan import complete_source_arn, iam_display, iam_display_roles, iam_extract, iam_simulate
+from libs.iam_scan import complete_source_arn, iam_display, \
+    iam_display_roles, iam_extract, iam_simulate
 from libs.scan import aws_scan
 from libs.tools import Cache, NoColor, generate_layer
 from config import variables
@@ -102,7 +103,7 @@ def discover_handler(session, args, meta_types, cache):
             security_config=None
         )
 
-def iam_handler(session, args, cache, console):
+def iam_handler(session, args, cache, csl):
     """
     Handle iam argument
     """
@@ -115,18 +116,18 @@ def iam_handler(session, args, cache, console):
             res_iam,
             args.source,
             cache,
-            console,
+            csl,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
             verbose=args.verbose)
     elif args.source and args.action:
         account_id = session.client('sts').get_caller_identity().get('Account')
-        arn_list = iam_extract(args.source, account_id, console, verbose=args.verbose)
+        arn_list = iam_extract(args.source, account_id, csl, verbose=args.verbose)
         for arn in arn_list:
-            if iam_simulate(client_iam, res_iam, arn, args.action, console, verbose=args.verbose):
-                console.print(f'{args.source} -> {args.action}: Access Granted')
+            if iam_simulate(client_iam, res_iam, arn, args.action, csl, verbose=args.verbose):
+                csl.print(f'{args.source} -> {args.action}: Access Granted')
                 sys.exit(0)
-        console.print(f'{args.source} -> {args.action}: Not Authorized')
+        csl.print(f'{args.source} -> {args.action}: Not Authorized')
     else:
         iam_display_roles(
             client_iam,
@@ -170,7 +171,10 @@ def main(verb, args):
     identity = 'Unknown'
     try:
         identity = cache.get_caller_identity('id', session)['Arn']
-    except (botocore.exceptions.UnauthorizedSSOTokenError, botocore.exceptions.EndpointConnectionError, botocore.exceptions.ClientError) as err_msg:
+    except (
+        botocore.exceptions.UnauthorizedSSOTokenError,
+        botocore.exceptions.EndpointConnectionError,
+        botocore.exceptions.ClientError) as err_msg:
         CONSOLE.print(f'[red]{err_msg}')
         sys.exit(1)
     except:
@@ -179,7 +183,10 @@ def main(verb, args):
         csl.print('[red]No region defined, take a look at the ~/.aws/config file')
         sys.exit(1)
     csl.print(f'[white]Welcome [bold]{identity}[/bold] !')
-    csl.print(f'[white]Scan type: [bold]{verb}[/bold], Profile: [bold]{args.profile}[/bold], Region: [bold]{session.region_name}')
+    csl.print(
+        f'[white]Scan type: [bold]{verb}[/bold], '+
+        f'Profile: [bold]{args.profile}[/bold], '+
+        f'Region: [bold]{session.region_name}')
 
     if verb == 'audit':
         audit_handler(session, args, meta_types, cache)
@@ -201,7 +208,10 @@ if __name__ == '__main__':
     PARSER.add_argument('--version', action='version', version=VERSION)
     PARSER.add_argument('--no-color', action='store_true', help='Disable colors')
     PARSER.add_argument('--no-cache', action='store_true', help='Disable cache')
-    PARSER.add_argument('--clean-cache', action='store_true', help='Erase current cache by a new one')
+    PARSER.add_argument(
+        '--clean-cache',
+        action='store_true',
+        help='Erase current cache by a new one')
     PARSER.add_argument(
         '-l', '--layer',
         action='store_true',
@@ -328,6 +338,7 @@ if __name__ == '__main__':
     ARGS = PARSER.parse_args()
     if len(sys.argv) == 1:
         PARSER.print_help()
+        sys.exit(0)
     if ARGS.layer:
         generate_layer(variables.FINDING_RULES_PATH)
         sys.exit(0)

@@ -7,6 +7,9 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
+# Standard imports
+from datetime import datetime, timezone
+
 # Third party library imports
 import botocore
 
@@ -27,7 +30,8 @@ class EC2(AssetType):
         self.public_ip = ''
         self.security_groups = {}
         self.dns_record = None
-        self.attached_ssh_key = False
+        self.old_attached_ssh_key = False
+        self.ssh_key_days = -1
         self.role_poweruser = ''
         self.role_admin = ''
         self.instance_id = ''
@@ -51,8 +55,8 @@ class EC2(AssetType):
                 asset_report['SecurityGroups'] = self.security_groups
             if self.dns_record:
                 asset_report['DnsRecord'] = self.dns_record
-            if self.attached_ssh_key:
-                asset_report['SSHKey'] = f'[yellow]{self.attached_ssh_key}[/yellow]'
+            if self.old_attached_ssh_key:
+                asset_report['SSHKey age'] = f'[yellow]{self.ssh_key_days} days[/yellow]'
             if self.role_poweruser:
                 asset_report['Roles PowerUser'] = f'[yellow]{self.role_poweruser}[/yellow]'
             if self.role_admin:
@@ -187,7 +191,11 @@ def scan(ec2, sg_raw, subnets_raw, kp_raw, boto_session, public_only):
             draw = draw_sg(security_group['GroupId'], sg_raw)
             if draw:
                 ec2_asset.security_groups[security_group['GroupId']] = draw
-    ec2_asset.attached_ssh_key = 'KeyName' in ec2 and ec2['KeyName'] in [ k['KeyName'] for k in kp_raw ]
+    if 'KeyName' in ec2:
+        for k in kp_raw:
+            if k['KeyName'] == ec2['KeyName'] and 'CreateTime' in k:
+                ec2_asset.ssh_key_days = (datetime.now(timezone.utc) - k['CreateTime']).days
+    ec2_asset.old_attached_ssh_key = ec2_asset.ssh_key_days > 365/2
     return ec2_asset
 
 @log_me('Scanning EC2...')
