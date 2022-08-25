@@ -4,6 +4,22 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.2.2
+-----
+
+2022/08/24
+
+### New feature
+  - Add 'Endpoint Service has untrusted account in principals' rule
+  - Add option `-p|--list-profiles` to list available profiles
+
+### Changes
+  - Detect SSH keys issues if creation time > 6 months
+  - Remove `-n|--name` option
+
+### Fixtures
+  - Handle boto3 errors with pretty output (sso and more)
+
 4.2.1
 -----
 

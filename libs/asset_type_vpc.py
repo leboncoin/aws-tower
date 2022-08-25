@@ -12,7 +12,7 @@ import botocore
 
 from config import variables
 from .asset_type import AssetType
-from .tools import get_tag, log_me, search_filter_in
+from .tools import get_account_in_arn, get_tag, log_me, search_filter_in
 
 # Debug
 # from pdb import set_trace as st
@@ -38,6 +38,8 @@ class VPC(AssetType):
         self.dst_region_id = ''
         # VPC Endpoint Services
         self.is_endpoint_service = is_endpoint_service
+        self.has_untrusted_accounts = False
+        self.untrusted_accounts = set()
         # VPC VPN Endpoints
         self.is_vpn = is_vpn
         self.endpoint = 'unknown'
@@ -56,6 +58,8 @@ class VPC(AssetType):
                     f'{self.src_account_id}:{self.src_region_id} <-> {self.dst_account_id}:{self.dst_region_id}'
             elif self.is_endpoint_service and self.public:
                 asset_report['Public'] = '[red]True[/red]'
+            elif self.is_endpoint_service and self.has_untrusted_accounts:
+                asset_report['Untrusted Accounts'] = f'[red]{list(self.untrusted_accounts)}[/red]'
             elif self.is_vpn:
                 asset_report['Endpoint'] = self.endpoint
                 asset_report['Port'] = self.port
@@ -78,6 +82,8 @@ class VPC(AssetType):
             message = '<Private>'
             if self.public:
                 message = '[red]<Public>[/red]'
+            if self.has_untrusted_accounts:
+                message += ' [red]Untrusted Accounts[/red]'
         elif self.is_vpn:
             message = f'{self.port} {self.endpoint}'
         return f'{message}{self.display_brief_audit()}'
@@ -177,6 +183,11 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
                     asset_name = f'endpoint_service:{vpc_endpoint_service["ServiceId"]}'
                 asset = VPC(name=asset_name, is_endpoint_service=True)
                 asset.public = True in [ '*' in i['Principal'] for i in raw_data['vpc_endpoint_services_perm_raw'][vpc_endpoint_service['ServiceId']]['AllowedPrincipals']]
+                for allowed_principal in raw_data['vpc_endpoint_services_perm_raw'][vpc_endpoint_service['ServiceId']]['AllowedPrincipals']:
+                    aws_account_id = get_account_in_arn(allowed_principal['Principal'])
+                    if aws_account_id not in trusted_accounts_list:
+                        asset.untrusted_accounts.add(aws_account_id)
+                asset.has_untrusted_accounts = asset.untrusted_accounts != set()
                 cache.save_asset(f'VPC_ES_{vpc_endpoint_service["ServiceId"]}', asset)
                 if public_only and not asset.public:
                     asset = None

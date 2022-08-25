@@ -157,6 +157,14 @@ def generate_layer(rules_path):
                         t['score'] += 1
     print(json.dumps(layer))
 
+def get_account_in_arn(arn):
+    """
+    Extracts the aws account id in the arn, if exists
+    """
+    if len(arn.split(':')) >= 5:
+        return arn.split(':')[4]
+    return '000000000000'
+
 def get_network(subnet_id, subnets_raw):
     """
     Get simple name for vpc and subnet
