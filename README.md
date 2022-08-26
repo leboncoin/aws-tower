@@ -40,7 +40,7 @@ positional arguments:
     audit               Audit AWS account to find security issues
     iam                 Display IAM info for an AWS account
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   --version             show program's version number and exit
   --no-color            Disable colors
@@ -57,7 +57,7 @@ usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}
                         Types to display (default: display everything)
@@ -79,7 +79,7 @@ usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}
                         Types to display (default: display everything)
@@ -98,7 +98,7 @@ usage: aws_tower_cli.py iam [-h] [-s SOURCE] [-a ACTION] [--min-rights {admin,po
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -s SOURCE, --source SOURCE
                         Source arn

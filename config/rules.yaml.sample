@@ -1,5 +1,5 @@
 ---
-version: 4.2.1-1
+version: 4.2.2
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -1086,6 +1086,44 @@ types:
               - type: attribute
                 name: attribute_value
                 value: public
+      - message:
+          text: '[{service_name}] Endpoint Service has untrusted account in principals'
+          args:
+            service_name:
+              type: attribute
+              key: name
+        severity: high
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is an VPC
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: VPC
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
+          - type: has_attribute_equal
+            description: Check if is_endpoint_service is True
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: is_endpoint_service
+          - type: has_attribute_equal
+            description: Check if has_untrusted_accounts is True
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: has_untrusted_accounts
       - message:
           text: '[{service_name}] VPN endpoint'
           args:
