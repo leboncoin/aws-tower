@@ -19,9 +19,9 @@ ALERTING_SEVERITIES = ['medium', 'high', 'critical']
 
 # Paths
 ROOT_PATH = Path(__file__).parent.parent
-FINDING_RULES_PATH = ROOT_PATH / 'config' / 'rules.yaml'
-SUBNET_ALLOW_LIST_PATH = ROOT_PATH / 'config' / 'subnet_allow_list.txt'
-TRUSTED_ACCOUNTS_LIST_PATH = ROOT_PATH / 'config' / 'trusted_accounts_list.txt'
+FINDING_RULES_PATH = ROOT_PATH / 'config' / 'rules.yaml.sample'
+SUBNET_ALLOW_LIST_PATH = ROOT_PATH / 'config' / 'subnet_allow_list.txt.sample'
+TRUSTED_ACCOUNTS_LIST_PATH = ROOT_PATH / 'config' / 'trusted_accounts_list.txt.sample'
 
 META_TYPES = ['APIGW', 'CLOUDFRONT', 'EC2', 'EKS', 'ELB', 'IAM', 'RDS', 'S3', 'VPC']
 

@@ -46,7 +46,7 @@ class IAM(AssetType):
             self.region = arn.split(':')[3]
             self.account_id = arn.split(':')[4]
             self.resource_type = arn.split(':')[5].split('/')[0]
-            self.resource_id = arn.split(':')[5].split('/')[1]
+            self.resource_id = '/'.join(arn.split(':')[5].split('/')[1:])
 
     def is_valid(self):
         """

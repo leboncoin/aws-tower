@@ -275,7 +275,9 @@ def iam_get_roles(
                 if service and service not in get_role_services(role):
                     continue
                 role_obj = IAM(arn=role['Arn'])
-                if role_obj.resource_id in ['aws-reserved', 'aws-service-role', 'service-role']:
+                if role_obj.resource_id.startswith('aws-reserved') or \
+                    role_obj.resource_id.startswith('aws-service-role') or \
+                    role_obj.resource_id.startswith('service-role'):
                     continue
                 if role['RoleName'] in iam_rolename_passlist:
                     continue

@@ -20,8 +20,9 @@ AWS Services monitored:
 
 ```bash
 $ pip install -r requirements.txt
-$ cp config/rules.yaml.sample config/rules.yaml # if you want to use "audit"
-$ cp config/subnet_allow_list.txt.sample config/subnet_allow_list.txt # if you want to use an allow list
+$ cp config/rules.yaml.sample config/rules.yaml # if you want to use "audit", then edit "config/variables.py" and remove .sample
+$ cp config/subnet_allow_list.txt.sample config/subnet_allow_list.txt # if you want to use a subnet allow list, then edit "config/variables.py" and remove .sample
+$ cp config/trusted_accounts_list.txt.sample config/trusted_accounts_list.txt # if you want to use an aws account allow list, then edit "config/variables.py" and remove .sample
 ```
 
 ## Usage

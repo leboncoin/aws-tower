@@ -45,7 +45,7 @@ def yaml_to_json(patterns_content, logger):
     try:
         datamap = yaml.load(patterns_content)
     except YAMLError as err_msg:
-        logger.error(f'Cannot read rules.yml: {err_msg}')
+        logger.error(f'Cannot read rules.yaml: {err_msg}')
         return None
     return OrderlyJSONEncoder(indent=2).encode(datamap)
 
