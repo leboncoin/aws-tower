@@ -144,6 +144,7 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     trusted_accounts_list_path = variables.TRUSTED_ACCOUNTS_LIST_PATH
+    trusted_accounts_list = []
     if trusted_accounts_list_path.exists():
         trusted_accounts_list = trusted_accounts_list_path.read_text(
             encoding='ascii', errors='ignore').split('\n')
