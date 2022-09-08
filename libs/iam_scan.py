@@ -199,6 +199,7 @@ def iam_display(
     client,
     resource,
     arn,
+    min_rights,
     cache,
     console,
     iam_action_passlist=[],
@@ -210,25 +211,34 @@ def iam_display(
     iam_obj = IAM(arn=arn)
     console.print(f'ARN: {arn}')
     console.print(f'Resource type: {iam_obj.resource_type}')
-    if iam_obj.resource_type == 'role':
-        role_info = get_role_from_arn(client, arn)
-        if role_info is not None:
-            if role_info['RoleName'] in iam_rolename_passlist:
-                return
-            console.print(f'Role Name: {role_info["RoleName"]}')
-            role = resource.Role(role_info['RoleName'])
-            actions = []
-            for policy in role.policies.all():
-                if verbose:
-                    console.print(f'RolePolicy: {policy.name}')
-                actions = [*actions, *get_actions_from_rolepolicy(policy)]
-            for policy in role.attached_policies.all():
-                if verbose:
-                    console.print(f'Policy: {policy.arn}')
-                actions = [*actions, *get_actions_from_policy(client, policy, cache)]
-            actions = filter_actions(actions, iam_action_passlist)
-            console.print(f'Actions: {set(actions)}')
+    if iam_obj.resource_type != 'role':
+        return
+    role_info = get_role_from_arn(client, arn)
+    if role_info is None or role_info['RoleName'] in iam_rolename_passlist:
+        return
+    console.print(f'Role Name: {role_info["RoleName"]}')
+    role = resource.Role(role_info['RoleName'])
 
+    # Get all actions
+    actions = []
+    for policy in role.policies.all():
+        if verbose:
+            console.print(f'RolePolicy: {policy.name}')
+        actions = [*actions, *get_actions_from_rolepolicy(policy)]
+    for policy in role.attached_policies.all():
+        if verbose:
+            console.print(f'Policy: {policy.arn}')
+        actions = [*actions, *get_actions_from_policy(client, policy, cache)]
+    actions = filter_actions(actions, iam_action_passlist)
+
+    # Display actions
+    iam_obj.actions = actions
+    iam_obj.simplify_actions()
+    if iam_obj.admin_actions:
+        console.print(f'[red]Admin actions: {iam_obj.admin_actions}[/red]')
+    if iam_obj.poweruser_actions and min_rights != 'admin':
+        console.print(f'[yellow]Poweruser actions: {iam_obj.poweruser_actions}[/yellow]')
+    console.print(f'ALL Actions: {set(actions)}')
 
 def get_role_services(role):
     """

@@ -82,3 +82,15 @@ class AssetType:
         This is a nutshell, check the ASsetGroup override function.
         """
         return True
+
+    # def dst_linked_assets(self, _):
+    #     """
+    #     Among all asset, find assets linked in destination
+    #     """
+    #     return []
+
+    def src_linked_assets(self, _):
+        """
+        Among all asset, find assets linked in source
+        """
+        return []

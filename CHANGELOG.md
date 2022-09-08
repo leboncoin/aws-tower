@@ -4,6 +4,22 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.3.0
+-----
+
+2022/09/08
+
+### New feature
+  - Add `draw` verb : `aws-tower draw <my-profile>` to display a threat map
+
+### Changes
+  - Dissociate IAM services and actions, easier to read and understand findings
+  - whitelist more IAM actions as readers and not poweruser
+  - Add more retryier in lambda monitoring and split in another lambda child
+
+### Fixtures
+  - Fix iam_scan to use min-rights
+
 4.2.2
 -----
 

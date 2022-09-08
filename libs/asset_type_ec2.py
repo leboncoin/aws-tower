@@ -93,6 +93,27 @@ class EC2(AssetType):
             return f'<Public> {self.public_ip} {self.private_ip}'
         return f'<Private> {self.private_ip}'
 
+    def src_linked_assets(self, assets):
+        """
+        Among all asset, find assets linked to the EC2 in source
+        """
+        result = set()
+        ec2_sgs = set()
+        for _, ec2_sg in self.security_groups.items():
+            for _, port_allowed_ips in ec2_sg.items():
+                for elb_sg_linked in port_allowed_ips:
+                    if elb_sg_linked.startswith('sg-'):
+                        ec2_sgs.add(elb_sg_linked)
+        if not ec2_sgs:
+            return result
+        for elb in assets:
+            if elb.get_type() != 'ELB':
+                continue
+            for elb_sg in elb.security_groups.keys():
+                if elb_sg in ec2_sgs:
+                    result.add(elb)
+        return result
+
 @log_me('Getting EC2 raw data...')
 def get_raw_data(raw_data, authorizations, boto_session, cache, _):
     """
@@ -247,12 +268,12 @@ def parse_iam_instance_profile(assets, authorizations, raw_data, _):
                 for iam in iam_group.list:
                     if role_name != iam.arn.split('/')[-1]:
                         continue
-                    if iam.poweruser_actions is not None:
+                    if iam.poweruser_services is not None:
                         if ec2.role_poweruser != '':
                             ec2.role_poweruser = ' '
-                        ec2.role_poweruser += f'{role_name}: {iam.poweruser_actions}'
-                    if iam.admin_actions is not None:
+                        ec2.role_poweruser += f'{role_name}: {iam.poweruser_services}'
+                    if iam.admin_services is not None:
                         if ec2.role_admin != '':
                             ec2.role_admin = ' '
-                        ec2.role_admin += f'{role_name}: {iam.admin_actions}'
+                        ec2.role_admin += f'{role_name}: {iam.admin_services}'
     return assets, authorizations

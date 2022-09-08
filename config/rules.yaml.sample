@@ -1,5 +1,5 @@
 ---
-version: 4.2.2
+version: 4.3.0
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -48,7 +48,8 @@ types:
                 name: source
                 value: source
         severity: high
-        techniques:
+        metadata:
+          risks: ['WAN reachable asset']
           visibility: ['T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1040', 'T1046', 'T1190', 'T1590.005', 'T1595.001']
@@ -96,7 +97,8 @@ types:
                 name: source
                 value: source
         severity: high
-        techniques:
+        metadata:
+          risks: ['WAN reachable asset']
           visibility: ['T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1040', 'T1046', 'T1190', 'T1590.005', 'T1595.001']
@@ -144,7 +146,8 @@ types:
                 name: source
                 value: source
         severity: medium
-        techniques:
+        metadata:
+          risks: ['LAN reachable asset']
           visibility: ['T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1040', 'T1046']
@@ -193,7 +196,8 @@ types:
                 name: source
                 value: source
         severity: low
-        techniques:
+        metadata:
+          risks: ['LAN reachable asset']
           visibility: ['T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1040', 'T1046']
@@ -218,32 +222,34 @@ types:
               - type: variable
                 name: asset
                 value: asset
-        techniques:
+        metadata:
+          risks: ['Reconnaissance']
           visibility: ['T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1590.002', 'T1596.001']
       - message:
-          text: '[{resource_id}] Admin actions: {admin_actions}'
+          text: '[{resource_id}] Admin actions: {admin_services}'
           args:
-            admin_actions:
+            admin_services:
               type: attribute
-              key: admin_actions
+              key: admin_services
             resource_id:
               type: attribute
               key: resource_id
         severity: high
         rules:
           - type: has_attribute
-            description: Check if admin_actions attribute exists
+            description: Check if admin_services attribute exists
             conditions:
               - type: constant
                 name: attribute
-                value: admin_actions
+                value: admin_services
             data_sources:
               - type: variable
                 name: asset
                 value: asset
-        techniques:
+        metadata:
+          risks: ['Powerful asset']
           visibility: ['T1136.003', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1136.003', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1078.001', 'T1078.004']
@@ -268,32 +274,34 @@ types:
               - type: variable
                 name: asset
                 value: asset
-        techniques:
+        metadata:
+          risks: ['Powerful asset']
           visibility: ['T1136.003', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1136.003', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1078.001', 'T1078.004']
       - message:
-          text: '[{resource_id}] Poweruser actions: {poweruser_actions}'
+          text: '[{resource_id}] Poweruser actions: {poweruser_services}'
           args:
-            poweruser_actions:
+            poweruser_services:
               type: attribute
-              key: poweruser_actions
+              key: poweruser_services
             resource_id:
               type: attribute
               key: resource_id
         severity: medium
         rules:
           - type: has_attribute
-            description: Check if poweruser_actions attribute exists
+            description: Check if poweruser_services attribute exists
             conditions:
               - type: constant
                 name: attribute
-                value: poweruser_actions
+                value: poweruser_services
             data_sources:
               - type: variable
                 name: asset
                 value: asset
-        techniques:
+        metadata:
+          risks: ['Powerful asset']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1190', 'T1530', 'T1580', 'T1619']
@@ -328,7 +336,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.block_public_acls
-        techniques:
+        metadata:
+          risks: ['Application vulnerability']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1190', 'T1530', 'T1580', 'T1619']
@@ -363,7 +372,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.block_public_policy
-        techniques:
+        metadata:
+          risks: ['Application vulnerability']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1190', 'T1530', 'T1580', 'T1619']
@@ -398,7 +408,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.ignore_public_acls
-        techniques:
+        metadata:
+          risks: ['Application vulnerability']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1190', 'T1530', 'T1580', 'T1619']
@@ -433,7 +444,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.restrict_public_buckets
-        techniques:
+        metadata:
+          risks: ['Application vulnerability']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1190', 'T1530', 'T1580', 'T1619']
@@ -468,7 +480,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.all_users_grants
-        techniques:
+        metadata:
+          risks: ['WAN reachable asset', 'Application vulnerability']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1190', 'T1530', 'T1580', 'T1619']
@@ -503,7 +516,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: acls.any_authenticated_users_grants
-        techniques:
+        metadata:
+          risks: ['WAN reachable asset', 'Application vulnerability']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1190', 'T1530', 'T1580', 'T1619']
@@ -548,7 +562,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: authorization.has_no_auth_endpoint
-        techniques:
+        metadata:
+          risks: ['WAN reachable asset']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1190']
@@ -593,7 +608,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: authorization.has_no_auth_endpoint
-        techniques:
+        metadata:
+          risks: ['WAN reachable asset', 'Application vulnerability']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1190']
@@ -638,7 +654,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: authorization.has_no_auth_endpoint
-        techniques:
+        metadata:
+          risks: ['LAN reachable asset', 'Application vulnerability']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           protection: ['T1040', 'T1046']
@@ -682,6 +699,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: engine
+        metadata:
+          risks: ['LAN reachable asset', 'Application vulnerability', 'Sensitive asset']
 # https://mariadb.com/kb/en/security/
 # https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MariaDB.html
       - message:
@@ -725,6 +744,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: engine
+        metadata:
+          risks: ['LAN reachable asset', 'Application vulnerability', 'Sensitive asset']
 # https://www.postgresql.org/support/security/
       - message:
           text: '[{service_name}] Deprecated postgres engine version ({current_version})'
@@ -765,6 +786,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: engine
+        metadata:
+          risks: ['LAN reachable asset', 'Application vulnerability', 'Sensitive asset']
 # https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_SQLServer.html
       - message:
           text: '[{service_name}] Deprecated sqlserver-se (mssql) engine version ({current_version})'
@@ -804,6 +827,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: engine
+        metadata:
+          risks: ['LAN reachable asset', 'Application vulnerability', 'Sensitive asset']
 # https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
       - message:
           text: '[{service_name}] Public RDS database'
@@ -833,6 +858,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: aws_service
+        metadata:
+          risks: ['WAN reachable asset', 'Sensitive asset']
       - message:
           text: '[{service_name}] Deprecated EKS Kubernetes version ({current_version})'
           args:
@@ -878,6 +905,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: version
+        metadata:
+          risks: ['Application vulnerability', 'Sensitive asset']
       - message:
           text: '[{service_name}] Public EKS cluster'
           args:
@@ -906,6 +935,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: aws_service
+        metadata:
+          risks: ['WAN reachable asset', 'Sensitive asset']
       - message:
           text: '[{service_name}] An old SSH Key is attached'
           args:
@@ -954,6 +985,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: operating_system
+        metadata:
+          risks: ['Application vulnerability']
       - message:
           text: '[{service_name}] EC2 with an Admin role'
           args:
@@ -982,6 +1015,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: role_admin
+        metadata:
+          risks: ['Powerful asset']
       - message:
           text: '[{service_name}] EC2 with an PowerUser role'
           args:
@@ -1010,6 +1045,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: role_poweruser
+        metadata:
+          risks: ['Powerful asset']
       - message:
           text: '[{service_name}] untrusted VPC peering'
           args:
@@ -1048,6 +1085,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: is_trusted_peering
+        metadata:
+          risks: ['Compromised asset']
       - message:
           text: '[{service_name}] Endpoint Service too open'
           args:
@@ -1086,6 +1125,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: public
+        metadata:
+          risks: ['WAN reachable asset']
       - message:
           text: '[{service_name}] Endpoint Service has untrusted account in principals'
           args:
@@ -1124,6 +1165,8 @@ types:
               - type: attribute
                 name: attribute_value
                 value: has_untrusted_accounts
+        metadata:
+          risks: ['Compromised asset']
       - message:
           text: '[{service_name}] VPN endpoint'
           args:
@@ -1152,3 +1195,5 @@ types:
               - type: attribute
                 name: attribute_value
                 value: is_vpn
+        metadata:
+          risks: ['WAN reachable asset']

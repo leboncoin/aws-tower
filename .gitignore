@@ -10,6 +10,7 @@ config/rules.yaml
 config/lambda.config
 config/subnet_allow_list.txt
 config/trusted_accounts_list.txt
+config/variables.py
 
 # Documentation
 

@@ -17,7 +17,8 @@ import boto3
 import botocore
 from rich import console
 
-from libs.display import print_report, print_summary
+from libs.display import audit_scan, draw_threats, prepare_report, \
+    print_report, print_summary
 from libs.iam_scan import complete_source_arn, iam_display, \
     iam_display_roles, iam_extract, iam_simulate
 from libs.scan import aws_scan
@@ -28,7 +29,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.2.2'
+VERSION = '4.3.0'
 
 def audit_handler(session, args, meta_types, cache):
     """
@@ -103,6 +104,33 @@ def discover_handler(session, args, meta_types, cache):
             security_config=None
         )
 
+def draw_handler(session, args, meta_types, cache):
+    """
+    Handle draw argument
+    """
+    assets = aws_scan(
+        session,
+        cache,
+        iam_action_passlist=variables.IAM_ACTION_PASSLIST,
+        iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
+        public_only=False,
+        meta_types=meta_types,
+        name_filter='',
+        console=CONSOLE
+    )
+
+    min_severity = 'medium'
+    max_severity = 'critical'
+    security_config = {
+        'findings_rules_path': variables.FINDING_RULES_PATH,
+        'severity_levels': variables.SEVERITY_LEVELS,
+        'min_severity': min_severity,
+        'max_severity': max_severity
+    }
+    report = prepare_report(assets, meta_types, CONSOLE)
+    audit_scan(assets, report, security_config, None, CONSOLE)
+    draw_threats(f'AWS Tower: Threat map of {args.profile}', assets, CONSOLE)
+
 def iam_handler(session, args, cache, csl):
     """
     Handle iam argument
@@ -115,6 +143,7 @@ def iam_handler(session, args, cache, csl):
             client_iam,
             res_iam,
             args.source,
+            args.min_rights,
             cache,
             csl,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
@@ -192,6 +221,8 @@ def main(verb, args):
         audit_handler(session, args, meta_types, cache)
     elif verb == 'discover':
         discover_handler(session, args, meta_types, cache)
+    elif verb == 'draw':
+        draw_handler(session, args, meta_types, cache)
     elif verb == 'iam':
         iam_handler(session, args, cache, csl)
     else:
@@ -220,41 +251,6 @@ if __name__ == '__main__':
         '-p', '--list-profiles',
         action='store_true',
         help='List available profiles')
-
-    # DISCOVER Arguments
-    DISCOVER_PARSER = SUBPARSERS.add_parser(
-        'discover',
-        help='Discover assets in an AWS account')
-    DISCOVER_PARSER.add_argument(
-        'profile',
-        action='store',
-        help='A valid profile name configured in the ~/.aws/config file')
-    DISCOVER_PARSER.add_argument(
-        '-t', '--type',
-        action='append',
-        choices=variables.META_TYPES,
-        help='Types to display (default: display everything)')
-    DISCOVER_PARSER.add_argument(
-        '-p', '--public-only',
-        action='store_true',
-        help='Display public assets only')
-    DISCOVER_PARSER.add_argument(
-        '-f', '--filter',
-        action='store',
-        default='',
-        help='Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"')
-    DISCOVER_PARSER.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        help='Verbose output of the account assets')
-    DISCOVER_PARSER.add_argument(
-        '-b', '--brief',
-        action='store_true',
-        help='Brief output of the account assets')
-    DISCOVER_PARSER.add_argument(
-        '-s', '--summary',
-        action='store_true',
-        help='Summary of the account assets')
 
     # AUDIT Arguments
     AUDIT_PARSER = SUBPARSERS.add_parser(
@@ -296,6 +292,55 @@ if __name__ == '__main__':
         '-s', '--summary',
         action='store_true',
         help='Summary of the account assets')
+
+    # DISCOVER Arguments
+    DISCOVER_PARSER = SUBPARSERS.add_parser(
+        'discover',
+        help='Discover assets in an AWS account')
+    DISCOVER_PARSER.add_argument(
+        'profile',
+        action='store',
+        help='A valid profile name configured in the ~/.aws/config file')
+    DISCOVER_PARSER.add_argument(
+        '-t', '--type',
+        action='append',
+        choices=variables.META_TYPES,
+        help='Types to display (default: display everything)')
+    DISCOVER_PARSER.add_argument(
+        '-p', '--public-only',
+        action='store_true',
+        help='Display public assets only')
+    DISCOVER_PARSER.add_argument(
+        '-f', '--filter',
+        action='store',
+        default='',
+        help='Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"')
+    DISCOVER_PARSER.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='Verbose output of the account assets')
+    DISCOVER_PARSER.add_argument(
+        '-b', '--brief',
+        action='store_true',
+        help='Brief output of the account assets')
+    DISCOVER_PARSER.add_argument(
+        '-s', '--summary',
+        action='store_true',
+        help='Summary of the account assets')
+
+    # DRAW Arguments
+    DRAW_PARSER = SUBPARSERS.add_parser(
+        'draw',
+        help='Draw a threat model of your AWS account')
+    DRAW_PARSER.add_argument(
+        'profile',
+        action='store',
+        help='A valid profile name configured in the ~/.aws/config file')
+    DRAW_PARSER.add_argument(
+        '-t', '--type',
+        action='append',
+        choices=variables.META_TYPES,
+        help='Types to display (default: display everything)')
 
     # IAM Arguments
     IAM_PARSER = SUBPARSERS.add_parser(
@@ -351,6 +396,8 @@ if __name__ == '__main__':
         VERB = 'audit'
     elif hasattr(ARGS, 'min_rights'):
         VERB = 'iam'
+    elif not hasattr(ARGS, 'filter'):
+        VERB = 'draw'
     if ARGS.no_color:
         CONSOLE = None
     main(VERB, ARGS)

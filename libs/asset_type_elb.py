@@ -69,6 +69,22 @@ class ELB(AssetType):
             return f'<Public> {self.dns_record}'
         return f'<{self.scheme}> {self.dns_record}'
 
+    # def dst_linked_assets(self, assets):
+    #     """
+    #     Among all asset, find assets linked to the ELB in destination
+    #     """
+    #     result = set()
+    #     elb_sgs = self.security_groups.keys()
+    #     for _ in elb_sgs:
+    #         for ec2 in assets:
+    #             if ec2.get_type() != 'EC2':
+    #                 continue
+    #             for _, ec2_sg in ec2.security_groups.items():
+    #                 for _, port_allowed_ips in ec2_sg.items():
+    #                     if 'sg-xxxxxxxxx' in port_allowed_ips:
+    #                         result.add(ec2)
+    #     return result
+
 @log_me('Getting Elastic Load Balancer raw data...')
 def get_raw_data(raw_data, authorizations, boto_session, cache, _):
     """
