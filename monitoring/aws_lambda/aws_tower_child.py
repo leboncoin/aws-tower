@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-AWS Tower Lambda
+AWS Tower Lambda Child
 
 Copyright 2020-2022 Leboncoin
 Licensed under the Apache License, Version 2.0
@@ -13,6 +13,7 @@ from hashlib import sha256
 import logging
 import os
 import sys
+import time
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -34,7 +35,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '4.2.0'
+VERSION = '4.3.0'
 
 PATROWL = {}
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -57,6 +58,27 @@ def hashcode(message):
     Return the 8th first char of the sha256
     """
     return sha256(message.encode()).hexdigest()[:8]
+
+def get_patrowl_assets():
+    """
+    Return all patrowl assets, with a retry system
+    """
+    try:
+        patrowl_assets = PATROWL_API.get_assets()
+    except:
+        LOGGER.warning('Error while getting all assets, retrying in 10 seconds...')
+        time.sleep(10)
+        try:
+            patrowl_assets = PATROWL_API.get_assets()
+        except:
+            LOGGER.warning('Error while getting all assets, retrying in 30 seconds...')
+            time.sleep(30)
+            try:
+                patrowl_assets = PATROWL_API.get_assets()
+            except:
+                LOGGER.critical('Unable to get patrowl assets...')
+                patrowl_assets = []
+    return patrowl_assets
 
 def main(account):
     """
@@ -95,7 +117,8 @@ def main(account):
         return
     LOGGER.warning(f'Stop scanning {aws_account_name=}, {env=}, {region_name=}...')
 
-    patrowl_assets = PATROWL_API.get_assets()
+    patrowl_assets = get_patrowl_assets()
+
     count = 0
     for asset in assets:
         count += 1

@@ -20,13 +20,12 @@ from patrowl4py.api import PatrowlManagerApi
 
 # Own library and config files
 from libs.patrowl import add_in_assetgroup
-from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
 LOGGER = logging.getLogger('aws-tower-launcher')
 
-VERSION = '4.2.0'
+VERSION = '4.3.0'
 
 PATROWL = {}
 PATROWL['api_token'] = os.environ['PATROWL_APITOKEN']
@@ -85,17 +84,17 @@ def is_config_ok(config, profile):
 
 def call_lambda(row):
     """
-    Call child lambda to do async task via  boto3
+    Call child lambda to do async task via boto3
     """
-    LOGGER.warning(f'Calling lambda aws_tower with {row = }')
+    LOGGER.warning(f'Calling lambda aws_tower_child_account with {row = }')
     try:
         boto3.client('lambda').invoke(
-            FunctionName='aws_tower',
+            FunctionName='aws_tower_child_account',
             InvocationType='Event',
             Payload=json.dumps(row)
         )
     except Exception as err_msg:
-        LOGGER.error(f'Unable to call lambda aws_tower: {err_msg}')
+        LOGGER.error(f'Unable to call lambda aws_tower_child_account: {err_msg}')
         return False
     return True
 
@@ -111,19 +110,12 @@ def main():
         if not is_config_ok(config, profile):
             continue
         aws_account_name = profile.split()[1]
-        # ... and per aws service
-        for meta_type in variables.META_TYPES:
-            payload = {
-                aws_account_name: config[profile]['role_arn'],
-                'env': config[profile]['env'],
-                'meta_types': [meta_type]
-            }
-            # ... and per region
-            for region in variables.LAMBDA_SCAN_REGION_LIST:
-                payload['region_name'] = region
-                LOGGER.warning(payload)
-                call_lambda(payload)
-
+        payload = {
+            aws_account_name: config[profile]['role_arn'],
+            'env': config[profile]['env']
+        }
+        LOGGER.warning(payload)
+        call_lambda(payload)
 
 def handler(event, context):
     """

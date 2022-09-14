@@ -35,6 +35,7 @@ class EC2(AssetType):
         self.role_poweruser = ''
         self.role_admin = ''
         self.instance_id = ''
+        self.eks_cluster = ''
 
     def report(self, report, brief=False):
         """
@@ -92,6 +93,34 @@ class EC2(AssetType):
         if self.public:
             return f'<Public> {self.public_ip} {self.private_ip}'
         return f'<Private> {self.private_ip}'
+
+    def src_linked_assets(self, assets):
+        """
+        Among all asset, find assets linked to the EC2 in source
+        """
+        result = set()
+        ec2_sgs = set()
+        for _, ec2_sg in self.security_groups.items():
+            for _, port_allowed_ips in ec2_sg.items():
+                for elb_sg_linked in port_allowed_ips:
+                    if elb_sg_linked.startswith('sg-'):
+                        ec2_sgs.add(elb_sg_linked)
+        if not ec2_sgs:
+            return result
+        for elb in assets:
+            if elb.get_type() != 'ELB':
+                continue
+            for elb_sg in elb.security_groups.keys():
+                if elb_sg in ec2_sgs:
+                    result.add(elb)
+        return result
+
+    def cluster_name(self):
+        """
+        Return the name of the belonging cluster
+        """
+        return self.eks_cluster
+
 
 @log_me('Getting EC2 raw data...')
 def get_raw_data(raw_data, authorizations, boto_session, cache, _):
@@ -184,6 +213,9 @@ def scan(ec2, sg_raw, subnets_raw, kp_raw, boto_session, public_only):
             pass
     if 'Tags' in ec2:
         ec2_asset.name = get_tag(ec2['Tags'], 'Name')
+        eks_cluster_name =  [ i['Key'].split('/')[-1] for i in ec2['Tags'] if i['Key'].startswith('kubernetes.io/cluster/') ]
+        if eks_cluster_name:
+            ec2_asset.eks_cluster = eks_cluster_name[0]
     if 'PublicIpAddress' in ec2:
         ec2_asset.public_ip = ec2['PublicIpAddress']
     if 'SecurityGroups' in ec2:
@@ -247,12 +279,12 @@ def parse_iam_instance_profile(assets, authorizations, raw_data, _):
                 for iam in iam_group.list:
                     if role_name != iam.arn.split('/')[-1]:
                         continue
-                    if iam.poweruser_actions is not None:
+                    if iam.poweruser_services is not None:
                         if ec2.role_poweruser != '':
                             ec2.role_poweruser = ' '
-                        ec2.role_poweruser += f'{role_name}: {iam.poweruser_actions}'
-                    if iam.admin_actions is not None:
+                        ec2.role_poweruser += f'{role_name}: {iam.poweruser_services}'
+                    if iam.admin_services is not None:
                         if ec2.role_admin != '':
                             ec2.role_admin = ' '
-                        ec2.role_admin += f'{role_name}: {iam.admin_actions}'
+                        ec2.role_admin += f'{role_name}: {iam.admin_services}'
     return assets, authorizations

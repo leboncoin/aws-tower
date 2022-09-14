@@ -20,9 +20,9 @@ AWS Services monitored:
 
 ```bash
 $ pip install -r requirements.txt
-$ cp config/rules.yaml.sample config/rules.yaml # if you want to use "audit", then edit "config/variables.py" and remove .sample
-$ cp config/subnet_allow_list.txt.sample config/subnet_allow_list.txt # if you want to use a subnet allow list, then edit "config/variables.py" and remove .sample
-$ cp config/trusted_accounts_list.txt.sample config/trusted_accounts_list.txt # if you want to use an aws account allow list, then edit "config/variables.py" and remove .sample
+$ cp config/rules.yaml.sample config/rules.yaml # if you want to use "audit"
+$ cp config/subnet_allow_list.txt.sample config/subnet_allow_list.txt # if you want to use a subnet allow list
+$ cp config/trusted_accounts_list.txt.sample config/trusted_accounts_list.txt # if you want to use an aws account allow list
 ```
 
 ## Usage
@@ -33,12 +33,14 @@ $ alias aws-tower='<path>/aws_tower_cli.py'
 
 ```bash
 $ aws-tower --help
-usage: aws_tower_cli.py [-h] [--version] [--no-color] [--no-cache] [--clean-cache] [-l] [-p] {discover,audit,iam} ...
+usage: aws_tower_cli.py [-h] [--version] [--no-color] [--no-cache] [--clean-cache] [-l] [-p] {audit,discover,draw,iam} ...
 
 positional arguments:
-  {discover,audit,iam}  commands
-    discover            Discover assets in an AWS account
+  {audit,discover,draw,iam}
+                        commands
     audit               Audit AWS account to find security issues
+    discover            Discover assets in an AWS account
+    draw                Draw a threat model of your AWS account
     iam                 Display IAM info for an AWS account
 
 options:
@@ -90,6 +92,19 @@ options:
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets
+```
+
+```bash
+$ aws-tower draw --help
+usage: aws_tower_cli.py draw [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] profile
+
+positional arguments:
+  profile               A valid profile name configured in the ~/.aws/config file
+
+options:
+  -h, --help            show this help message and exit
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}
+                        Types to display (default: display everything)
 ```
 
 ```bash

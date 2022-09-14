@@ -519,13 +519,15 @@ class Patterns:
         self._logger.error(f'Unable to determine the version to compare...{previous_version=}{current_version=}{next_version=}')
         return False
 
-    def _generate_report_message(self, message, severity, kwargs):
+    def _generate_report_message(self, message, severity, metadata, kwargs):
         """Generate a message for the report
 
         :param message: Message data from the finding (may be a string or dictionary)
         :type message: mixed
         :param severity: Severity of the message (examples: 'info', 'high', ..)
         :type severity: str
+        :param metadata: Metadata append to the finding, not displayed
+        :type metadata: mixed
         :param kwargs: data_sources we may need to generate the message (like attributes, name, source, ...)
         :return: Message generated
         :rtype: dict
@@ -534,7 +536,8 @@ class Patterns:
         if isinstance(message, str):
             report_message = {
                 'title': f'{message}',
-                'severity': f'{severity}'
+                'severity': f'{severity}',
+                'metadata': metadata
             }
             return report_message
         try:
@@ -574,7 +577,8 @@ class Patterns:
             try:
                 report_message = {
                     'title': message['text'].format(**args),
-                    'severity': f'{severity}'
+                    'severity': f'{severity}',
+                    'metadata': metadata
                 }
             except Exception as err_msg:
                 self._logger.error(f'Unable to generate report message: {err_msg}')
@@ -634,9 +638,12 @@ class Patterns:
                         finding_found = False
                         break
             if finding_found:
+                if 'metadata' not in finding:
+                    finding['metadata'] = {}
                 report_message = self._generate_report_message(
                     finding['message'],
                     finding['severity'],
+                    finding['metadata'],
                     kwargs
                 )
                 if report_message is not False:
@@ -645,13 +652,13 @@ class Patterns:
                         break
         return report
 
-    def extract_findings_from_security_groups(self, asset):
-        """Try to extract findings from asset security groups
+    def extract_findings(self, asset):
+        """Try to extract findings from asset
 
         :param asset: aws asset
         :type asset: AssetType
-        :return: Report generated from the findings
-        :rtype: list
+        :return: Report generated
+        :rtype: []
         """
         if len(self._patterns) == 0:
             return []
@@ -670,21 +677,10 @@ class Patterns:
                         )
                         if result is not False:
                             report += result
+
         report_attributes = self._check_findings_by_type('attributes', asset=asset)
         if report_attributes is not False:
             report += report_attributes
-        return report
-
-    def extract_findings(self, asset):
-        """Try to extract findings from asset
-
-        :param asset: aws asset
-        :type asset: AssetType
-        :return: Report generated
-        :rtype: []
-        """
-        report = []
-        report += self.extract_findings_from_security_groups(asset)
         return report
 
     def _check_arguments_definitions(self, arguments, name):

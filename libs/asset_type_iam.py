@@ -36,10 +36,12 @@ class IAM(AssetType):
         super().__init__('IAM role', arn, public=False)
         self.arn = arn
         self.actions = []
-        self.admin_actions = None
-        self.dangerous_actions = None
-        self.poweruser_actions = None
-        self.reader_actions = None
+        self.admin_services = None # None instead of set(), for rules matching
+        self.admin_actions = set()
+        self.dangerous_actions = None # None instead of set(), for rules matching
+        self.poweruser_services = None # None instead of set(), for rules matching
+        self.poweruser_actions = set()
+        self.reader_services = None # TODO: remove it, useless
         if self.is_valid():
             self.partition = arn.split(':')[1]
             self.service = arn.split(':')[2]
@@ -110,48 +112,59 @@ class IAM(AssetType):
     def simplify_actions(self):
         """
         Simplify the actions and regroupe in a way to understand actions
-        admin > poweruser (write|delete|update) > reader > lister
+        admin > poweruser (write|delete|update) > reader
         """
         types = {}
+        readers_multi_verbs = [
+            'AdminGet', 'AdminList', 'ESHttpGet', 'ESHttpHead', 'StartCostEstimation',
+            # SSM
+            'PutInventory', 'PutConfigurePackageResult', 'PutComplianceItems',
+            'UpdateAssociationStatus', 'UpdateInstanceAssociationStatus',
+            'UpdateInstanceInformation']
         poweruser_multi_verbs = ['GitPush']
         readers_verb = [
-            'Batch', 'Check', 'Compare', 'Count', 'Describe', 'Detect', 'Discover',
-            'Download', 'Estimate', 'Evaluate', 'Export', 'Filter', 'Get', 'Git',
-            'Is', 'List', 'Lookup', 'Preview', 'Query', 'Read', 'Receive', 'Resolve',
-            'Request', 'Retrieve', 'Sample', 'Scan', 'Search', 'Select', 'Simulate',
-            'Synthesize', 'Test', 'Verify', 'View']
+            'Batch', 'Check', 'Classify', 'Compare', 'Contains', 'Count',
+            'Describe', 'Detect', 'Discover', 'Download', 'Estimate', 'Evaluate',
+            'Export', 'Filter', 'Generate', 'Get', 'Git', 'Is', 'List', 'Lookup', 'Preview',
+            'Query', 'Read', 'Receive', 'Resolve', 'Request', 'Retrieve',
+            'Sample', 'Scan', 'Search', 'Select', 'Simulate',
+            'Synthesize', 'Test', 'Validate', 'Verify', 'View']
         for action in self.actions:
             if action == '*':
-                self.admin_actions = ['*']
+                self.admin_services = ['*']
+                self.admin_actions.add(action)
                 return
             service = action.split(':')[0]
             if service not in types:
                 types[service] = []
             types[service].append(action.split(':')[1])
-        for service in types:
-            if '*' in types[service]:
-                if self.admin_actions is None:
-                    self.admin_actions = []
-                self.admin_actions.append(service)
+        for service, actions in types.items():
+            if '*' in actions:
+                if self.admin_services is None:
+                    self.admin_services = []
+                self.admin_services.append(service)
+                self.admin_actions.add(f'{service}:*')
             else:
                 is_poweruser = False
-                is_reader = False
-                for action in types[service]:
+                for action in actions:
                     self.add_dangerous_actions(service, action)
                     verb = re.search('^[A-Z][a-z]+', action)
-                    is_poweruser = is_poweruser or \
-                        (verb and verb.group(0) not in readers_verb) or \
-                        (action in poweruser_multi_verbs)
-                    is_reader = is_reader or \
-                        (verb and verb.group(0) in readers_verb and action not in poweruser_multi_verbs)
+                    if ((verb and verb.group(0) not in readers_verb) or \
+                        (action in poweruser_multi_verbs)) and \
+                        True not in [ action.startswith(i) for i in readers_multi_verbs ]:
+                        is_poweruser = True
+                        self.poweruser_actions.add(f'{service}:{action}')
                 if is_poweruser:
-                    if self.poweruser_actions is None:
-                        self.poweruser_actions = []
-                    self.poweruser_actions.append(service)
-                elif is_reader:
-                    if self.reader_actions is None:
-                        self.reader_actions = []
-                    self.reader_actions.append(service)
+                    if self.poweruser_services is None:
+                        self.poweruser_services = set()
+                    self.poweruser_services.add(service)
+        # To avoid random order in output
+        if self.admin_services:
+            self.admin_services = list(self.admin_services)
+            self.admin_services.sort()
+        if self.poweruser_services:
+            self.poweruser_services = list(self.poweruser_services)
+            self.poweruser_services.sort()
 
     def print_actions(self, min_rights):
         """
@@ -173,9 +186,9 @@ class IAM(AssetType):
             min_rights = 'reader'
         filtered_actions = {}
         for i in range(action_category[min_rights]+1):
-            if getattr(self, f'{action_id[i]}_actions') is None:
+            if getattr(self, f'{action_id[i]}_services') is None:
                 continue
-            filtered_actions[action_id[i]] = getattr(self, f'{action_id[i]}_actions')
+            filtered_actions[action_id[i]] = getattr(self, f'{action_id[i]}_services')
         return f'{self.arn}: {filtered_actions}'
 
 
@@ -189,12 +202,12 @@ class IAM(AssetType):
             asset_report = {
                 'Arn': self.arn
             }
-            if self.admin_actions:
-                asset_report['Admin actions'] = f'[red]{self.admin_actions}[/red]'
+            if self.admin_services:
+                asset_report['Admin actions'] = f'[red]{self.admin_services}[/red]'
             if self.dangerous_actions:
                 asset_report['Dangerous actions'] = f'[red]{self.dangerous_actions}[/red]'
-            if self.poweruser_actions:
-                asset_report['Poweruser actions'] = f'[yellow]{self.poweruser_actions}[/yellow]'
+            if self.poweruser_services:
+                asset_report['Poweruser actions'] = f'[yellow]{self.poweruser_services}[/yellow]'
             if self.security_issues:
                 self.update_audit_report(asset_report)
         if 'IAM' not in report:
@@ -209,16 +222,16 @@ class IAM(AssetType):
         Return the report in one line
         """
         actions = ''
-        if self.admin_actions:
-            actions += f'[red]Admin actions: {self.admin_actions}[/red] '
+        if self.admin_services:
+            actions += f'[red]Admin actions: {self.admin_services}[/red] '
         if self.dangerous_actions:
             actions += f'[red]Dangerous actions: {self.dangerous_actions}[/red] '
-        if self.poweruser_actions:
-            actions += f'[yellow]Poweruser actions: {self.poweruser_actions}[/yellow] '
+        if self.poweruser_services:
+            actions += f'[yellow]Poweruser actions: {self.poweruser_services}[/yellow] '
         return f'{actions}{self.display_brief_audit()}'
 
     def finding_description(self, _):
         """
         Return a description of the finding
         """
-        return f'Actions: {self.actions}'
+        return f'Admin actions: {self.admin_actions}\nPoweruser actions: {self.poweruser_actions}\nALL actions: {self.actions}'
