@@ -662,6 +662,7 @@ types:
 # https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MySQL.html
 # https://dev.mysql.com/doc/relnotes/mysql/8.0/en/
 # https://dev.mysql.com/doc/relnotes/mysql/5.7/en/
+# https://nvd.nist.gov/vuln/search/results?form_type=Advanced&results_type=overview&isCpeNameSearch=true&seach_type=all&query=cpe:2.3:a:oracle:mysql:8.0.29:*:*:*:*:*:*:*
       - message:
           text: '[{service_name}] Deprecated mysql engine version ({current_version})'
           args:
@@ -692,9 +693,8 @@ types:
               - type: constant
                 name: versions
                 value:
-                  - '5.6.34'
-                  - '5.7.16'
-                  - '8.0.11'
+                  - '5.7.38'
+                  - '8.0.29'
             data_sources:
               - type: attribute
                 name: attribute_value
@@ -733,13 +733,13 @@ types:
               - type: constant
                 name: versions
                 value:
-                  - '10.2.43'
-                  - '10.3.34'
-                  - '10.4.24'
-                  - '10.5.15'
-                  - '10.6.7'
-                  - '10.7.3'
-                  - '10.8.1'
+                  - '10.3.36'
+                  - '10.4.26'
+                  - '10.5.17'
+                  - '10.6.9'
+                  - '10.7.5'
+                  - '10.8.4'
+                  - '10.9.2'
             data_sources:
               - type: attribute
                 name: attribute_value
@@ -777,11 +777,11 @@ types:
               - type: constant
                 name: versions
                 value:
-                  - '10.22'
-                  - '11.17'
-                  - '12.12'
-                  - '13.8'
-                  - '14.5'
+                  - '10.21'
+                  - '11.16'
+                  - '12.11'
+                  - '13.7'
+                  - '14.4'
             data_sources:
               - type: attribute
                 name: attribute_value
@@ -860,6 +860,7 @@ types:
                 value: aws_service
         metadata:
           risks: ['WAN reachable asset', 'Sensitive asset']
+# https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html#kubernetes-release-calendar
       - message:
           text: '[{service_name}] Deprecated EKS Kubernetes version ({current_version})'
           args:
@@ -900,7 +901,7 @@ types:
               - type: constant
                 name: versions
                 value:
-                  - '1.18'
+                  - '1.21'
             data_sources:
               - type: attribute
                 name: attribute_value

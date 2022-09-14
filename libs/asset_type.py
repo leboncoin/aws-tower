@@ -94,3 +94,9 @@ class AssetType:
         Among all asset, find assets linked in source
         """
         return []
+
+    def cluster_name(self):
+        """
+        Return nothing by default
+        """
+        return ''

@@ -16,6 +16,7 @@ AWS-TOWER
   - Dissociate IAM services and actions, easier to read and understand findings
   - whitelist more IAM actions as readers and not poweruser
   - Add more retryier in lambda monitoring and split in another lambda child
+  - Update deprecated RDS/EKS engine in rules
 
 ### Fixtures
   - Fix iam_scan to use min-rights

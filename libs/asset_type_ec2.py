@@ -35,6 +35,7 @@ class EC2(AssetType):
         self.role_poweruser = ''
         self.role_admin = ''
         self.instance_id = ''
+        self.eks_cluster = ''
 
     def report(self, report, brief=False):
         """
@@ -113,6 +114,13 @@ class EC2(AssetType):
                 if elb_sg in ec2_sgs:
                     result.add(elb)
         return result
+
+    def cluster_name(self):
+        """
+        Return the name of the belonging cluster
+        """
+        return self.eks_cluster
+
 
 @log_me('Getting EC2 raw data...')
 def get_raw_data(raw_data, authorizations, boto_session, cache, _):
@@ -205,6 +213,9 @@ def scan(ec2, sg_raw, subnets_raw, kp_raw, boto_session, public_only):
             pass
     if 'Tags' in ec2:
         ec2_asset.name = get_tag(ec2['Tags'], 'Name')
+        eks_cluster_name =  [ i['Key'].split('/')[-1] for i in ec2['Tags'] if i['Key'].startswith('kubernetes.io/cluster/') ]
+        if eks_cluster_name:
+            ec2_asset.eks_cluster = eks_cluster_name[0]
     if 'PublicIpAddress' in ec2:
         ec2_asset.public_ip = ec2['PublicIpAddress']
     if 'SecurityGroups' in ec2:

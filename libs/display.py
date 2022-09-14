@@ -119,6 +119,7 @@ def draw_threats(title, assets, csl):
     from diagrams.aws.database import RDS
     from diagrams.aws.storage import S3
     from diagrams.aws.general import InternetGateway
+    from diagrams.aws.management import OrganizationsAccount
 
     def get_asset_risks(asset):
         report = set()
@@ -189,13 +190,19 @@ def draw_threats(title, assets, csl):
     edge_attr = {
         "minlen": "5"
     }
-    with Diagram(title, direction='LR', edge_attr=edge_attr):
+    with Diagram(title, direction='LR', edge_attr=edge_attr, outformat="svg"):
         internet = InternetGateway('INTERNET')
         lan = InternetGateway('LAN')
 
-        # Create objects
+        # Draw objects not in Cluster
         objects = []
+        clusters = {}
         for asset in vuln_assets:
+            if asset.cluster_name():
+                if asset.cluster_name() not in clusters:
+                    clusters[asset.cluster_name()] = []
+                clusters[asset.cluster_name()].append(asset)
+                continue
             if not is_present(objects, asset):
                 objects.append(locals()[asset.get_type()](tagged_name(asset)))
             for linked_asset in asset.src_linked_assets(assets):
@@ -204,6 +211,18 @@ def draw_threats(title, assets, csl):
                         objects.append(locals()[linked_asset.get_type()](f'Private {linked_asset.get_type()}'))
                 elif not is_present(objects, linked_asset):
                     objects.append(locals()[linked_asset.get_type()](tagged_name(linked_asset)))
+        # Draw each Cluster
+        for cluster_name, cluster_members in clusters.items():
+            with Cluster(cluster_name):
+                for asset in cluster_members:
+                    if not is_present(objects, asset):
+                        objects.append(locals()[asset.get_type()](tagged_name(asset)))
+                    for linked_asset in asset.src_linked_assets(assets):
+                        if get_asset_color(linked_asset) == '🟢':
+                            if not is_present(objects, f'Private {linked_asset.get_type()}'):
+                                objects.append(locals()[linked_asset.get_type()](f'Private {linked_asset.get_type()}'))
+                        elif not is_present(objects, linked_asset):
+                            objects.append(locals()[linked_asset.get_type()](tagged_name(linked_asset)))
 
         # Create link between objects
         links = []

@@ -68,6 +68,12 @@ class EKS(AssetType):
             return f'<Public> {self.endpoint} v{self.version}'
         return f'<Private> {self.endpoint} v{self.version}'
 
+    def cluster_name(self):
+        """
+        Return the name of the cluster
+        """
+        return self.name
+
 
 @log_me('Getting EKS raw data...')
 def get_raw_data(raw_data, authorizations, boto_session, cache, _):

@@ -3,7 +3,7 @@ __pycache__
 venv
 package
 .env
-*.png
+*.svg
 
 # Config
 config/rules.yaml
