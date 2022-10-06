@@ -11,6 +11,7 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 # Standard library imports
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import sys
+import os
 
 # Third party library imports
 import boto3
@@ -178,7 +179,11 @@ def main(verb, args):
     if args.no_color:
         csl = NoColor()
     try:
-        session = boto3.Session(profile_name=args.profile)
+        if args.profile != "varenv":
+            session = boto3.Session(profile_name=args.profile)
+        else:
+            session = boto3.Session(aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"], aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"], aws_session_token=os.environ["AWS_SESSION_TOKEN"])
+
     except botocore.exceptions.ProfileNotFound:
         csl.print(f'[red]The profile [bold]{args.profile}[/bold] can\'t be found...')
         csl.print('[red]Take a look at the ~/.aws/config file.')
