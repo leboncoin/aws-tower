@@ -4,6 +4,8 @@ venv
 package
 .env
 *.svg
+*.png
+*.dot
 
 # Config
 config/rules.yaml

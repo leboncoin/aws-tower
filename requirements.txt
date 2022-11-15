@@ -1,4 +1,4 @@
-boto3>=1.24.68
-diagrams>=0.21.1
+boto3>=1.26.1
+diagrams>=0.22.0
 rich>=12.2.0
 ruamel.yaml>=0.17.21

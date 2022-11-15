@@ -119,7 +119,7 @@ def draw_handler(session, args, meta_types, cache):
         console=CONSOLE
     )
 
-    min_severity = 'medium'
+    min_severity = 'low'
     max_severity = 'critical'
     security_config = {
         'findings_rules_path': variables.FINDING_RULES_PATH,
@@ -129,7 +129,7 @@ def draw_handler(session, args, meta_types, cache):
     }
     report = prepare_report(assets, meta_types, CONSOLE)
     audit_scan(assets, report, security_config, None, CONSOLE)
-    draw_threats(f'AWS Tower: Threat map of {args.profile}', assets, CONSOLE)
+    draw_threats(f'AWS Tower: Threat map of {args.profile}', assets, CONSOLE, args)
 
 def iam_handler(session, args, cache, csl):
     """
@@ -341,6 +341,14 @@ if __name__ == '__main__':
         action='append',
         choices=variables.META_TYPES,
         help='Types to display (default: display everything)')
+    DRAW_PARSER.add_argument(
+        '--test1',
+        action='store_true',
+        help='Test 1: affichage que de ce qui est critique')
+    DRAW_PARSER.add_argument(
+        '--test2',
+        action='store_true',
+        help='Test 2: affichage de tout ce qui apprait dans l\'audit')
 
     # IAM Arguments
     IAM_PARSER = SUBPARSERS.add_parser(
