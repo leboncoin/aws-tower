@@ -83,11 +83,11 @@ class AssetType:
         """
         return True
 
-    # def dst_linked_assets(self, _):
-    #     """
-    #     Among all asset, find assets linked in destination
-    #     """
-    #     return []
+    def dst_linked_assets(self, _):
+        """
+        Among all asset, find assets linked in destination
+        """
+        return []
 
     def src_linked_assets(self, _):
         """

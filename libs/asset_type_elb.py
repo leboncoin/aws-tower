@@ -25,6 +25,7 @@ class ELB(AssetType):
         self.scheme = scheme
         self.security_groups = {}
         self.dns_record = None
+        self.targets = []
 
     def report(self, report, brief=False):
         """
@@ -69,21 +70,15 @@ class ELB(AssetType):
             return f'<Public> {self.dns_record}'
         return f'<{self.scheme}> {self.dns_record}'
 
-    # def dst_linked_assets(self, assets):
-    #     """
-    #     Among all asset, find assets linked to the ELB in destination
-    #     """
-    #     result = set()
-    #     elb_sgs = self.security_groups.keys()
-    #     for _ in elb_sgs:
-    #         for ec2 in assets:
-    #             if ec2.get_type() != 'EC2':
-    #                 continue
-    #             for _, ec2_sg in ec2.security_groups.items():
-    #                 for _, port_allowed_ips in ec2_sg.items():
-    #                     if 'sg-xxxxxxxxx' in port_allowed_ips:
-    #                         result.add(ec2)
-    #     return result
+    def dst_linked_assets(self, assets):
+        """
+        Among all asset, find assets linked to the ELB in destination
+        """
+        result = set()
+        for asset in assets:
+            if asset.get_type() == 'EC2' and asset.instance_id in self.targets:
+                result.add(asset)
+        return result
 
 @log_me('Getting Elastic Load Balancer raw data...')
 def get_raw_data(raw_data, authorizations, boto_session, cache, _):
@@ -97,6 +92,19 @@ def get_raw_data(raw_data, authorizations, boto_session, cache, _):
             'elb_describe_load_balancers',
             elb_client,
             'describe_load_balancers')['LoadBalancers']
+        target_groups = cache.get(
+            'elb_describe_target_groups',
+            elb_client,
+            'describe_target_groups')['TargetGroups']
+        for i, loadbalancer in enumerate(raw_data['elb_raw']):
+            for target in target_groups:
+                if 'TargetGroups' not in raw_data['elb_raw'][i]:
+                    raw_data['elb_raw'][i]['TargetGroups'] = {}
+                if loadbalancer['LoadBalancerArn'] in target['LoadBalancerArns']:
+                    raw_data['elb_raw'][i]['TargetGroups'][target['TargetGroupName']] = cache.get_elb_describe_target_health(
+                        f'elb_describe_target_health_{target["TargetGroupName"]}',
+                        elb_client,
+                        target['TargetGroupArn'])
     except botocore.exceptions.ClientError:
         raw_data['elb_raw'] = []
         authorizations['elb'] = False
@@ -119,6 +127,9 @@ def scan(elb, sg_raw, subnets_raw, public_only):
     if 'SecurityGroups' in elb:
         for security_group in elb['SecurityGroups']:
             elb_asset.security_groups[security_group] = draw_sg(security_group, sg_raw)
+    for target_group in elb['TargetGroups']:
+        for target in elb['TargetGroups'][target_group]['TargetHealthDescriptions']:
+            elb_asset.targets.append(target['Target']['Id'])
     return elb_asset
 
 @log_me('Scanning Elastic Load Balancer...')

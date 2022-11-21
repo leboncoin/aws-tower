@@ -29,7 +29,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.3.0'
+VERSION = '4.4.0'
 
 def audit_handler(session, args, meta_types, cache):
     """
@@ -119,7 +119,7 @@ def draw_handler(session, args, meta_types, cache):
         console=CONSOLE
     )
 
-    min_severity = 'low'
+    min_severity = 'medium'
     max_severity = 'critical'
     security_config = {
         'findings_rules_path': variables.FINDING_RULES_PATH,
@@ -342,13 +342,13 @@ if __name__ == '__main__':
         choices=variables.META_TYPES,
         help='Types to display (default: display everything)')
     DRAW_PARSER.add_argument(
-        '--test1',
+        '--limit',
         action='store_true',
-        help='Test 1: affichage que de ce qui est critique')
+        help='Restrict to only interesting assets among vulnerable')
     DRAW_PARSER.add_argument(
-        '--test2',
+        '--all',
         action='store_true',
-        help='Test 2: affichage de tout ce qui apprait dans l\'audit')
+        help='All assets, without lonely nodes')
 
     # IAM Arguments
     IAM_PARSER = SUBPARSERS.add_parser(

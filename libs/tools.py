@@ -355,6 +355,17 @@ class Cache:
             ServiceId=service_id)
         self.save_file(result, cache_file)
         return result
+    def get_elb_describe_target_health(self, key, client, targetgrouparn):
+        """
+        Custom cache method for elb.describe_target_health(TargetGroupArn=targetgrouparn)
+        """
+        cache_file = Path(f'{self.prefix}_{key}')
+        if cache_file.exists() and self.enabled:
+            return pickle.load(cache_file.open(mode='rb'))
+        result = client.describe_target_health(
+            TargetGroupArn=targetgrouparn)
+        self.save_file(result, cache_file)
+        return result
 
 def search_filter_in(asset, filter_str):
     """

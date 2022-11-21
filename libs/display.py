@@ -16,7 +16,7 @@ from .patterns import Patterns
 from .tools import NoColor, log_me
 
 # Debug
-from pdb import set_trace as st
+# from pdb import set_trace as st
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -174,28 +174,26 @@ def draw_threats(title, assets, csl, args):
         for obj in diag_objs:
             if asset_name == obj.label:
                 return obj
-        # if not isinstance(asset, str) and get_asset_color(asset) == '🟢':
-        #     asset_name = f'Private {asset.get_type()}'
-        # for obj in diag_objs:
-        #     if asset_name == obj.label:
-        #         return obj
         return None
 
     def is_present(diag_objs, asset):
         return get_obj(diag_objs, asset)
 
     # Generate "Vulnerable Assets", the base of the construction
-    if args.test1:
-        csl.print('TEST1: All vulnerable assets')
+    if args.limit:
+        csl.print('Restrict to only interesting assets among vulnerable')
         asset_names = set()
         vuln_assets = set()
         for asset in assets:
-            if get_asset_risks(asset) and asset.name not in asset_names:
+            if ('Application vulnerability' in get_asset_risks(asset) or \
+                'Powerful asset' in get_asset_risks(asset) or \
+                'Sensitive asset' in get_asset_risks(asset)) and \
+                asset.name not in asset_names:
                 asset_names.add(asset.name)
                 vuln_assets.add(asset)
                 csl.print(tagged_name(asset).replace('\n', ''))
-    elif args.test2:
-        csl.print('TEST2: All, without lonely nodes')
+    elif args.all:
+        csl.print('All assets, without lonely nodes')
         asset_names = set()
         vuln_assets = set()
         for asset in assets:
@@ -204,14 +202,11 @@ def draw_threats(title, assets, csl, args):
                 vuln_assets.add(asset)
                 csl.print(tagged_name(asset).replace('\n', ''))
     else:
-        csl.print('Vulnerable and Interesting assets')
+        csl.print('All vulnerable assets')
         asset_names = set()
         vuln_assets = set()
         for asset in assets:
-            if ('Application vulnerability' in get_asset_risks(asset) or \
-                'Powerful asset' in get_asset_risks(asset) or \
-                'Sensitive asset' in get_asset_risks(asset)) and \
-                asset.name not in asset_names:
+            if get_asset_risks(asset) and asset.name not in asset_names:
                 asset_names.add(asset.name)
                 vuln_assets.add(asset)
                 csl.print(tagged_name(asset).replace('\n', ''))
@@ -224,31 +219,22 @@ def draw_threats(title, assets, csl, args):
         if 'WAN reachable asset' in get_asset_risks(asset):
             links_lr.add(('INTERNET', asset))
         for linked_asset in asset.src_linked_assets(assets):
-            # if 'internal-' in linked_asset.name or 'internal-' in asset.name:
-            #     st()
-            # internet >> public linked asset
-            # if 'WAN reachable asset' in get_asset_risks(linked_asset):
-            #     links_lr.add(('INTERNET', linked_asset))
             if linked_asset.public:
                 links_lr.add(('INTERNET', linked_asset))
                 # linked asset >> asset
                 links_lr.add((linked_asset, asset))
-            elif linked_asset.get_type() == 'ELB' and not linked_asset.public:
-                links_rl.add((linked_asset, 'LAN'))
-                # asset << linked asset
-                links_rl.add((asset, linked_asset))
             else:
                 # asset << linked asset
                 links_rl.add((asset, linked_asset))
-            # if 'LAN reachable asset' in get_asset_risks(asset):
-            #     # Private linked ELB << lan
-            #     links_rl.add((f'Private {linked_asset.get_type()}', 'LAN'))
-            #     # linked asset << Private linked ELB
-            #     links_rl.add((asset, f'Private {linked_asset.get_type()}'))
-            # TODO: why ?
-            # else:
-            #     # linked asset >> vuln linked asset
-            #     links_lr.add((linked_asset, asset))
+        for linked_asset in asset.dst_linked_assets(assets):
+            if asset.public:
+                links_lr.add(('INTERNET', asset))
+                # asset >> linked_asset
+                links_lr.add((asset, linked_asset))
+            else:
+                links_rl.add((asset, 'LAN'))
+                # linked_asset << asset
+                links_rl.add((linked_asset, asset))
 
     # Remove assets without any links
     to_remove = []
@@ -283,10 +269,9 @@ def draw_threats(title, assets, csl, args):
             if not is_present(objects, asset):
                 objects.append(locals()[asset.get_type()](tagged_name(asset)))
             for linked_asset in asset.src_linked_assets(assets):
-                # if get_asset_color(linked_asset) == '🟢':
-                #     if not is_present(objects, f'Private {linked_asset.get_type()}'):
-                #         objects.append(locals()[linked_asset.get_type()](f'Private {linked_asset.get_type()}'))
-                # elif not is_present(objects, linked_asset):
+                if not is_present(objects, linked_asset):
+                    objects.append(locals()[linked_asset.get_type()](tagged_name(linked_asset)))
+            for linked_asset in asset.dst_linked_assets(assets):
                 if not is_present(objects, linked_asset):
                     objects.append(locals()[linked_asset.get_type()](tagged_name(linked_asset)))
         # Draw each Cluster
@@ -296,10 +281,9 @@ def draw_threats(title, assets, csl, args):
                     if not is_present(objects, asset):
                         objects.append(locals()[asset.get_type()](tagged_name(asset)))
                     for linked_asset in asset.src_linked_assets(assets):
-                        # if get_asset_color(linked_asset) == '🟢':
-                        #     if not is_present(objects, f'Private {linked_asset.get_type()}'):
-                        #         objects.append(locals()[linked_asset.get_type()](f'Private {linked_asset.get_type()}'))
-                        # elif not is_present(objects, linked_asset):
+                        if not is_present(objects, linked_asset):
+                            objects.append(locals()[linked_asset.get_type()](tagged_name(linked_asset)))
+                    for linked_asset in asset.dst_linked_assets(assets):
                         if not is_present(objects, linked_asset):
                             objects.append(locals()[linked_asset.get_type()](tagged_name(linked_asset)))
 
