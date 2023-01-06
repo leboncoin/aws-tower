@@ -2,7 +2,7 @@
 """
 Asset types S3 Group class
 
-Copyright 2020-2022 Leboncoin
+Copyright 2020-2023 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """

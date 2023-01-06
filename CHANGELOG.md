@@ -4,6 +4,17 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.4.0
+-----
+
+2023/01/06
+
+### New feature
+  - Add `--limit` and `--all` for draw
+
+### Changes
+  - Add Public ELB rule
+
 4.3.0
 -----
 
