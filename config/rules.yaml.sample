@@ -1,5 +1,5 @@
 ---
-version: 4.3.0
+version: 4.4.0
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -655,10 +655,40 @@ types:
                 name: attribute_value
                 value: authorization.has_no_auth_endpoint
         metadata:
-          risks: ['LAN reachable asset', 'Application vulnerability']
+          risks: ['WAN reachable asset']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
           detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
-          protection: ['T1040', 'T1046']
+          protection: ['T1190']
+      - message:
+          text: '[{service_name}] Public ELB'
+          args:
+            service_name:
+              type: attribute
+              key: name
+        severity: low
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is public
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: public
+          - type: has_attribute_equal
+            description: Check if the asset is a ELB
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: ELB
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
+        metadata:
+          risks: ['WAN reachable asset']
 # https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MySQL.html
 # https://dev.mysql.com/doc/relnotes/mysql/8.0/en/
 # https://dev.mysql.com/doc/relnotes/mysql/5.7/en/

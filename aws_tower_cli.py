@@ -2,7 +2,7 @@
 """
 AWS Tower CLI
 
-Copyright 2020-2022 Leboncoin
+Copyright 2020-2023 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
@@ -29,7 +29,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.3.0'
+VERSION = '4.4.0'
 
 def audit_handler(session, args, meta_types, cache):
     """
@@ -129,7 +129,7 @@ def draw_handler(session, args, meta_types, cache):
     }
     report = prepare_report(assets, meta_types, CONSOLE)
     audit_scan(assets, report, security_config, None, CONSOLE)
-    draw_threats(f'AWS Tower: Threat map of {args.profile}', assets, CONSOLE)
+    draw_threats(f'AWS Tower: Threat map of {args.profile}', assets, CONSOLE, args)
 
 def iam_handler(session, args, cache, csl):
     """
@@ -341,6 +341,14 @@ if __name__ == '__main__':
         action='append',
         choices=variables.META_TYPES,
         help='Types to display (default: display everything)')
+    DRAW_PARSER.add_argument(
+        '--limit',
+        action='store_true',
+        help='Restrict to only interesting assets among vulnerable')
+    DRAW_PARSER.add_argument(
+        '--all',
+        action='store_true',
+        help='All assets, without lonely nodes')
 
     # IAM Arguments
     IAM_PARSER = SUBPARSERS.add_parser(

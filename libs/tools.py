@@ -2,7 +2,7 @@
 """
 Tools class
 
-Copyright 2020-2022 Leboncoin
+Copyright 2020-2023 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
@@ -353,6 +353,17 @@ class Cache:
             return pickle.load(cache_file.open(mode='rb'))
         result = client.describe_vpc_endpoint_service_permissions(
             ServiceId=service_id)
+        self.save_file(result, cache_file)
+        return result
+    def get_elb_describe_target_health(self, key, client, targetgrouparn):
+        """
+        Custom cache method for elb.describe_target_health(TargetGroupArn=targetgrouparn)
+        """
+        cache_file = Path(f'{self.prefix}_{key}')
+        if cache_file.exists() and self.enabled:
+            return pickle.load(cache_file.open(mode='rb'))
+        result = client.describe_target_health(
+            TargetGroupArn=targetgrouparn)
         self.save_file(result, cache_file)
         return result
 

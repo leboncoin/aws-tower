@@ -2,7 +2,7 @@
 """
 Display library
 
-Copyright 2020-2022 Leboncoin
+Copyright 2020-2023 Leboncoin
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
@@ -111,7 +111,7 @@ def print_summary(assets, meta_types, console, security_config):
                         new_report[asset_type][issue['severity']] += 1
     console.print(json.dumps(new_report, sort_keys=False, indent=4))
 
-def draw_threats(title, assets, csl):
+def draw_threats(title, assets, csl, args):
     # Third-party library imports
     from diagrams import Diagram, Cluster
     from diagrams.aws.compute import EC2, EKS
@@ -134,8 +134,12 @@ def draw_threats(title, assets, csl):
 
     def get_asset_color(asset):
         color = '🟢'
+        # Ignore low
         if asset.security_issues:
-            color = '🟠'
+            color = '🟢'
+        for finding in asset.security_issues:
+            if finding['severity'] == 'medium':
+                color = '🟠'
         for finding in asset.security_issues:
             if finding['severity'] == 'high':
                 color = '🔴'
@@ -175,22 +179,81 @@ def draw_threats(title, assets, csl):
     def is_present(diag_objs, asset):
         return get_obj(diag_objs, asset)
 
-    csl.print('Vulnerable and Interesting assets')
-    asset_names = set()
-    vuln_assets = set()
-    for asset in assets:
-        if ('Application vulnerability' in get_asset_risks(asset) or \
-            'Powerful asset' in get_asset_risks(asset) or \
-            'Sensitive asset' in get_asset_risks(asset)) and \
-            asset.name not in asset_names:
-            asset_names.add(asset.name)
-            vuln_assets.add(asset)
-            csl.print(tagged_name(asset).replace('\n', ''))
+    # Generate "Vulnerable Assets", the base of the construction
+    if args.limit:
+        csl.print('Restrict to only interesting assets among vulnerable')
+        asset_names = set()
+        vuln_assets = set()
+        for asset in assets:
+            if ('Application vulnerability' in get_asset_risks(asset) or \
+                'Powerful asset' in get_asset_risks(asset) or \
+                'Sensitive asset' in get_asset_risks(asset)) and \
+                asset.name not in asset_names:
+                asset_names.add(asset.name)
+                vuln_assets.add(asset)
+                csl.print(tagged_name(asset).replace('\n', ''))
+    elif args.all:
+        csl.print('All assets, without lonely nodes')
+        asset_names = set()
+        vuln_assets = set()
+        for asset in assets:
+            if asset.get_type() in ['ELB', 'EC2', 'APIGW', 'CF'] and asset.name not in asset_names:
+                asset_names.add(asset.name)
+                vuln_assets.add(asset)
+                csl.print(tagged_name(asset).replace('\n', ''))
+    else:
+        csl.print('All vulnerable assets')
+        asset_names = set()
+        vuln_assets = set()
+        for asset in assets:
+            if get_asset_risks(asset) and asset.name not in asset_names:
+                asset_names.add(asset.name)
+                vuln_assets.add(asset)
+                csl.print(tagged_name(asset).replace('\n', ''))
+
+    # Generate links between all assets
+    links_lr = set()
+    links_rl = set()
+    for asset in vuln_assets:
+        # internet >> public vulnerable asset
+        if 'WAN reachable asset' in get_asset_risks(asset):
+            links_lr.add(('INTERNET', asset))
+        for linked_asset in asset.src_linked_assets(assets):
+            if linked_asset.public:
+                links_lr.add(('INTERNET', linked_asset))
+                # linked asset >> asset
+                links_lr.add((linked_asset, asset))
+            else:
+                # asset << linked asset
+                links_rl.add((asset, linked_asset))
+        for linked_asset in asset.dst_linked_assets(assets):
+            if asset.public:
+                links_lr.add(('INTERNET', asset))
+                # asset >> linked_asset
+                links_lr.add((asset, linked_asset))
+            else:
+                links_rl.add((asset, 'LAN'))
+                # linked_asset << asset
+                links_rl.add((linked_asset, asset))
+
+    # Remove assets without any links
+    to_remove = []
+    for i in vuln_assets:
+        asset_is_present = False
+        for link in links_lr:
+            asset_is_present = asset_is_present or i in link
+        for link in links_rl:
+            asset_is_present = asset_is_present or i in link
+        if not asset_is_present:
+            to_remove.append(i)
+    for asset in to_remove:
+        csl.print(f'Removing asset: {asset.name}')
+        vuln_assets.remove(asset)
 
     edge_attr = {
         "minlen": "5"
     }
-    with Diagram(title, direction='LR', edge_attr=edge_attr, outformat="svg"):
+    with Diagram(title, direction='LR', edge_attr=edge_attr):
         internet = InternetGateway('INTERNET')
         lan = InternetGateway('LAN')
 
@@ -206,10 +269,10 @@ def draw_threats(title, assets, csl):
             if not is_present(objects, asset):
                 objects.append(locals()[asset.get_type()](tagged_name(asset)))
             for linked_asset in asset.src_linked_assets(assets):
-                if get_asset_color(linked_asset) == '🟢':
-                    if not is_present(objects, f'Private {linked_asset.get_type()}'):
-                        objects.append(locals()[linked_asset.get_type()](f'Private {linked_asset.get_type()}'))
-                elif not is_present(objects, linked_asset):
+                if not is_present(objects, linked_asset):
+                    objects.append(locals()[linked_asset.get_type()](tagged_name(linked_asset)))
+            for linked_asset in asset.dst_linked_assets(assets):
+                if not is_present(objects, linked_asset):
                     objects.append(locals()[linked_asset.get_type()](tagged_name(linked_asset)))
         # Draw each Cluster
         for cluster_name, cluster_members in clusters.items():
@@ -218,32 +281,18 @@ def draw_threats(title, assets, csl):
                     if not is_present(objects, asset):
                         objects.append(locals()[asset.get_type()](tagged_name(asset)))
                     for linked_asset in asset.src_linked_assets(assets):
-                        if get_asset_color(linked_asset) == '🟢':
-                            if not is_present(objects, f'Private {linked_asset.get_type()}'):
-                                objects.append(locals()[linked_asset.get_type()](f'Private {linked_asset.get_type()}'))
-                        elif not is_present(objects, linked_asset):
+                        if not is_present(objects, linked_asset):
+                            objects.append(locals()[linked_asset.get_type()](tagged_name(linked_asset)))
+                    for linked_asset in asset.dst_linked_assets(assets):
+                        if not is_present(objects, linked_asset):
                             objects.append(locals()[linked_asset.get_type()](tagged_name(linked_asset)))
 
         # Create link between objects
-        links = []
-        for asset in vuln_assets:
-            if 'WAN reachable asset' in get_asset_risks(asset):
-                if (internet, get_obj(objects, asset)) not in links:
-                    links.append((internet, get_obj(objects, asset)))
-                    internet >> get_obj(objects, asset)
-            for linked_asset in asset.src_linked_assets(assets):
-                if 'WAN reachable asset' in get_asset_risks(linked_asset):
-                    if (internet, get_obj(objects, linked_asset)) not in links:
-                        links.append((internet, get_obj(objects, linked_asset)))
-                        internet >> get_obj(objects, linked_asset)
-                if get_asset_color(linked_asset) == '🟢':
-                    if (get_obj(objects, f'Private {linked_asset.get_type()}'), lan) not in links:
-                        links.append((get_obj(objects, f'Private {linked_asset.get_type()}'), lan))
-                        get_obj(objects, f'Private {linked_asset.get_type()}') << lan
-                    if (get_obj(objects, asset), get_obj(objects, f'Private {linked_asset.get_type()}')) not in links:
-                        links.append((get_obj(objects, asset), get_obj(objects, f'Private {linked_asset.get_type()}')))
-                        get_obj(objects, asset) << get_obj(objects, f'Private {linked_asset.get_type()}')
-                else:
-                    if (get_obj(objects, linked_asset), get_obj(objects, asset)) not in links:
-                        links.append((get_obj(objects, linked_asset), get_obj(objects, asset)))
-                        get_obj(objects, linked_asset) >> get_obj(objects, asset)
+        objects.append(internet)
+        objects.append(lan)
+        for link in links_lr:
+            if get_obj(objects, link[0]) and get_obj(objects, link[1]):
+                get_obj(objects, link[0]) >> get_obj(objects, link[1])
+        for link in links_rl:
+            if get_obj(objects, link[0]) and get_obj(objects, link[1]):
+                get_obj(objects, link[0]) << get_obj(objects, link[1])
