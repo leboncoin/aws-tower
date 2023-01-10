@@ -14,7 +14,8 @@ from dataclasses import dataclass
 import botocore
 
 from .asset_type import AssetType
-from .tools import log_me, search_filter_in
+from .asset_type_lambda import Lambda
+from .tools import get_lambda_name, log_me, search_filter_in
 
 # Debug
 # from pdb import set_trace as st
@@ -58,6 +59,7 @@ class APIGW(AssetType):
         for auth_type in authorization_types:
             self.authorization.add_auth_type(auth_type)
         self.location.region = region_name
+        self.backend_endpoint = []
 
     def report(self, report, brief=False):
         """
@@ -68,7 +70,8 @@ class APIGW(AssetType):
         else:
             asset_report = {
                 'ApiEndpoint': self.api_endpoint,
-                'AuthorizationTypes': self.authorization.types
+                'AuthorizationTypes': self.authorization.types,
+                'Backend Endpoints': self.backend_endpoint
             }
             if self.public:
                 asset_report['PubliclyAccessible'] = '[red]True[/red]'
@@ -96,6 +99,16 @@ class APIGW(AssetType):
             return f'<Public> {self.api_endpoint} Auth:{self.authorization.types}'
         return f'<Private> {self.api_endpoint} Auth:{self.authorization.types}'
 
+    def dst_linked_assets(self, assets):
+        """
+        Among all asset, find assets linked to the APIGW in destination
+        """
+        result = set()
+        for asset in assets:
+            if asset.get_type() == 'Lambda' and f'lambda:{asset.name}' in self.backend_endpoint:
+                result.add(asset)
+        return result
+
 @log_me('Getting API Gateway raw data...')
 def get_raw_data(raw_data, authorizations, boto_session, cache, _):
     """
@@ -108,8 +121,19 @@ def get_raw_data(raw_data, authorizations, boto_session, cache, _):
             'ag_get_rest_apis',
             ag_client,
             'get_rest_apis')['items']
-    except botocore.exceptions.ClientError:
-        raw_data['ag_raw'] = []
+        raw_data['ag_rest_api_raw'] = {}
+        for rest_api in raw_data['ag_raw']:
+            raw_data['ag_rest_api_raw'][rest_api['id']] = []
+            resources = ag_client.get_resources(restApiId=rest_api['id'])['items']
+            for resource in resources:
+                if 'resourceMethods' not in resource:
+                    continue
+                raw_data['ag_rest_api_raw'][rest_api['id']].append(
+                    ag_client.get_integration(
+                        restApiId=rest_api['id'],
+                        resourceId=resource['id'],
+                        httpMethod='GET'))
+    except botocore.exceptions.ClientError as err_msg:
         authorizations['apigw'] = False
 
     agv2_client = boto_session.client('apigatewayv2')
@@ -119,8 +143,21 @@ def get_raw_data(raw_data, authorizations, boto_session, cache, _):
             'agv2_get_apis',
             agv2_client,
             'get_apis')['Items']
+        raw_data['agv2_rest_api_raw'] = {}
+        for rest_api in raw_data['agv2_raw']:
+            raw_data['agv2_rest_api_raw'][rest_api['ApiId']] = agv2_client.get_integrations(
+                    ApiId=rest_api['ApiId'])['Items']
     except botocore.exceptions.ClientError:
         raw_data['agv2_raw'] = []
+        authorizations['apigw'] = False
+
+    lambda_client = boto_session.client('lambda')
+    try:
+        raw_data['lambda_raw'] = cache.get(
+            'lambda_get_functions',
+            lambda_client,
+            'list_functions')['Functions']
+    except botocore.exceptions.ClientError as err_msg:
         authorizations['apigw'] = False
     return raw_data, authorizations
 
@@ -142,6 +179,9 @@ def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, 
                 boto_session.region_name,
                 [apigw['apiKeySource']],
                 public=is_public)
+            for rest_api in raw_data['ag_rest_api_raw'][apigw['id']]:
+                asset.backend_endpoint.append(
+                    get_lambda_name(rest_api['uri']))
             cache.save_asset(f'APIGW_{apigw["name"]}', asset)
         if asset is not None and name_filter.lower() in asset.name.lower():
             assets.append(asset)
@@ -160,7 +200,18 @@ def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, 
                 boto_session.region_name,
                 authorization_types,
                 public=True)
+            for rest_api in raw_data['agv2_rest_api_raw'][apigw['ApiId']]:
+                asset.backend_endpoint.append(
+                    get_lambda_name(rest_api['IntegrationUri']))
             cache.save_asset(f'APIGW_{apigw["Name"]}', asset)
+        if search_filter_in(asset, name_filter):
+            assets.append(asset)
+    for lambda_fun in raw_data['lambda_raw']:
+        asset = cache.get_asset(f'LAMBDA_{lambda_fun["FunctionName"]}')
+        if asset is None:
+            authorization_types = []
+            asset = Lambda(lambda_fun['FunctionName'])
+            cache.save_asset(f'LAMBDA_{lambda_fun["FunctionName"]}', asset)
         if search_filter_in(asset, name_filter):
             assets.append(asset)
     return assets, authorizations

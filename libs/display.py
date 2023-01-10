@@ -112,9 +112,9 @@ def print_summary(assets, meta_types, console, security_config):
     console.print(json.dumps(new_report, sort_keys=False, indent=4))
 
 def draw_threats(title, assets, csl, args):
-    # Third-party library imports
+    # Diagrams imports
     from diagrams import Diagram, Cluster
-    from diagrams.aws.compute import EC2, EKS
+    from diagrams.aws.compute import EC2, EKS, LambdaFunction as Lambda
     from diagrams.aws.network import ELB, CloudFront, APIGateway as APIGW, VPC
     from diagrams.aws.database import RDS
     from diagrams.aws.storage import S3

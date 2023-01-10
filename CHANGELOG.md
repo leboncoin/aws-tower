@@ -4,6 +4,14 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.4.1
+-----
+
+2023/01/10
+
+### New feature
+  - Add Lambda object, displayed in draw for API Gateway
+
 4.4.0
 -----
 
