@@ -23,18 +23,6 @@ class Lambda(AssetType):
         """
         Add an asset with only relevent informations
         """
-        if brief:
-            asset_report = self.report_brief()
-        else:
-            asset_report = {}
-            if self.security_issues:
-                self.update_audit_report(asset_report)
-        if 'Lambda' not in report[self.location.region]:
-            report[self.location.region]['Lambda'] = \
-                { self.name: asset_report }
-            return report
-        report[self.location.region]['Lambda'].update(
-            { self.name: asset_report })
         return report
 
     def report_brief(self):
