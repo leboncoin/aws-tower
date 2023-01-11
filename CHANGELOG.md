@@ -11,6 +11,7 @@ AWS-TOWER
 
 ### New feature
   - Add Lambda object, displayed in draw for API Gateway
+  - Add `-o|--output` to save JSON audit and discovery in the specified file
 
 4.4.0
 -----
