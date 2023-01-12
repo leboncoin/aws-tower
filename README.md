@@ -55,7 +55,9 @@ options:
 
 ```bash
 $ aws-tower audit --help
-usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-f FILTER] [-v] [-b] [-s] profile
+usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-f FILTER] [-v] [-b] [-s]
+                              [-o OUTPUT]
+                              profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
@@ -73,11 +75,13 @@ options:
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets
+  -o OUTPUT, --output OUTPUT
+                        Save the JSON output inside the specified file
 ```
 
 ```bash
 $ aws-tower discover --help
-usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-p] [-f FILTER] [-v] [-b] [-s] profile
+usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-p] [-f FILTER] [-v] [-b] [-s] [-o OUTPUT] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
@@ -92,6 +96,8 @@ options:
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets
+  -o OUTPUT, --output OUTPUT
+                        Save the JSON output inside the specified file
 ```
 
 ```bash
