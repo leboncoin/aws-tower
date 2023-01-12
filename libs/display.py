@@ -11,6 +11,7 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 # Standard library imports
 import json
 import logging
+from pathlib import Path
 
 from .patterns import Patterns
 from .tools import NoColor, log_me
@@ -70,7 +71,7 @@ def audit_scan(assets, report, security_config, brief, console):
         report = asset.report(report, brief=brief)
     return report
 
-def print_report(assets, meta_types, console, brief=False, security_config=None):
+def print_report(assets, meta_types, console, output_file, brief=False, security_config=None):
     """
     Print subnets
     """
@@ -83,7 +84,11 @@ def print_report(assets, meta_types, console, brief=False, security_config=None)
 
     if console is None:
         console = NoColor()
-    console.print(str_report)
+    if output_file:
+        Path(output_file).write_text(str_report, encoding='utf-8')
+        console.print(f'Output printed in {output_file}.')
+    else:
+        console.print(str_report)
     return True
 
 def print_summary(assets, meta_types, console, security_config):
@@ -112,9 +117,9 @@ def print_summary(assets, meta_types, console, security_config):
     console.print(json.dumps(new_report, sort_keys=False, indent=4))
 
 def draw_threats(title, assets, csl, args):
-    # Third-party library imports
+    # Diagrams imports
     from diagrams import Diagram, Cluster
-    from diagrams.aws.compute import EC2, EKS
+    from diagrams.aws.compute import EC2, EKS, LambdaFunction as Lambda
     from diagrams.aws.network import ELB, CloudFront, APIGateway as APIGW, VPC
     from diagrams.aws.database import RDS
     from diagrams.aws.storage import S3

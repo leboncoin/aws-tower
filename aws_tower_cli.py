@@ -29,7 +29,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.4.0'
+VERSION = '4.4.1'
 
 def audit_handler(session, args, meta_types, cache):
     """
@@ -70,6 +70,7 @@ def audit_handler(session, args, meta_types, cache):
             assets,
             variables.META_TYPES,
             CONSOLE,
+            args.output,
             brief=args.brief,
             security_config=security_config
         )
@@ -100,6 +101,7 @@ def discover_handler(session, args, meta_types, cache):
             assets,
             variables.META_TYPES,
             CONSOLE,
+            args.output,
             brief=args.brief,
             security_config=None
         )
@@ -292,6 +294,11 @@ if __name__ == '__main__':
         '-s', '--summary',
         action='store_true',
         help='Summary of the account assets')
+    AUDIT_PARSER.add_argument(
+        '-o', '--output',
+        action='store',
+        default='',
+        help='Save the JSON output inside the specified file')
 
     # DISCOVER Arguments
     DISCOVER_PARSER = SUBPARSERS.add_parser(
@@ -327,6 +334,11 @@ if __name__ == '__main__':
         '-s', '--summary',
         action='store_true',
         help='Summary of the account assets')
+    DISCOVER_PARSER.add_argument(
+        '-o', '--output',
+        action='store',
+        default='',
+        help='Save the JSON output inside the specified file')
 
     # DRAW Arguments
     DRAW_PARSER = SUBPARSERS.add_parser(

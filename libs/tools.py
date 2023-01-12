@@ -165,6 +165,12 @@ def get_account_in_arn(arn):
         return arn.split(':')[4]
     return '000000000000'
 
+def get_lambda_name(apigw_arn):
+    """
+    Extracts the lambda name of the function in an APIGW integration
+    """
+    return 'lambda:' + apigw_arn.split(':')[-1].split('/')[0]
+
 def get_network(subnet_id, subnets_raw):
     """
     Get simple name for vpc and subnet
