@@ -229,6 +229,7 @@ def draw_threats(title, assets, csl, args):
                 # linked asset >> asset
                 links_lr.add((linked_asset, asset))
             else:
+                links_rl.add((linked_asset, 'LAN'))
                 # asset << linked asset
                 links_rl.add((asset, linked_asset))
         for linked_asset in asset.dst_linked_assets(assets):
@@ -256,7 +257,7 @@ def draw_threats(title, assets, csl, args):
         vuln_assets.remove(asset)
 
     edge_attr = {
-        "minlen": "5"
+        'minlen': '5'
     }
     with Diagram(title, direction='LR', edge_attr=edge_attr):
         internet = InternetGateway('INTERNET')
