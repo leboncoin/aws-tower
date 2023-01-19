@@ -71,7 +71,7 @@ options:
   -M {info,low,medium,high,critical}, --max-severity {info,low,medium,high,critical}
                         max severity level to report when security is enabled (default: high)
   -f FILTER, --filter FILTER
-                        Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"
+                        Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx", "os:xxx"
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets
@@ -92,7 +92,7 @@ options:
                         Types to display (default: display everything)
   -p, --public-only     Display public assets only
   -f FILTER, --filter FILTER
-                        Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"
+                        Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx", "os:xxx"
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets

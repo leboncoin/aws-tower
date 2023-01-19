@@ -380,6 +380,7 @@ def search_filter_in(asset, filter_str):
     - port:xxx -> asset.security_groups (ELB, EC2)
     - engine:xxx -> asset.engine (RDS)
     - version:xxx -> asset.version (EKS, RDS)
+    - os:xxx -> asset.version (EC2)
     """
     filter_str = filter_str.lower()
     if asset is None:
@@ -397,6 +398,8 @@ def search_filter_in(asset, filter_str):
             is_found = asset.version.startswith(version)
         if asset.get_type() == 'RDS' and '==' in asset.engine:
             is_found = asset.engine.split('==')[1].startswith(version)
+    elif filter_str.startswith('os:') and hasattr(asset, 'operating_system'):
+        is_found = asset.operating_system.lower().startswith(filter_str.split(':')[1])
     else:
         if filter_str in asset.name.lower():
             return True
