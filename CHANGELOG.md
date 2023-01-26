@@ -4,6 +4,18 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.4.2
+-----
+
+2023/01/24
+
+### New feature
+  - Add 'os' filter
+
+### Changes
+  - Display InstanceID for EC2
+  - Filter IAM roles to display only Instance Profiles
+
 4.4.1
 -----
 

@@ -18,6 +18,7 @@ import re
 import ruamel.yaml
 from ruamel.yaml.error import YAMLError
 
+# Debug
 # from pdb import set_trace as st
 
 LOGGER = logging.getLogger('aws-tower')
@@ -406,7 +407,8 @@ def search_filter_in(asset, filter_str):
         for attribute in [
             'aliases', 'api_endpoint', 'arn',
             'dns_record', 'dst_account_id', 'endpoint',
-            'engine', 'private_ip', 'public_ip', 'src_account_id', 'url']:
+            'engine', 'private_ip', 'public_ip', 'src_account_id', 'url',
+            'role_poweruser', 'role_admin']:
             is_found |= hasattr(asset, attribute) and \
                 isinstance(getattr(asset, attribute), str) and \
                 filter_str in getattr(asset, attribute).lower()

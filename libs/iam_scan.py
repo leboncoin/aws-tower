@@ -289,6 +289,7 @@ def iam_get_roles(
                     role_obj.resource_id.startswith('aws-service-role') or \
                     role_obj.resource_id.startswith('service-role'):
                     continue
+                role_obj.is_instance_profile = {'Service': 'ec2.amazonaws.com'} in [ x['Principal'] for x in role['AssumeRolePolicyDocument']['Statement'] if 'Principal' in x]
                 if role['RoleName'] in iam_rolename_passlist:
                     continue
                 actions = []
