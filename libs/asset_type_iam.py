@@ -39,6 +39,7 @@ class IAM(AssetType):
         self.admin_services = None # None instead of set(), for rules matching
         self.admin_actions = set()
         self.dangerous_actions = None # None instead of set(), for rules matching
+        self.is_instance_profile = False
         self.poweruser_services = None # None instead of set(), for rules matching
         self.poweruser_actions = set()
         self.reader_services = None # TODO: remove it, useless

@@ -17,6 +17,7 @@ import libs.asset_type_ec2 as ec2
 import libs.asset_type_eks as eks
 import libs.asset_type_elb as elb
 import libs.asset_type_iam_group as iam
+import libs.asset_type_mq as mq
 import libs.asset_type_rds as rds
 import libs.asset_type_route53 as r53
 import libs.asset_type_s3_group as s3
@@ -38,6 +39,7 @@ def get_raw_data(boto_session, meta_types, cache, console):
         'eks': True,
         'elb': True,
         'iam': True,
+        'mq': True,
         'rds': True,
         's3': True,
         'route53': True,
@@ -78,6 +80,14 @@ def get_raw_data(boto_session, meta_types, cache, console):
 
     if 'ELB' in meta_types:
         raw_data, authorizations = elb.get_raw_data(
+            raw_data,
+            authorizations,
+            boto_session,
+            cache,
+            console)
+
+    if 'MQ' in meta_types:
+        raw_data, authorizations = mq.get_raw_data(
             raw_data,
             authorizations,
             boto_session,
@@ -203,6 +213,16 @@ def aws_scan(
             iam_action_passlist,
             iam_rolename_passlist,
             name_filter,
+            cache,
+            console)
+
+    if 'MQ' in meta_types:
+        assets, authorizations = mq.parse_raw_data(
+            assets,
+            authorizations,
+            raw_data,
+            name_filter,
+            public_only,
             cache,
             console)
 

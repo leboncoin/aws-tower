@@ -12,6 +12,7 @@ AWS Services monitored:
 - EKS
 - ALB/ELB
 - IAM
+- MQ
 - RDS
 - S3
 - VPC
@@ -55,8 +56,8 @@ options:
 
 ```bash
 $ aws-tower audit --help
-usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-f FILTER] [-v] [-b] [-s]
-                              [-o OUTPUT]
+usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-f FILTER] [-v] [-b]
+                              [-s] [-o OUTPUT]
                               profile
 
 positional arguments:
@@ -64,14 +65,14 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}
                         Types to display (default: display everything)
   -m {info,low,medium,high,critical}, --min-severity {info,low,medium,high,critical}
                         min severity level to report when security is enabled (default: medium)
   -M {info,low,medium,high,critical}, --max-severity {info,low,medium,high,critical}
                         max severity level to report when security is enabled (default: high)
   -f FILTER, --filter FILTER
-                        Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"
+                        Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx", "os:xxx"
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets
@@ -81,18 +82,18 @@ options:
 
 ```bash
 $ aws-tower discover --help
-usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] [-p] [-f FILTER] [-v] [-b] [-s] [-o OUTPUT] profile
+usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}] [-p] [-f FILTER] [-v] [-b] [-s] [-o OUTPUT] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 options:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}
                         Types to display (default: display everything)
   -p, --public-only     Display public assets only
   -f FILTER, --filter FILTER
-                        Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"
+                        Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx", "os:xxx"
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
   -s, --summary         Summary of the account assets

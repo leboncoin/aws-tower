@@ -46,7 +46,8 @@ class EC2(AssetType):
         else:
             asset_report = {
                 'OS': self.operating_system,
-                'PrivateIP': self.private_ip
+                'PrivateIP': self.private_ip,
+                'InstanceID': self.instance_id
             }
             if self.public:
                 asset_report['PubliclyAccessible'] = '[red]True[/red]'

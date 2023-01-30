@@ -29,7 +29,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.4.1'
+VERSION = '4.4.2'
 
 def audit_handler(session, args, meta_types, cache):
     """
@@ -281,7 +281,7 @@ if __name__ == '__main__':
         '-f', '--filter',
         action='store',
         default='',
-        help='Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"')
+        help='Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx", "os:xxx"')
     AUDIT_PARSER.add_argument(
         '-v', '--verbose',
         action='store_true',
@@ -321,7 +321,7 @@ if __name__ == '__main__':
         '-f', '--filter',
         action='store',
         default='',
-        help='Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx"')
+        help='Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx", "os:xxx"')
     DISCOVER_PARSER.add_argument(
         '-v', '--verbose',
         action='store_true',

@@ -98,6 +98,7 @@ def parse_raw_data(
     """
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
+    Only display EC2 instance profile
     """
     iamgroup = IAMGroup(name='IAM roles')
     client_iam = boto_session.client('iam')
@@ -107,7 +108,7 @@ def parse_raw_data(
             client_iam, resource_iam, cache,
             iam_action_passlist=iam_action_passlist,
             iam_rolename_passlist=iam_rolename_passlist):
-            if search_filter_in(role, name_filter):
+            if search_filter_in(role, name_filter) and role.is_instance_profile:
                 iamgroup.list.append(role)
     except botocore.exceptions.ClientError:
         authorizations['iam'] = False
