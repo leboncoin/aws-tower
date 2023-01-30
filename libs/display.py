@@ -125,6 +125,7 @@ def draw_threats(title, assets, csl, args):
     from diagrams.aws.storage import S3
     from diagrams.aws.general import InternetGateway
     from diagrams.aws.management import OrganizationsAccount
+    from diagrams.aws.integration import MQ
 
     def get_asset_risks(asset):
         report = set()

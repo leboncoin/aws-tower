@@ -7,10 +7,11 @@ AWS-TOWER
 4.4.2
 -----
 
-2023/01/24
+2023/01/26
 
 ### New feature
   - Add 'os' filter
+  - Add 'MQ' asset type
 
 ### Changes
   - Display InstanceID for EC2

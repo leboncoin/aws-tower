@@ -392,7 +392,7 @@ def search_filter_in(asset, filter_str):
         for security_group in asset.security_groups:
             is_found |= port in asset.security_groups[security_group].keys()
     elif filter_str.startswith('engine:') and hasattr(asset, 'engine'):
-        is_found = asset.engine.startswith(filter_str.split(':')[1])
+        is_found = asset.engine.lower().startswith(filter_str.split(':')[1])
     elif filter_str.startswith('version:'):
         version = filter_str.split(':')[1]
         if asset.get_type() == 'EKS':
