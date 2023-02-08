@@ -27,7 +27,6 @@ class EC2(AssetType):
         super().__init__('EC2', name, public=public)
         self.operating_system = 'unknown'
         self.operating_system_name = 'unknown'
-        self.is_os_deprecated = False
         self.private_ip = private_ip
         self.public_ip = ''
         self.security_groups = {}
@@ -46,11 +45,8 @@ class EC2(AssetType):
         if brief:
             asset_report = self.report_brief()
         else:
-            os_colored = f'{self.operating_system} ({self.operating_system_name})'
-            if self.is_os_deprecated:
-                os_colored = f'[red]{os_colored}[/red]'
             asset_report = {
-                'OS': os_colored,
+                'OS': f'{self.operating_system} ({self.operating_system_name})',
                 'PrivateIP': self.private_ip,
                 'InstanceID': self.instance_id
             }
@@ -215,10 +211,6 @@ def scan(ec2, sg_raw, subnets_raw, kp_raw, boto_session, public_only):
     if 'ImageId' in ec2:
         try:
             ec2_asset.operating_system = ec2_res.Image(ec2['ImageId']).platform_details
-        except:
-            pass
-        try:
-            ec2_asset.is_os_deprecated = datetime.strptime(ec2_res.Image(ec2['ImageId']).deprecation_time, '%Y-%m-%dT%H:%M:%S.000Z') < datetime.now()
         except:
             pass
         try:
