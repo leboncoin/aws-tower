@@ -400,7 +400,8 @@ def search_filter_in(asset, filter_str):
         if asset.get_type() == 'RDS' and '==' in asset.engine:
             is_found = asset.engine.split('==')[1].startswith(version)
     elif filter_str.startswith('os:') and hasattr(asset, 'operating_system'):
-        is_found = asset.operating_system.lower().startswith(filter_str.split(':')[1])
+        os_name = f'{asset.operating_system}+{asset.operating_system_name}'.lower()
+        is_found = os_name in filter_str.split(':')[1] or filter_str.split(':')[1] in os_name
     else:
         if filter_str in asset.name.lower():
             return True

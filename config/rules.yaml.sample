@@ -1,5 +1,5 @@
 ---
-version: 4.4.2
+version: 4.4.3
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -1045,6 +1045,46 @@ types:
               - type: attribute
                 name: attribute_value
                 value: operating_system
+        metadata:
+          risks: ['Application vulnerability']
+      - message:
+          text: '[{service_name}] EC2 is running a deprecated OS'
+          args:
+            service_name:
+              type: attribute
+              key: name
+        severity: medium
+        rules:
+          - type: has_attribute_equal
+            description: Check if the asset is an EC2
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: EC2
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: aws_service
+          - type: has_attribute_equal
+            description: Check if is_os_deprecated is in the asset
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: is_os_deprecated
+          - type: has_attribute_equal
+            description: Check if is_os_deprecated is True
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: true
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: is_os_deprecated
         metadata:
           risks: ['Application vulnerability']
       - message:
