@@ -150,6 +150,22 @@ $ export PATROWL_PUBLIC_ENDPOINT=http://localhost/
 $ python -c 'from monitoring.aws_lambda import aws_tower_child; aws_tower_child.main({ "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly", "env": "pro|pre|dev", "region_name": "eu-west-1", "meta_types": ["S3"] })'
 ```
 
+
+## Usage (layers)
+
+```bash
+$ aws-tower --layer > /tmp/aws-tower-layer.json
+```
+
+Then, go to [Attack Navigator](https://mitre-attack.github.io/attack-navigator/#comment_underline=false)
+
+Click on "Open Existing Layer" -> "Upload from local"
+
+Upload your generated file, `/tmp/aws-tower-layer.json`
+
+You will have a warning, **Click No** to refuse the upgrade on Att&ck v12, stay in v11.
+
+
 ## Findings
 
 Some rules already exists in `config/rules.yaml.sample`, but you can add your own too.

@@ -135,9 +135,9 @@ def generate_layer(rules_path):
         for rule in [
             *rules['types']['security_group']['findings'],
             *rules['types']['attributes']['findings']]:
-            if 'techniques' not in rule or i not in rule['techniques']:
+            if 'metadata' not in rule or i not in rule['metadata']:
                 continue
-            for tech_id in rule['techniques'][i]:
+            for tech_id in rule['metadata'][i]:
                 tech_ids.add(tech_id)
         for tech_id in tech_ids:
             # Check if technique is not already in the layer
