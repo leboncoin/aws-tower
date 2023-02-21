@@ -204,6 +204,7 @@ def iam_display(
     console,
     iam_action_passlist=[],
     iam_rolename_passlist=[],
+    only_dangerous_actions=False,
     verbose=False):
     """
     Display information about the ARN
@@ -234,11 +235,14 @@ def iam_display(
     # Display actions
     iam_obj.actions = actions
     iam_obj.simplify_actions()
-    if iam_obj.admin_actions:
-        console.print(f'[red]Admin actions: {iam_obj.admin_actions}[/red]')
-    if iam_obj.poweruser_actions and min_rights != 'admin':
-        console.print(f'[yellow]Poweruser actions: {iam_obj.poweruser_actions}[/yellow]')
-    console.print(f'ALL Actions: {set(actions)}')
+    if iam_obj.dangerous_actions:
+        console.print(f'[red]Dangerous actions: {iam_obj.dangerous_actions}[/red]')
+    if not only_dangerous_actions:
+        if iam_obj.admin_actions:
+            console.print(f'[red]Admin actions: {iam_obj.admin_actions}[/red]')
+        if iam_obj.poweruser_actions and min_rights != 'admin':
+            console.print(f'[yellow]Poweruser actions: {iam_obj.poweruser_actions}[/yellow]')
+        console.print(f'ALL Actions: {set(actions)}')
 
 def get_role_services(role):
     """
@@ -314,6 +318,7 @@ def iam_display_roles(
     console,
     iam_action_passlist=[],
     iam_rolename_passlist=[],
+    only_dangerous_actions=False,
     verbose=False):
     """
     Display all roles actions
@@ -327,8 +332,12 @@ def iam_display_roles(
         arn=arn,
         service=service)
     for role in roles:
-        actions = role.print_actions(min_rights)
-        if actions:
-            console.print(actions)
-            if verbose:
-                console.print(f'Actions: {role.actions}')
+        if only_dangerous_actions:
+            if role.dangerous_actions:
+                print(f'{role.name}: {role.dangerous_actions}')
+        else:
+            actions = role.print_actions(min_rights)
+            if actions:
+                console.print(actions)
+                if verbose:
+                    console.print(f'Actions: {role.actions}')

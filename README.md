@@ -116,7 +116,7 @@ options:
 
 ```bash
 $ aws-tower iam --help
-usage: aws_tower_cli.py iam [-h] [-s SOURCE] [-a ACTION] [--min-rights {admin,poweruser,reader}] [--service SERVICE] [-d] [-v] profile
+usage: aws_tower_cli.py iam [-h] [-s SOURCE] [-a ACTION] [--min-rights {admin,poweruser,reader}] [--service SERVICE] [-d] [--only-dangerous-actions] [-v] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
@@ -131,6 +131,8 @@ options:
                         Minimum actions rights
   --service SERVICE     Action Category to match
   -d, --display         Display informations about the source ARN
+  --only-dangerous-actions
+                        Display IAM dangerous actions only
   -v, --verbose         Verbose output of the account assets
 ```
 
