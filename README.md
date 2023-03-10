@@ -172,6 +172,26 @@ Upload your generated file, `/tmp/aws-tower-layer.json`
 You will have a warning, **Click No** to refuse the upgrade on Att&ck v12, stay in v11.
 
 
+## Usage (draw)
+
+```bash
+# Display demo-account with only medium, high and critical findings
+$ aws-tower draw demo-account
+
+# Display demo-account, with all assets
+$ aws-tower draw demo-account --all
+
+# Display VPC peering connexion in demo-account
+$ aws-tower draw demo-account --vpc-peering-dot /tmp/_vpc_demo_account.dot
+$ dot -Tjpg /tmp/_vpc_demo_account.dot -o /tmp/_vpc_demo_account.jpg
+
+# Display VPC peering connexion in all accounts
+$ for account in $(aws-tower -p); do aws-tower draw $account --vpc-peering-dot "/tmp/_${account}.dot"; done
+$ (echo 'graph {'; grep -h -- ';' /tmp/_*.dot | sort -u; echo '}')> /tmp/complete.dot
+$ dot -Tjpg /tmp/complete.dot -o /tmp/graph.jpg
+```
+
+
 ## Findings
 
 Some rules already exists in `config/rules.yaml.sample`, but you can add your own too.
