@@ -4,6 +4,20 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.4.3
+-----
+
+2023/03/10
+
+### New feature
+  - Display EC2 OS info and improve filter
+  - Pattern: add rule has_attribute_contain*
+  - Add --only-dangerous-actions for iam verb
+
+### Fixtures
+  - Fix `--layer` and add Usage in README
+
+
 4.4.2
 -----
 
