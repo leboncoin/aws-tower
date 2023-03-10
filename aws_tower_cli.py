@@ -17,8 +17,8 @@ import boto3
 import botocore
 from rich import console
 
-from libs.display import audit_scan, draw_threats, prepare_report, \
-    print_report, print_summary
+from libs.display import audit_scan, draw_threats, draw_vpc_peering, \
+    prepare_report, print_report, print_summary
 from libs.iam_scan import complete_source_arn, iam_display, \
     iam_display_roles, iam_extract, iam_simulate
 from libs.scan import aws_scan
@@ -29,7 +29,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.4.3'
+VERSION = '4.4.4'
 
 def audit_handler(session, args, meta_types, cache):
     """
@@ -110,6 +110,9 @@ def draw_handler(session, args, meta_types, cache):
     """
     Handle draw argument
     """
+    if args.vpc_peering_dot:
+        meta_types = ['VPC']
+
     assets = aws_scan(
         session,
         cache,
@@ -131,7 +134,10 @@ def draw_handler(session, args, meta_types, cache):
     }
     report = prepare_report(assets, meta_types, CONSOLE)
     audit_scan(assets, report, security_config, None, CONSOLE)
-    draw_threats(f'AWS Tower: Threat map of {args.profile}', assets, CONSOLE, args)
+    if args.vpc_peering_dot:
+        draw_vpc_peering(assets, args.vpc_peering_dot, args)
+    else:
+        draw_threats(f'AWS Tower: Threat map of {args.profile}', assets, CONSOLE, args)
 
 def iam_handler(session, args, cache, csl):
     """
@@ -363,6 +369,10 @@ if __name__ == '__main__':
         '--all',
         action='store_true',
         help='All assets, without lonely nodes')
+    DRAW_PARSER.add_argument(
+        '--vpc-peering-dot',
+        action='store',
+        help='Save VPC peering dot file')
 
     # IAM Arguments
     IAM_PARSER = SUBPARSERS.add_parser(

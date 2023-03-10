@@ -103,15 +103,19 @@ options:
 
 ```bash
 $ aws-tower draw --help
-usage: aws_tower_cli.py draw [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] profile
+usage: aws_tower_cli.py draw [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}] [--limit] [--all] [--vpc-peering-dot VPC_PEERING_DOT] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 options:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}
                         Types to display (default: display everything)
+  --limit               Restrict to only interesting assets among vulnerable
+  --all                 All assets, without lonely nodes
+  --vpc-peering-dot VPC_PEERING_DOT
+                        Save VPC peering dot file
 ```
 
 ```bash

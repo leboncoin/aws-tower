@@ -12,7 +12,9 @@ Updated by Fabien MARTINEZ (fabien.martinez@adevinta.com)
 import json
 import logging
 from pathlib import Path
+import re
 
+from config import variables
 from .patterns import Patterns
 from .tools import NoColor, log_me
 
@@ -115,6 +117,36 @@ def print_summary(assets, meta_types, console, security_config):
                     else:
                         new_report[asset_type][issue['severity']] += 1
     console.print(json.dumps(new_report, sort_keys=False, indent=4))
+
+def clean_dot_name(vpc_name, vpc_region):
+    """
+    Return a valid dot name
+    """
+    trusted_accounts_list_path = variables.TRUSTED_ACCOUNTS_LIST_PATH
+    trusted_accounts_list = []
+    if trusted_accounts_list_path.exists():
+        trusted_accounts_list = trusted_accounts_list_path.read_text(
+            encoding='ascii', errors='ignore').split('\n')
+
+    for trust_account in trusted_accounts_list:
+        if trust_account.startswith(f'{vpc_name}:'):
+            name = trust_account.split(':')[1]
+
+    if re.search('^[0-9]', name):
+        name = '_' + name
+    return (name+'_'+vpc_region).replace('-', '_').replace(' ', '_').replace(':', '_')
+
+def draw_vpc_peering(assets, dot_filename, args):
+    """
+    Returns a dot file representing the VPC peering link.
+    """
+    dot_path = Path(dot_filename).open('w', encoding='utf-8')
+    dot_path.write('graph {\n')
+    for vpc in assets:
+        if not vpc.is_peering:
+            continue
+        dot_path.write(f'{clean_dot_name(vpc.src_account_id, vpc.src_region_id)} -- {clean_dot_name(vpc.dst_account_id, vpc.dst_region_id)};\n')
+    dot_path.write('}\n')
 
 def draw_threats(title, assets, csl, args):
     # Diagrams imports

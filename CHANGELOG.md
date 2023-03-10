@@ -4,6 +4,12 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.4.4
+-----
+
+### New feature
+  - Add `--vpc-peering-dot` to save vpc peering in a dot file
+
 4.4.3
 -----
 
@@ -12,7 +18,7 @@ AWS-TOWER
 ### New feature
   - Display EC2 OS info and improve filter
   - Pattern: add rule has_attribute_contain*
-  - Add --only-dangerous-actions for iam verb
+  - Add `--only-dangerous-actions` for iam verb
 
 ### Fixtures
   - Fix `--layer` and add Usage in README
