@@ -26,6 +26,7 @@ class EC2(AssetType):
     def __init__(self, name: str, private_ip: str, public: bool=False):
         super().__init__('EC2', name, public=public)
         self.operating_system = 'unknown'
+        self.operating_system_name = 'unknown'
         self.private_ip = private_ip
         self.public_ip = ''
         self.security_groups = {}
@@ -45,7 +46,7 @@ class EC2(AssetType):
             asset_report = self.report_brief()
         else:
             asset_report = {
-                'OS': self.operating_system,
+                'OS': f'{self.operating_system} ({self.operating_system_name})',
                 'PrivateIP': self.private_ip,
                 'InstanceID': self.instance_id
             }
@@ -210,6 +211,10 @@ def scan(ec2, sg_raw, subnets_raw, kp_raw, boto_session, public_only):
     if 'ImageId' in ec2:
         try:
             ec2_asset.operating_system = ec2_res.Image(ec2['ImageId']).platform_details
+        except:
+            pass
+        try:
+            ec2_asset.operating_system_name = ec2_res.Image(ec2['ImageId']).name
         except:
             pass
     if 'Tags' in ec2:

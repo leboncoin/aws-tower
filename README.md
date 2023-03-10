@@ -116,7 +116,7 @@ options:
 
 ```bash
 $ aws-tower iam --help
-usage: aws_tower_cli.py iam [-h] [-s SOURCE] [-a ACTION] [--min-rights {admin,poweruser,reader}] [--service SERVICE] [-d] [-v] profile
+usage: aws_tower_cli.py iam [-h] [-s SOURCE] [-a ACTION] [--min-rights {admin,poweruser,reader}] [--service SERVICE] [-d] [--only-dangerous-actions] [-v] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
@@ -131,6 +131,8 @@ options:
                         Minimum actions rights
   --service SERVICE     Action Category to match
   -d, --display         Display informations about the source ARN
+  --only-dangerous-actions
+                        Display IAM dangerous actions only
   -v, --verbose         Verbose output of the account assets
 ```
 
@@ -149,6 +151,22 @@ $ export PATROWL_PUBLIC_ENDPOINT=http://localhost/
 
 $ python -c 'from monitoring.aws_lambda import aws_tower_child; aws_tower_child.main({ "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly", "env": "pro|pre|dev", "region_name": "eu-west-1", "meta_types": ["S3"] })'
 ```
+
+
+## Usage (layers)
+
+```bash
+$ aws-tower --layer > /tmp/aws-tower-layer.json
+```
+
+Then, go to [Attack Navigator](https://mitre-attack.github.io/attack-navigator/#comment_underline=false)
+
+Click on "Open Existing Layer" -> "Upload from local"
+
+Upload your generated file, `/tmp/aws-tower-layer.json`
+
+You will have a warning, **Click No** to refuse the upgrade on Att&ck v12, stay in v11.
+
 
 ## Findings
 

@@ -91,6 +91,10 @@ class Patterns:
             'data_sources': ['attribute_value'],
             'conditions': ['attribute_value']
         },
+        'has_attribute_contain': {
+            'data_sources': ['attribute_value'],
+            'conditions': ['attribute_value']
+        },
         'is_cidr': {
             'data_sources': ['source'],
             'conditions': ['is_cidr']
@@ -317,6 +321,19 @@ class Patterns:
         :rtype: bool
         """
         return not self._check_rule_has_attribute_equal(data_sources, conditions)
+
+    def _check_rule_has_attribute_contain(self, data_sources, conditions):
+        """Check if data_sources['attribute_value'] has the attribute equal to conditions['attribute_value']
+        Check rule "has_attribute_contain"
+
+        :param data_sources: Where we want to find the conditions
+        :type data_sources: {"attribute_value": mixed}
+        :param conditions: Attribute value to be equal
+        :type conditions: {"attribute_value": mixed}
+        :return: True if one contain the other
+        :rtype: bool
+        """
+        return data_sources['attribute_value'].lower() in conditions['attribute_value'].lower() or conditions['attribute_value'].lower() in data_sources['attribute_value'].lower()
 
     def _check_rule_in(self, data_sources, conditions):
         """Check if conditions['data_element'] may be found in data_sources['data_list']

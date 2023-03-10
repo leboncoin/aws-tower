@@ -135,9 +135,9 @@ def generate_layer(rules_path):
         for rule in [
             *rules['types']['security_group']['findings'],
             *rules['types']['attributes']['findings']]:
-            if 'techniques' not in rule or i not in rule['techniques']:
+            if 'metadata' not in rule or i not in rule['metadata']:
                 continue
-            for tech_id in rule['techniques'][i]:
+            for tech_id in rule['metadata'][i]:
                 tech_ids.add(tech_id)
         for tech_id in tech_ids:
             # Check if technique is not already in the layer
@@ -400,7 +400,8 @@ def search_filter_in(asset, filter_str):
         if asset.get_type() == 'RDS' and '==' in asset.engine:
             is_found = asset.engine.split('==')[1].startswith(version)
     elif filter_str.startswith('os:') and hasattr(asset, 'operating_system'):
-        is_found = asset.operating_system.lower().startswith(filter_str.split(':')[1])
+        os_name = f'{asset.operating_system}+{asset.operating_system_name}'.lower()
+        is_found = os_name in filter_str.split(':')[1] or filter_str.split(':')[1] in os_name
     else:
         if filter_str in asset.name.lower():
             return True

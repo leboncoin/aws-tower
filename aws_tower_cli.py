@@ -29,7 +29,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.4.2'
+VERSION = '4.4.3'
 
 def audit_handler(session, args, meta_types, cache):
     """
@@ -150,6 +150,7 @@ def iam_handler(session, args, cache, csl):
             csl,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
+            only_dangerous_actions=args.only_dangerous_actions,
             verbose=args.verbose)
     elif args.source and args.action:
         account_id = session.client('sts').get_caller_identity().get('Account')
@@ -170,6 +171,7 @@ def iam_handler(session, args, cache, csl):
             csl,
             iam_action_passlist=variables.IAM_ACTION_PASSLIST,
             iam_rolename_passlist=variables.IAM_ROLENAME_PASSLIST,
+            only_dangerous_actions=args.only_dangerous_actions,
             verbose=args.verbose)
 
 def main(verb, args):
@@ -395,6 +397,10 @@ if __name__ == '__main__':
         '-d', '--display',
         action='store_true',
         help='Display informations about the source ARN')
+    IAM_PARSER.add_argument(
+        '--only-dangerous-actions',
+        action='store_true',
+        help='Display IAM dangerous actions only')
     IAM_PARSER.add_argument(
         '-v', '--verbose',
         action='store_true',
