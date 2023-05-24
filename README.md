@@ -103,15 +103,19 @@ options:
 
 ```bash
 $ aws-tower draw --help
-usage: aws_tower_cli.py draw [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}] profile
+usage: aws_tower_cli.py draw [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}] [--limit] [--all] [--vpc-peering-dot VPC_PEERING_DOT] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 options:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,RDS,S3,VPC}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}
                         Types to display (default: display everything)
+  --limit               Restrict to only interesting assets among vulnerable
+  --all                 All assets, without lonely nodes
+  --vpc-peering-dot VPC_PEERING_DOT
+                        Save VPC peering dot file
 ```
 
 ```bash
@@ -166,6 +170,26 @@ Click on "Open Existing Layer" -> "Upload from local"
 Upload your generated file, `/tmp/aws-tower-layer.json`
 
 You will have a warning, **Click No** to refuse the upgrade on Att&ck v12, stay in v11.
+
+
+## Usage (draw)
+
+```bash
+# Display demo-account with only medium, high and critical findings
+$ aws-tower draw demo-account
+
+# Display demo-account, with all assets
+$ aws-tower draw demo-account --all
+
+# Display VPC peering connexion in demo-account
+$ aws-tower draw demo-account --vpc-peering-dot /tmp/_vpc_demo_account.dot
+$ dot -Tjpg /tmp/_vpc_demo_account.dot -o /tmp/_vpc_demo_account.jpg
+
+# Display VPC peering connexion in all accounts
+$ for account in $(aws-tower -p); do aws-tower draw $account --vpc-peering-dot "/tmp/_${account}.dot"; done
+$ (echo 'graph {'; grep -h -- ';' /tmp/_*.dot | sort -u; echo '}')> /tmp/complete.dot
+$ dot -Tjpg /tmp/complete.dot -o /tmp/graph.jpg
+```
 
 
 ## Findings
