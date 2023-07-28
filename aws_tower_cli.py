@@ -29,7 +29,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.4.4'
+VERSION = '4.4.5'
 
 def audit_handler(session, args, meta_types, cache):
     """

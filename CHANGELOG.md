@@ -4,6 +4,12 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.4.5
+-----
+
+### Fisxtures
+  - Small fix in API Gateway
+
 4.4.4
 -----
 

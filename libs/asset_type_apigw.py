@@ -126,7 +126,7 @@ def get_raw_data(raw_data, authorizations, boto_session, cache, _):
             raw_data['ag_rest_api_raw'][rest_api['id']] = []
             resources = ag_client.get_resources(restApiId=rest_api['id'])['items']
             for resource in resources:
-                if 'resourceMethods' not in resource:
+                if 'resourceMethods' not in resource or 'GET' not in resource['resourceMethods']:
                     continue
                 raw_data['ag_rest_api_raw'][rest_api['id']].append(
                     ag_client.get_integration(
@@ -167,51 +167,56 @@ def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, 
     Parsing the raw data to extracts assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
-    for apigw in raw_data['ag_raw']:
-        asset = cache.get_asset(f'APIGW_{apigw["name"]}')
-        if asset is None:
-            is_public = 'REGIONAL' in apigw['endpointConfiguration']['types']
-            if public_only and not is_public:
-                continue
-            asset = APIGW(
-                apigw['name'],
-                apigw['id'],
-                boto_session.region_name,
-                [apigw['apiKeySource']],
-                public=is_public)
-            for rest_api in raw_data['ag_rest_api_raw'][apigw['id']]:
-                asset.backend_endpoint.append(
-                    get_lambda_name(rest_api['uri']))
-            cache.save_asset(f'APIGW_{apigw["name"]}', asset)
-        if asset is not None and name_filter.lower() in asset.name.lower():
-            assets.append(asset)
-    for apigw in raw_data['agv2_raw']:
-        asset = cache.get_asset(f'APIGW_{apigw["Name"]}')
-        if asset is None:
-            authorization_types = []
-            try:
-                for route in raw_data['agv2_client'].get_routes(ApiId=apigw['ApiId'])['Items']:
-                    authorization_types.append(route['AuthorizationType'])
-            except botocore.exceptions.ClientError:
-                authorizations['apigw'] = False
-            asset = APIGW(
-                apigw['Name'],
-                apigw['ApiId'],
-                boto_session.region_name,
-                authorization_types,
-                public=True)
-            for rest_api in raw_data['agv2_rest_api_raw'][apigw['ApiId']]:
-                asset.backend_endpoint.append(
-                    get_lambda_name(rest_api['IntegrationUri']))
-            cache.save_asset(f'APIGW_{apigw["Name"]}', asset)
-        if search_filter_in(asset, name_filter):
-            assets.append(asset)
-    for lambda_fun in raw_data['lambda_raw']:
-        asset = cache.get_asset(f'LAMBDA_{lambda_fun["FunctionName"]}')
-        if asset is None:
-            authorization_types = []
-            asset = Lambda(lambda_fun['FunctionName'])
-            cache.save_asset(f'LAMBDA_{lambda_fun["FunctionName"]}', asset)
-        if search_filter_in(asset, name_filter):
-            assets.append(asset)
+    if 'ag_raw' in raw_data:
+        for apigw in raw_data['ag_raw']:
+            asset = cache.get_asset(f'APIGW_{apigw["name"]}')
+            if asset is None:
+                is_public = 'REGIONAL' in apigw['endpointConfiguration']['types']
+                if public_only and not is_public:
+                    continue
+                asset = APIGW(
+                    apigw['name'],
+                    apigw['id'],
+                    boto_session.region_name,
+                    [apigw['apiKeySource']],
+                    public=is_public)
+                for rest_api in raw_data['ag_rest_api_raw'][apigw['id']]:
+                    if 'uri' not in rest_api:
+                        rest_api['uri'] = 'unknown'
+                    asset.backend_endpoint.append(
+                        get_lambda_name(rest_api['uri']))
+                cache.save_asset(f'APIGW_{apigw["name"]}', asset)
+            if asset is not None and name_filter.lower() in asset.name.lower():
+                assets.append(asset)
+    if 'agv2_raw' in raw_data:
+        for apigw in raw_data['agv2_raw']:
+            asset = cache.get_asset(f'APIGW_{apigw["Name"]}')
+            if asset is None:
+                authorization_types = []
+                try:
+                    for route in raw_data['agv2_client'].get_routes(ApiId=apigw['ApiId'])['Items']:
+                        authorization_types.append(route['AuthorizationType'])
+                except botocore.exceptions.ClientError:
+                    authorizations['apigw'] = False
+                asset = APIGW(
+                    apigw['Name'],
+                    apigw['ApiId'],
+                    boto_session.region_name,
+                    authorization_types,
+                    public=True)
+                for rest_api in raw_data['agv2_rest_api_raw'][apigw['ApiId']]:
+                    asset.backend_endpoint.append(
+                        get_lambda_name(rest_api['IntegrationUri']))
+                cache.save_asset(f'APIGW_{apigw["Name"]}', asset)
+            if search_filter_in(asset, name_filter):
+                assets.append(asset)
+    if 'lambda_raw' in raw_data:
+        for lambda_fun in raw_data['lambda_raw']:
+            asset = cache.get_asset(f'LAMBDA_{lambda_fun["FunctionName"]}')
+            if asset is None:
+                authorization_types = []
+                asset = Lambda(lambda_fun['FunctionName'])
+                cache.save_asset(f'LAMBDA_{lambda_fun["FunctionName"]}', asset)
+            if search_filter_in(asset, name_filter):
+                assets.append(asset)
     return assets, authorizations
