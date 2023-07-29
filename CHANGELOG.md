@@ -6,12 +6,15 @@ AWS-TOWER
 
 4.4.5
 -----
+2023/07/28
 
-### Fisxtures
+### Fixtures
   - Small fix in API Gateway
 
 4.4.4
 -----
+
+2023/03/10
 
 ### New feature
   - Add `--vpc-peering-dot` to save vpc peering in a dot file
