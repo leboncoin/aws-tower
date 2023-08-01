@@ -4,6 +4,14 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.5.0
+-----
+
+2023/08/01
+
+### New feature
+  - Add 'LIGHTSAIL' asset type
+
 4.4.5
 -----
 2023/07/28

@@ -35,6 +35,7 @@ def get_tag(tags, key):
 def draw_sg(security_group, sg_raw):
     """
     Returns a full definition of security groups
+    Ex: {'80': ['0.0.0.0/0'], '9182': ['sg-e6337083'], '6379': ['sg-83b71de4', '34.1.1.1/32', '3.1.1.1/32'], '4520': ['0.0.0.0/0'], '3389': ['0.0.0.0/0'], '443': ['0.0.0.0/0']}
     """
     result = {}
     for _sg in sg_raw:
