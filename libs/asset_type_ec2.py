@@ -38,7 +38,7 @@ class EC2(AssetType):
         self.instance_id = ''
         self.eks_cluster = ''
 
-    def report(self, report, brief=False):
+    def report(self, report, brief=False, with_fpkey=False):
         """
         Add an asset with only relevent informations
         """
@@ -65,7 +65,7 @@ class EC2(AssetType):
             if self.role_admin:
                 asset_report['Roles Admin'] = f'[red]{self.role_admin}[/red]'
             if self.security_issues:
-                self.update_audit_report(asset_report)
+                self.update_audit_report(asset_report, with_fpkey)
         if 'EC2' not in report[self.location.region][self.location.vpc][self.location.subnet]:
             report[self.location.region][self.location.vpc][self.location.subnet]['EC2'] = \
                 { self.name: asset_report }

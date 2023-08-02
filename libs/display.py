@@ -49,7 +49,7 @@ def prepare_report(assets, meta_types, console):
     return report
 
 @log_me('Auditing the scan...')
-def audit_scan(assets, report, security_config, brief, console):
+def audit_scan(assets, report, security_config, brief, with_fpkey, console):
     """
     Add assets in report and audit them
     """
@@ -70,17 +70,19 @@ def audit_scan(assets, report, security_config, brief, console):
             if not asset.security_issues:
                 continue
             asset.remove_not_vulnerable_members()
-        report = asset.report(report, brief=brief)
+            asset.remove_false_positives()
+        if asset.security_issues:
+            report = asset.report(report, brief=brief, with_fpkey=with_fpkey)
     return report
 
-def print_report(assets, meta_types, console, output_file, brief=False, security_config=None):
+def print_report(assets, meta_types, console, output_file, brief=False, with_fpkey=False, security_config=None):
     """
     Print subnets
     """
     # Construct Region/VPC/subnet
     report = prepare_report(assets, meta_types, console)
 
-    report = audit_scan(assets, report, security_config, brief, console)
+    report = audit_scan(assets, report, security_config, brief, with_fpkey, console)
 
     str_report = json.dumps(report, sort_keys=True, indent=4)
 

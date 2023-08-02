@@ -19,7 +19,7 @@ class Lambda(AssetType):
     def __init__(self, name: str, public: bool=False):
         super().__init__('Lambda', name, public=public)
 
-    def report(self, report, brief=False):
+    def report(self, report, brief=False, with_fpkey=False):
         """
         Add an asset with only relevent informations
         """

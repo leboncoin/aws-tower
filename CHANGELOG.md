@@ -7,10 +7,12 @@ AWS-TOWER
 4.5.0
 -----
 
-2023/08/01
+2023/08/02
 
 ### New feature
   - Add 'LIGHTSAIL' asset type
+  - Add `--false-positive-key` in audit mode
+  - Add `config/false_positives_list.txt` file, list of finding keys to ignore in audit report
 
 4.4.5
 -----

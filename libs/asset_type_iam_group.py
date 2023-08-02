@@ -40,7 +40,7 @@ class IAMGroup(AssetType):
         """
         return 'IAM'
 
-    def report(self, report, brief=False):
+    def report(self, report, brief=False, with_fpkey=False):
         """
         Add an asset with only relevent informations
         """

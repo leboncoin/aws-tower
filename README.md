@@ -12,6 +12,7 @@ AWS Services monitored:
 - EKS
 - ALB/ELB
 - IAM
+- Lightsail
 - MQ
 - RDS
 - S3
@@ -24,6 +25,7 @@ $ pip install -r requirements.txt
 $ cp config/rules.yaml.sample config/rules.yaml # if you want to use "audit"
 $ cp config/subnet_allow_list.txt.sample config/subnet_allow_list.txt # if you want to use a subnet allow list
 $ cp config/trusted_accounts_list.txt.sample config/trusted_accounts_list.txt # if you want to use an aws account allow list
+$ cp config/false_positives_list.txt.sample config/false_positives_list.txt # if you consider audited findings as false-positives
 ```
 
 ## Usage
@@ -56,16 +58,14 @@ options:
 
 ```bash
 $ aws-tower audit --help
-usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-f FILTER] [-v] [-b]
-                              [-s] [-o OUTPUT]
-                              profile
+usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-f FILTER] [-v] [-b] [--false-positive-key] [-s] [-o OUTPUT] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 options:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}
                         Types to display (default: display everything)
   -m {info,low,medium,high,critical}, --min-severity {info,low,medium,high,critical}
                         min severity level to report when security is enabled (default: medium)
@@ -75,6 +75,7 @@ options:
                         Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx", "os:xxx"
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
+  --false-positive-key  Display the unique "false-positive-key" label to consider those events as false-positive
   -s, --summary         Summary of the account assets
   -o OUTPUT, --output OUTPUT
                         Save the JSON output inside the specified file
@@ -82,14 +83,14 @@ options:
 
 ```bash
 $ aws-tower discover --help
-usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}] [-p] [-f FILTER] [-v] [-b] [-s] [-o OUTPUT] profile
+usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}] [-p] [-f FILTER] [-v] [-b] [-s] [-o OUTPUT] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 options:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}
                         Types to display (default: display everything)
   -p, --public-only     Display public assets only
   -f FILTER, --filter FILTER
@@ -103,14 +104,14 @@ options:
 
 ```bash
 $ aws-tower draw --help
-usage: aws_tower_cli.py draw [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}] [--limit] [--all] [--vpc-peering-dot VPC_PEERING_DOT] profile
+usage: aws_tower_cli.py draw [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}] [--limit] [--all] [--vpc-peering-dot VPC_PEERING_DOT] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 options:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}
                         Types to display (default: display everything)
   --limit               Restrict to only interesting assets among vulnerable
   --all                 All assets, without lonely nodes
