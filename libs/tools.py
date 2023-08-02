@@ -61,7 +61,9 @@ def draw_sg(security_group, sg_raw):
                         key_ports = f'{from_port}'
                         if from_port != to_port:
                             key_ports += f'-{to_port}'
-                        if key_ports  not in result:
+                        if key_ports == '0-65535':
+                            key_ports = 'all'
+                        if key_ports not in result:
                             result[key_ports] = []
                         ip_range = ip_perm['IpRanges']
                         userid_group_pairs = ip_perm['UserIdGroupPairs']
