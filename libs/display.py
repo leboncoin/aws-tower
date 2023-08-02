@@ -71,8 +71,9 @@ def audit_scan(assets, report, security_config, brief, with_fpkey, console):
                 continue
             asset.remove_not_vulnerable_members()
             asset.remove_false_positives()
-        if asset.security_issues:
-            report = asset.report(report, brief=brief, with_fpkey=with_fpkey)
+        if security_config and not asset.security_issues:
+            continue
+        report = asset.report(report, brief=brief, with_fpkey=with_fpkey)
     return report
 
 def print_report(assets, meta_types, console, output_file, brief=False, with_fpkey=False, security_config=None):
