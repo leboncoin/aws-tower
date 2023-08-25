@@ -6,6 +6,7 @@ package
 *.svg
 *.png
 *.dot
+.DS_Store
 
 # Config
 config/rules.yaml

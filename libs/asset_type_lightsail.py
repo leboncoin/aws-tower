@@ -147,12 +147,12 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     for lightsail in raw_data['lightsail_raw']:
-        asset = cache.get_asset(f'LS_{lightsail["supportCode"].split("/")[0]}')
+        asset = cache.get_asset(f'LS_{lightsail["supportCode"].replace("/", "_")}')
         if asset is None:
             asset = scan(
                 lightsail,
                 public_only)
-            cache.save_asset(f'LS_{lightsail["supportCode"].split("/")[0]}', asset)
+            cache.save_asset(f'LS_{lightsail["supportCode"].replace("/", "_")}', asset)
         if search_filter_in(asset, name_filter):
             assets.append(asset)
     return assets, authorizations
