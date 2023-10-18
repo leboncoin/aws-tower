@@ -70,8 +70,11 @@ class EC2(AssetType):
             report[self.location.region][self.location.vpc][self.location.subnet]['EC2'] = \
                 { self.name: asset_report }
             return report
+        reported_name = self.name
+        if self.name in report[self.location.region][self.location.vpc][self.location.subnet]['EC2']:
+            reported_name = f'{self.name}_{self.instance_id}'
         report[self.location.region][self.location.vpc][self.location.subnet]['EC2'].update(
-            { self.name: asset_report })
+            { reported_name: asset_report })
         return report
 
     def report_brief(self):

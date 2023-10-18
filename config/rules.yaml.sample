@@ -1,5 +1,5 @@
 ---
-version: 4.4.0
+version: 4.5.0
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -145,7 +145,7 @@ types:
               - type: variable
                 name: source
                 value: source
-        severity: medium
+        severity: low
         metadata:
           risks: ['LAN reachable asset']
           visibility: ['T1578.002', 'T1578.003', 'T1578.004']

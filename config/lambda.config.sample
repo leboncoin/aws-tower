@@ -1,12 +1,12 @@
 [profile some-account]
-role_arn = arn:aws:iam::12345678999:role/readonly
+role_arn = arn:aws:iam::12345678999:role/AuditRole
 env = pro
 
 [profile some-another-account]
-role_arn = arn:aws:iam::223456788888:role/readonly
+role_arn = arn:aws:iam::223456788888:role/AuditRole
 env = pre
 
 [profile some-dev-account]
-role_arn = arn:aws:iam::223456788888:role/readonly
+role_arn = arn:aws:iam::223456788888:role/AuditRole
 env = dev
 region_name = eu-west-1

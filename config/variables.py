@@ -47,3 +47,5 @@ AWS_ALL_REGION_LIST = [
     'us-east-1', 'us-east-2',
     'us-west-1', 'us-west-2'
 ]
+
+LAMBDA_PIVOTAL_ROLE_NAME = 'AWS-Tower'
