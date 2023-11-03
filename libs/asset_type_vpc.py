@@ -45,7 +45,7 @@ class VPC(AssetType):
         self.endpoint = 'unknown'
         self.port = 'unknown'
 
-    def report(self, report, brief=False):
+    def report(self, report, brief=False, with_fpkey=False):
         """
         Add an asset with only relevent informations
         """
@@ -64,7 +64,7 @@ class VPC(AssetType):
                 asset_report['Endpoint'] = self.endpoint
                 asset_report['Port'] = self.port
             if self.security_issues:
-                self.update_audit_report(asset_report)
+                self.update_audit_report(asset_report, with_fpkey)
         if 'VPC' not in report:
             report['VPC'] = { self.name: asset_report }
             return report

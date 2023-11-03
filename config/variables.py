@@ -22,8 +22,9 @@ ROOT_PATH = Path(__file__).parent.parent
 FINDING_RULES_PATH = ROOT_PATH / 'config' / 'rules.yaml'
 SUBNET_ALLOW_LIST_PATH = ROOT_PATH / 'config' / 'subnet_allow_list.txt'
 TRUSTED_ACCOUNTS_LIST_PATH = ROOT_PATH / 'config' / 'trusted_accounts_list.txt'
+FALSE_POSITIVES_LIST_PATH = ROOT_PATH / 'config' / 'false_positives_list.txt'
 
-META_TYPES = ['APIGW', 'CLOUDFRONT', 'EC2', 'EKS', 'ELB', 'IAM', 'MQ', 'RDS', 'S3', 'VPC']
+META_TYPES = ['APIGW', 'CLOUDFRONT', 'EC2', 'EKS', 'ELB', 'IAM', 'LIGHTSAIL', 'MQ', 'RDS', 'S3', 'VPC']
 
 IAM_ACTION_PASSLIST = ['autoscaling', 'ec2messages', 'elasticloadbalancing', 'logs', 'ssmmessages', 'support', 'xray']
 
@@ -46,3 +47,5 @@ AWS_ALL_REGION_LIST = [
     'us-east-1', 'us-east-2',
     'us-west-1', 'us-west-2'
 ]
+
+LAMBDA_PIVOTAL_ROLE_NAME = 'AWS-Tower'

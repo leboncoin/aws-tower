@@ -29,7 +29,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.4.5'
+VERSION = '4.5.0'
 
 def audit_handler(session, args, meta_types, cache):
     """
@@ -72,6 +72,7 @@ def audit_handler(session, args, meta_types, cache):
             CONSOLE,
             args.output,
             brief=args.brief,
+            with_fpkey=args.false_positive_key,
             security_config=security_config
         )
 
@@ -298,6 +299,10 @@ if __name__ == '__main__':
         '-b', '--brief',
         action='store_true',
         help='Brief output of the account assets')
+    AUDIT_PARSER.add_argument(
+        '--false-positive-key',
+        action='store_true',
+        help='Display the unique "false-positive-key" label to consider those events as false-positive')
     AUDIT_PARSER.add_argument(
         '-s', '--summary',
         action='store_true',

@@ -9,8 +9,10 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 
 # Standard library imports
 from dataclasses import dataclass
+from pathlib import Path
 
-from .tools import color_severity
+from config import variables
+from .tools import color_severity, get_false_positive_key
 
 # Debug
 # from pdb import set_trace as st
@@ -43,14 +45,17 @@ class AssetType:
         """
         self.security_issues = patterns.extract_findings(self)
 
-    def update_audit_report(self, report):
+    def update_audit_report(self, report, with_fpkey):
         """
         Return an output of the audit
         """
         for issue in self.security_issues:
             if 'Audit' not in report:
                 report['Audit'] = []
-            report['Audit'].append(color_severity(issue["severity"], issue["title"], self.console))
+            message = issue['title']
+            if with_fpkey:
+                message = f'<false-positive-key={get_false_positive_key(message, self.get_type(), self.name)}> {message}'
+            report['Audit'].append(color_severity(issue['severity'], message, self.console))
 
     def display_brief_audit(self):
         """
@@ -82,6 +87,23 @@ class AssetType:
         This is a nutshell, check the ASsetGroup override function.
         """
         return True
+
+    def remove_false_positives(self):
+        """
+        Removes the findings from the false_positives_list.txt
+        """
+        fp_list_path = variables.FALSE_POSITIVES_LIST_PATH
+        fp_list = []
+        if fp_list_path.exists():
+            fp_list = fp_list_path.read_text(
+                encoding='ascii', errors='ignore').split('\n')
+
+        security_issues = []
+
+        for security_issue in self.security_issues:
+            if get_false_positive_key(security_issue['title'], self.get_type(), self.name) not in fp_list:
+                security_issues.append(security_issue)
+        self.security_issues = security_issues
 
     def dst_linked_assets(self, _):
         """

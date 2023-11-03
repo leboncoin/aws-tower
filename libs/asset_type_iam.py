@@ -193,7 +193,7 @@ class IAM(AssetType):
         return f'{self.arn}: {filtered_actions}'
 
 
-    def report(self, report, brief=False):
+    def report(self, report, brief=False, with_fpkey=False):
         """
         Add an asset with only relevent informations
         """
@@ -210,7 +210,7 @@ class IAM(AssetType):
             if self.poweruser_services:
                 asset_report['Poweruser actions'] = f'[yellow]{self.poweruser_services}[/yellow]'
             if self.security_issues:
-                self.update_audit_report(asset_report)
+                self.update_audit_report(asset_report, with_fpkey)
         if 'IAM' not in report:
             report['IAM'] = { self.arn: asset_report }
             return report

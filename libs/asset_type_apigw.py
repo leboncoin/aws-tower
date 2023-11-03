@@ -61,7 +61,7 @@ class APIGW(AssetType):
         self.location.region = region_name
         self.backend_endpoint = []
 
-    def report(self, report, brief=False):
+    def report(self, report, brief=False, with_fpkey=False):
         """
         Add an asset with only relevent informations
         """
@@ -76,7 +76,7 @@ class APIGW(AssetType):
             if self.public:
                 asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.security_issues:
-                self.update_audit_report(asset_report)
+                self.update_audit_report(asset_report, with_fpkey)
         if 'APIGW' not in report[self.location.region]:
             report[self.location.region]['APIGW'] = { self.name: asset_report }
             return report

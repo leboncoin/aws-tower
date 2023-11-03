@@ -12,6 +12,7 @@ AWS Services monitored:
 - EKS
 - ALB/ELB
 - IAM
+- Lightsail
 - MQ
 - RDS
 - S3
@@ -24,6 +25,7 @@ $ pip install -r requirements.txt
 $ cp config/rules.yaml.sample config/rules.yaml # if you want to use "audit"
 $ cp config/subnet_allow_list.txt.sample config/subnet_allow_list.txt # if you want to use a subnet allow list
 $ cp config/trusted_accounts_list.txt.sample config/trusted_accounts_list.txt # if you want to use an aws account allow list
+$ cp config/false_positives_list.txt.sample config/false_positives_list.txt # if you consider audited findings as false-positives
 ```
 
 ## Usage
@@ -56,16 +58,14 @@ options:
 
 ```bash
 $ aws-tower audit --help
-usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-f FILTER] [-v] [-b]
-                              [-s] [-o OUTPUT]
-                              profile
+usage: aws_tower_cli.py audit [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}] [-m {info,low,medium,high,critical}] [-M {info,low,medium,high,critical}] [-f FILTER] [-v] [-b] [--false-positive-key] [-s] [-o OUTPUT] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 options:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}
                         Types to display (default: display everything)
   -m {info,low,medium,high,critical}, --min-severity {info,low,medium,high,critical}
                         min severity level to report when security is enabled (default: medium)
@@ -75,6 +75,7 @@ options:
                         Filter by asset value (Ex: "something", "port:xxx", "engine:xxx", "version:xxx", "os:xxx"
   -v, --verbose         Verbose output of the account assets
   -b, --brief           Brief output of the account assets
+  --false-positive-key  Display the unique "false-positive-key" label to consider those events as false-positive
   -s, --summary         Summary of the account assets
   -o OUTPUT, --output OUTPUT
                         Save the JSON output inside the specified file
@@ -82,14 +83,14 @@ options:
 
 ```bash
 $ aws-tower discover --help
-usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}] [-p] [-f FILTER] [-v] [-b] [-s] [-o OUTPUT] profile
+usage: aws_tower_cli.py discover [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}] [-p] [-f FILTER] [-v] [-b] [-s] [-o OUTPUT] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 options:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}
                         Types to display (default: display everything)
   -p, --public-only     Display public assets only
   -f FILTER, --filter FILTER
@@ -103,14 +104,14 @@ options:
 
 ```bash
 $ aws-tower draw --help
-usage: aws_tower_cli.py draw [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}] [--limit] [--all] [--vpc-peering-dot VPC_PEERING_DOT] profile
+usage: aws_tower_cli.py draw [-h] [-t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}] [--limit] [--all] [--vpc-peering-dot VPC_PEERING_DOT] profile
 
 positional arguments:
   profile               A valid profile name configured in the ~/.aws/config file
 
 options:
   -h, --help            show this help message and exit
-  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,MQ,RDS,S3,VPC}
+  -t {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}, --type {APIGW,CLOUDFRONT,EC2,EKS,ELB,IAM,LIGHTSAIL,MQ,RDS,S3,VPC}
                         Types to display (default: display everything)
   --limit               Restrict to only interesting assets among vulnerable
   --all                 All assets, without lonely nodes
@@ -140,10 +141,120 @@ options:
   -v, --verbose         Verbose output of the account assets
 ```
 
-## Usage (lambda)
+## Usage: monitoring 'aws_lambda'
+
+The method of monitoring use a cascade of Lambda to scan all of your accounts.
+
+At the end, it sends the findings into another stack of lambda : "aws_alerting", that is presented below.
 
 ```bash
-$ pip install -r requirements.lambda.txt --target ./package
+$ bash monitoring/aws_lambda/create_archive.sh
+
+# Upload the zip file into AWS Lambda: aws_lambda.zip
+
+# Create Lambda aws_tower_launcher:
+## Handler : monitoring.aws_lambda.aws_tower_launcher.handler
+## Duration: 15mn
+## Add authorization: AWSLambdaRole
+
+# Create Lambda aws_tower_child_account:
+## Name: aws_tower_child_account
+## Handler : monitoring.aws_lambda.aws_tower_child_account.handler
+## Duration: 15mn
+## Add authorization: AWSLambdaRole
+
+# Create IAM role in the current account named: 'AWS-Tower' (service AWS Lambda)
+## Authorization: AWSLambdaRole (optional)
+## and the custom policy "Assume-AuditRole-Any-Accounts":
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "sts:AssumeRole",
+            "Resource": "arn:aws:iam::*:role/AuditRole"
+        }
+    ]
+}
+
+# Create Lambda aws_tower_auditor
+## Name: aws_tower_auditor
+## Handler : monitoring.aws_lambda.aws_tower_auditor.handler
+## Duration: 5mn
+## Associate IAM role above 'AWS-Tower'
+
+# Create a role, in EACH AWS accounts, named 'AuditRole'
+## Authorization: SecurityAudit (AWS built-in)
+## Trusted relationship with the role of aws_tower_child
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Statement1",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::xxxxx:role/AWS-Tower"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
+
+```
+
+## Usage: monitoring 'aws_alerting'
+
+This lambda receive events directly from another lambda.
+If the event startswith "Add ", this mean this is a security event.
+- Step 1: Store in S3 bucket 'aws-tower-findings'
+- Step 2: Alerting via Slack
+
+```bash
+$ bash monitoring/aws_alerting/create_archive.sh
+
+# Upload the zip file into AWS Lambda: archive_alerting.zip
+
+
+monitoring.aws_alerting.aws_tower_alerting.handler
+
+edit role
+add policy
+Get-Slack-Secret
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": "secretsmanager:GetSecretValue",
+            "Resource": "arn:aws:secretsmanager:eu-west-3:xxxxx:secret:security_slack_alerts-*"
+        }
+    ]
+}
+
+s3-aws-tower-findings
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject"
+            ],
+            "Resource": "arn:aws:s3:::aws-tower-findings/*"
+        }
+    ]
+}
+
+
+```
+
+## Usage: monitoring 'aws_lambda_patrowl'
+
+```bash
+$ pip install -r monitoring/aws_lambda_patrowl/requirements.txt --target ./package
 
 $ cp config/lambda.config.sample config/lambda.config
 $ export PATROWL_APITOKEN=xxxxxxxxxxxxxxx
@@ -153,7 +264,7 @@ $ export PATROWL_DEV_ASSETGROUP=3
 $ export PATROWL_PRIVATE_ENDPOINT=http://localhost/
 $ export PATROWL_PUBLIC_ENDPOINT=http://localhost/
 
-$ python -c 'from monitoring.aws_lambda import aws_tower_child; aws_tower_child.main({ "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly", "env": "pro|pre|dev", "region_name": "eu-west-1", "meta_types": ["S3"] })'
+$ python -c 'from monitoring.aws_lambda_patrowl import aws_tower_child; aws_tower_child.main({ "my-account-profile": "arn:aws:iam::xxxxxxxxxxxxx:role/readonly", "env": "pro|pre|dev", "region_name": "eu-west-1", "meta_types": ["S3"] })'
 ```
 
 
