@@ -7,12 +7,13 @@ AWS-TOWER
 4.5.0
 -----
 
-2023/08/02
+2023/11/03
 
 ### New feature
   - Add 'LIGHTSAIL' asset type
   - Add `--false-positive-key` in audit mode
   - Add `config/false_positives_list.txt` file, list of finding keys to ignore in audit report
+  - Add lambda monitoring and documentation
 
 ### Fixtures
   - Audit: Consider ports 0-65535 as "all"
