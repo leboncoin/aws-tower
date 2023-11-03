@@ -183,7 +183,7 @@ $ bash monitoring/aws_lambda/create_archive.sh
 ## Duration: 5mn
 ## Associate IAM role above 'AWS-Tower'
 
-# Create a role in each AWS account named 'AuditRole'
+# Create a role, in EACH AWS accounts, named 'AuditRole'
 ## Authorization: SecurityAudit (AWS built-in)
 ## Trusted relationship with the role of aws_tower_child
 {

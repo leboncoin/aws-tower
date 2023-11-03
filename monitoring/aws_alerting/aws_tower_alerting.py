@@ -83,6 +83,14 @@ def save_event(event):
         return False
 
 
+def update_event(event):
+    """
+    Updates the object in S3 with the provided content.
+    """
+    key = get_finding_unique_name(event)
+    s3_client.put_object(Bucket=BUCKET_NAME, Key=key, Body=json.dumps(event))
+
+
 def create_slack_payload(title, description):
     """
     Create a Slack payload with title and description in Markdown format.
@@ -177,6 +185,7 @@ def main(event):
     is_already_seen = get_stored_event(key)
     if is_already_seen:
         print('Event is already in s3. Ignoring event.')
+        update_event(event)
     else:
         webhook_url = json.loads(get_secret())[SLACK_ENV[ENV]['webhook_key']]
         severity_logo = {

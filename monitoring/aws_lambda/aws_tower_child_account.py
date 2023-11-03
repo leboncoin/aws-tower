@@ -55,7 +55,7 @@ def main(account):
         }
         regions = variables.LAMBDA_SCAN_REGION_LIST
         is_global = meta_type in ['S3', 'CLOUDFRONT']
-        default_region = 'us-east-1'
+        default_region = regions[0]
         if meta_type == 'EC2':
             regions = variables.AWS_ALL_REGION_LIST
             payload['meta_types'] = ['EC2', 'IAM']
