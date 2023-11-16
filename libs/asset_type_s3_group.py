@@ -159,6 +159,11 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
                 region,
                 acls,
                 public_only)
+            try:
+                if raw_data['s3_client'].get_bucket_policy_status(Bucket=s_three['Name'])['PolicyStatus']['IsPublic']:
+                    s3bucket.public = True
+            except:
+                pass
             cache.save_asset(f'S3_{s_three["Name"]}', s3bucket)
         if search_filter_in(s3bucket, name_filter):
             s3group.list.append(s3bucket)
