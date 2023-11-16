@@ -95,6 +95,7 @@ def main(account):
         count += 1
         LOGGER.warning(f'Checking asset {count}/{len(assets)}: {asset.name}')
         asset.audit(patterns)
+        asset.remove_false_positives()
 
         # Always new findings, that's the all point of standalone mode
         for new_finding in asset.security_issues:
