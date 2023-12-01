@@ -1,5 +1,5 @@
 ---
-version: 4.5.0
+version: 4.6.0
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -300,6 +300,29 @@ types:
               - type: variable
                 name: asset
                 value: asset
+        metadata:
+          risks: ['Powerful asset']
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1190', 'T1530', 'T1580', 'T1619']
+      - message:
+          text: '[{resource_id}] Old access keys are attached to IAM user'
+          args:
+            resource_id:
+              type: attribute
+              key: resource_id
+        severity: medium
+        rules:
+          - type: has_attribute_not_equal
+            description: Check if old_access_keys is in the asset
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: []
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: old_access_keys
         metadata:
           risks: ['Powerful asset']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']

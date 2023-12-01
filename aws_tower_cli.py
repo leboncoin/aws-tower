@@ -29,7 +29,7 @@ from config import variables
 # from pdb import set_trace as st
 
 CONSOLE = console.Console()
-VERSION = '4.5.0'
+VERSION = '4.6.0'
 
 def audit_handler(session, args, meta_types, cache):
     """
@@ -134,7 +134,7 @@ def draw_handler(session, args, meta_types, cache):
         'max_severity': max_severity
     }
     report = prepare_report(assets, meta_types, CONSOLE)
-    audit_scan(assets, report, security_config, None, CONSOLE)
+    audit_scan(assets, report, security_config, None, False, CONSOLE)
     if args.vpc_peering_dot:
         draw_vpc_peering(assets, args.vpc_peering_dot, args)
     else:

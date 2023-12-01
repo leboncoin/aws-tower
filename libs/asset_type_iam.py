@@ -10,6 +10,7 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 # Standard library imports
 import logging
 import re
+from dataclasses import dataclass
 
 from .asset_type import AssetType
 
@@ -28,12 +29,21 @@ def allowed(response, action, resource):
             return result['EvalDecision'] == 'allowed'
     return False
 
+@dataclass
+class Policy:
+    """
+    Policy nutshell
+    """
+    arn: str = ''
+    default_version_id: str = ''
+    policy_name: str = ''
+
 class IAM(AssetType):
     """
     IAM Asset Type
     """
     def __init__(self, arn: str):
-        super().__init__('IAM role', arn, public=False)
+        super().__init__('IAM', arn, public=False)
         self.arn = arn
         self.actions = []
         self.admin_services = None # None instead of set(), for rules matching
@@ -42,7 +52,7 @@ class IAM(AssetType):
         self.is_instance_profile = False
         self.poweruser_services = None # None instead of set(), for rules matching
         self.poweruser_actions = set()
-        self.reader_services = None # TODO: remove it, useless
+        self.old_access_keys = []
         if self.is_valid():
             self.partition = arn.split(':')[1]
             self.service = arn.split(':')[2]
@@ -109,6 +119,12 @@ class IAM(AssetType):
                     self.dangerous_actions = []
                 if dangerous_action not in self.dangerous_actions:
                     self.dangerous_actions.append(dangerous_action)
+
+    def get_type(self):
+        """
+        Redefinition of get_type
+        """
+        return f'IAM {self.resource_type}'
 
     def simplify_actions(self):
         """
@@ -209,6 +225,8 @@ class IAM(AssetType):
                 asset_report['Dangerous actions'] = f'[red]{self.dangerous_actions}[/red]'
             if self.poweruser_services:
                 asset_report['Poweruser actions'] = f'[yellow]{self.poweruser_services}[/yellow]'
+            if self.old_access_keys:
+                asset_report['Old Access Keys'] += f'[yellow]{self.old_access_keys}[/yellow] '
             if self.security_issues:
                 self.update_audit_report(asset_report, with_fpkey)
         if 'IAM' not in report:
@@ -229,6 +247,10 @@ class IAM(AssetType):
             actions += f'[red]Dangerous actions: {self.dangerous_actions}[/red] '
         if self.poweruser_services:
             actions += f'[yellow]Poweruser actions: {self.poweruser_services}[/yellow] '
+        if self.old_access_keys:
+            actions += f'[yellow]Old access keys: {self.old_access_keys}[/yellow] '
+        if actions:
+            actions += f'- AWS IAM {self.resource_type}'
         return f'{actions}{self.display_brief_audit()}'
 
     def finding_description(self, _):

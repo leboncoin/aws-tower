@@ -26,7 +26,7 @@ FALSE_POSITIVES_LIST_PATH = ROOT_PATH / 'config' / 'false_positives_list.txt'
 
 META_TYPES = ['APIGW', 'CLOUDFRONT', 'EC2', 'EKS', 'ELB', 'IAM', 'LIGHTSAIL', 'MQ', 'RDS', 'S3', 'VPC']
 
-IAM_ACTION_PASSLIST = ['autoscaling', 'ec2messages', 'elasticloadbalancing', 'logs', 'ssmmessages', 'support', 'xray']
+IAM_ACTION_PASSLIST = ['autoscaling', 'ec2messages', 'ecs', 'elasticloadbalancing', 'logs', 'ssmmessages', 'support', 'xray']
 
 IAM_ROLENAME_PASSLIST = [
     'admin',

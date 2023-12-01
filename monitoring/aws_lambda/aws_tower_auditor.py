@@ -28,7 +28,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '4.5.0'
+VERSION = '4.6.0'
 
 LOGGER = logging.getLogger('aws-tower')
 
@@ -96,10 +96,12 @@ def main(account):
         LOGGER.warning(f'Checking asset {count}/{len(assets)}: {asset.name}')
         asset.audit(patterns)
         asset.remove_false_positives()
+        if asset.get_type() in ['IAM', 'CLOUDFRONT']:
+            region_name = 'global'
 
         # Always new findings, that's the all point of standalone mode
         for new_finding in asset.security_issues:
-            new_finding['title'] = f'{new_finding["title"]} [{get_false_positive_key(new_finding["title"], asset.get_type(), asset.name)}]'
+            new_finding['title'] += f' [{get_false_positive_key(new_finding["title"], asset.get_type(), asset.name)}]'
 
             if new_finding['severity'] not in variables.ALERTING_SEVERITIES:
                 continue

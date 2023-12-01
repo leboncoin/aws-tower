@@ -11,7 +11,7 @@ Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 import botocore
 
 from .asset_type import AssetType
-from .iam_scan import iam_get_roles
+from .iam_scan import iam_get_roles, iam_get_users
 from .tools import log_me, search_filter_in
 
 # Debug
@@ -22,7 +22,7 @@ class IAMGroup(AssetType):
     IAMGroup Asset Type
     """
     def __init__(self, name: str):
-        super().__init__('IAM roles', name)
+        super().__init__('IAM', name)
         self.list = []
 
     def audit(self, patterns):
@@ -72,7 +72,7 @@ class IAMGroup(AssetType):
         for iam in self.list:
             if iam.resource_id == resource_id:
                 return iam.finding_description(resource_id)
-        return 'IAM role not found...'
+        return 'IAM identity not found...'
 
     def remove_not_vulnerable_members(self):
         """
@@ -100,7 +100,7 @@ def parse_raw_data(
     enrich the assets list and add a 'False' in authorizations in case of errors
     Only display EC2 instance profile
     """
-    iamgroup = IAMGroup(name='IAM roles')
+    iamgroup = IAMGroup(name='IAM')
     client_iam = boto_session.client('iam')
     resource_iam = boto_session.resource('iam')
     try:
@@ -110,6 +110,8 @@ def parse_raw_data(
             iam_rolename_passlist=iam_rolename_passlist):
             if search_filter_in(role, name_filter) and role.is_instance_profile:
                 iamgroup.list.append(role)
+        for user in iam_get_users(client_iam, cache):
+            iamgroup.list.append(user)
     except botocore.exceptions.ClientError:
         authorizations['iam'] = False
     assets.append(iamgroup)
