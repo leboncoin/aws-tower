@@ -20,7 +20,7 @@ from requests import Session
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '4.5.0'
+VERSION = '4.6.0'
 
 SESSION = Session()
 

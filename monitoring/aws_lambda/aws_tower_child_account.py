@@ -20,7 +20,7 @@ from config import variables
 
 # pylint: disable=logging-fstring-interpolation
 
-VERSION = '4.5.0'
+VERSION = '4.6.0'
 
 LOGGER = logging.getLogger('aws-tower')
 

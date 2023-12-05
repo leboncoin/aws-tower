@@ -20,7 +20,7 @@ sys.path.append('package')
 
 LOGGER = logging.getLogger('aws-tower-launcher')
 
-VERSION = '4.5.0'
+VERSION = '4.6.0'
 
 LOGGER = logging.getLogger('aws-tower')
 
