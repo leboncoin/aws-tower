@@ -4,6 +4,24 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.6.0
+-----
+
+2024/03/06
+
+### New feature
+  - Add IAM user scan/audit, add 'global' region for lambda montoring
+  - [Lambda] Add remove_false_positives function in aws_tower_auditor
+  - Display domain name in API Gateway if exists
+
+### Updates
+  - update RDS version rules
+
+### Fixtures
+  - Fix VPC bug
+  - Fix AWS S3 public bucket detection
+  - Fix audit rule 'old_access_keys'
+
 4.5.0
 -----
 

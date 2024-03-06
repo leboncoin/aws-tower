@@ -60,6 +60,7 @@ class APIGW(AssetType):
             self.authorization.add_auth_type(auth_type)
         self.location.region = region_name
         self.backend_endpoint = []
+        self.domain_name = None
 
     def report(self, report, brief=False, with_fpkey=False):
         """
@@ -73,6 +74,8 @@ class APIGW(AssetType):
                 'AuthorizationTypes': self.authorization.types,
                 'Backend Endpoints': self.backend_endpoint
             }
+            if self.domain_name:
+                asset_report['Domain Name'] = self.domain_name
             if self.public:
                 asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.security_issues:
@@ -159,6 +162,17 @@ def get_raw_data(raw_data, authorizations, boto_session, cache, _):
             'list_functions')['Functions']
     except botocore.exceptions.ClientError as err_msg:
         authorizations['apigw'] = False
+
+    # Get domain API mapping
+    all_domains = cache.get(
+        'ag_get_domain_names',
+        ag_client,
+        'get_domain_names')['items']
+    raw_data['ag_domain_raw'] = {}
+    for domain in all_domains:
+        raw_data['ag_domain_raw'][domain['domainName']] = \
+            ag_client.get_base_path_mappings(domainName=domain['domainName'])
+
     return raw_data, authorizations
 
 @log_me('Scanning API Gateway...')
@@ -185,6 +199,11 @@ def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, 
                         rest_api['uri'] = 'unknown'
                     asset.backend_endpoint.append(
                         get_lambda_name(rest_api['uri']))
+                for domain in raw_data['ag_domain_raw']:
+                    if 'items' in raw_data['ag_domain_raw'][domain] and \
+                        raw_data['ag_domain_raw'][domain]['items'][0] and \
+                        raw_data['ag_domain_raw'][domain]['items'][0]['restApiId'] == apigw['id']:
+                        asset.domain_name = domain
                 cache.save_asset(f'APIGW_{apigw["name"]}', asset)
             if asset is not None and name_filter.lower() in asset.name.lower():
                 assets.append(asset)
@@ -207,6 +226,11 @@ def parse_raw_data(assets, authorizations, raw_data, public_only, boto_session, 
                 for rest_api in raw_data['agv2_rest_api_raw'][apigw['ApiId']]:
                     asset.backend_endpoint.append(
                         get_lambda_name(rest_api['IntegrationUri']))
+                for domain in raw_data['ag_domain_raw']:
+                    if 'items' in raw_data['ag_domain_raw'][domain] and \
+                        raw_data['ag_domain_raw'][domain]['items'][0] and \
+                        raw_data['ag_domain_raw'][domain]['items'][0]['restApiId'] == apigw['ApiId']:
+                        asset.domain_name = domain
                 cache.save_asset(f'APIGW_{apigw["Name"]}', asset)
             if search_filter_in(asset, name_filter):
                 assets.append(asset)
