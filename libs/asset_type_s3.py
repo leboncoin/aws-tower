@@ -99,7 +99,7 @@ class S3(AssetType):
                 map_users_uri[grant['Grantee']['URI']],
                 map_permissions[grant['Permission']])
 
-    def report(self, report, brief=False):
+    def report(self, report, brief=False, with_fpkey=False):
         """
         Add an asset with only relevent informations
         """
@@ -112,7 +112,7 @@ class S3(AssetType):
             if self.public:
                 asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.security_issues:
-                self.update_audit_report(asset_report)
+                self.update_audit_report(asset_report, with_fpkey)
             else:
                 if not self.acls.block_public_acls:
                     asset_report['ACL: BlockPublicAcls'] = False

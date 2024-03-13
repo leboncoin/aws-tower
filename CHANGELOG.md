@@ -4,8 +4,49 @@ CHANGELOG
 AWS-TOWER
 -----
 
+4.6.0
+-----
+
+2024/03/06
+
+### New feature
+  - Add IAM user scan/audit, add 'global' region for lambda montoring
+  - [Lambda] Add remove_false_positives function in aws_tower_auditor
+  - Display domain name in API Gateway if exists
+
+### Updates
+  - update RDS version rules
+
+### Fixtures
+  - Fix VPC bug
+  - Fix AWS S3 public bucket detection
+  - Fix audit rule 'old_access_keys'
+
+4.5.0
+-----
+
+2023/11/03
+
+### New feature
+  - Add 'LIGHTSAIL' asset type
+  - Add `--false-positive-key` in audit mode
+  - Add `config/false_positives_list.txt` file, list of finding keys to ignore in audit report
+  - Add lambda monitoring and documentation
+
+### Fixtures
+  - Audit: Consider ports 0-65535 as "all"
+
+4.4.5
+-----
+2023/07/28
+
+### Fixtures
+  - Small fix in API Gateway
+
 4.4.4
 -----
+
+2023/03/10
 
 ### New feature
   - Add `--vpc-peering-dot` to save vpc peering in a dot file

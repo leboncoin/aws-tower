@@ -45,7 +45,7 @@ class VPC(AssetType):
         self.endpoint = 'unknown'
         self.port = 'unknown'
 
-    def report(self, report, brief=False):
+    def report(self, report, brief=False, with_fpkey=False):
         """
         Add an asset with only relevent informations
         """
@@ -64,7 +64,7 @@ class VPC(AssetType):
                 asset_report['Endpoint'] = self.endpoint
                 asset_report['Port'] = self.port
             if self.security_issues:
-                self.update_audit_report(asset_report)
+                self.update_audit_report(asset_report, with_fpkey)
         if 'VPC' not in report:
             report['VPC'] = { self.name: asset_report }
             return report
@@ -177,13 +177,18 @@ def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, c
         authorizations['vpc'] = False
     else:
         for vpc_endpoint_service in raw_data['vpc_endpoint_services_raw']:
+            if vpc_endpoint_service['ServiceId'] not in raw_data['vpc_endpoint_services_perm_raw']:
+                continue
             asset = cache.get_asset(f'VPC_ES_{vpc_endpoint_service["ServiceId"]}')
             if asset is None:
                 asset_name = f'endpoint_service:{get_tag(vpc_endpoint_service["Tags"], "Name")}'
                 if asset_name == 'endpoint_service:':
                     asset_name = f'endpoint_service:{vpc_endpoint_service["ServiceId"]}'
                 asset = VPC(name=asset_name, is_endpoint_service=True)
-                asset.public = True in [ '*' in i['Principal'] for i in raw_data['vpc_endpoint_services_perm_raw'][vpc_endpoint_service['ServiceId']]['AllowedPrincipals']]
+                asset.public = True in [
+                    '*' in i['Principal']
+                    for i in raw_data['vpc_endpoint_services_perm_raw'][vpc_endpoint_service['ServiceId']]['AllowedPrincipals']
+                ]
                 for allowed_principal in raw_data['vpc_endpoint_services_perm_raw'][vpc_endpoint_service['ServiceId']]['AllowedPrincipals']:
                     aws_account_id = get_account_in_arn(allowed_principal['Principal'])
                     if aws_account_id not in trusted_accounts_list:

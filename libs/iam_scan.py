@@ -7,10 +7,13 @@ Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas.beguier@adevinta.com)
 """
 
+# Standard imports
+from datetime import datetime, timedelta, timezone
+
 # Third party library imports
 import boto3
 
-from .asset_type_iam import IAM
+from .asset_type_iam import IAM, Policy
 
 # Debug
 # from pdb import set_trace as st
@@ -307,6 +310,56 @@ def iam_get_roles(
             roles.append(role_obj)
     return roles
 
+def iam_get_users(client, cache):
+    """
+    Retrieves a list of IAM users and their access key details using a given AWS IAM client.
+
+    This function lists all users in the IAM and checks each user's access keys.
+    It determines if any active access keys are vulnerable based on specific
+    criteria: the key is older than 1 year or it was last used more than 6 months ago.
+    It appends this information to an IAM user object and
+    returns a list of these user objects.
+
+    Parameters:
+    client (boto3.client): An initialized boto3 IAM client object.
+
+    Returns:
+    list: A list of IAM user objects. Each IAM user object contains the user's ARN, access keys,
+          and a flag indicating if the user has any vulnerable access keys.
+
+    Note:
+    The IAM user object is assumed to be defined with attributes 'arn', 'access_keys' (a list),
+    and 'has_vulnerable_access_key' (a boolean). The function assumes 'IAM' is a predefined class.
+    """
+    users = client.list_users()
+    current_date = datetime.now(timezone.utc)
+    iam_users = []
+    for user in users['Users']:
+        iam_user = IAM(arn=user['Arn'])
+        access_keys = client.list_access_keys(UserName=user['UserName'])
+        for access_key in access_keys['AccessKeyMetadata']:
+            if access_key['Status'] == 'Active':
+                access_key_id = access_key['AccessKeyId']
+                creation_date = access_key['CreateDate']
+
+                # Get last used information of the access key
+                last_used_info = client.get_access_key_last_used(AccessKeyId=access_key_id)
+                last_used_date = last_used_info['AccessKeyLastUsed'].get('LastUsedDate', 'Never')
+
+                if current_date - creation_date > timedelta(days=365) or \
+                (last_used_date != 'Never' and current_date - last_used_date > timedelta(days=180)):
+                    iam_user.old_access_keys.append(\
+                        f'{access_key_id} ({(current_date - creation_date).days} days)')
+        if iam_user.old_access_keys:
+            policies = client.list_attached_user_policies(UserName=user['UserName'])
+            for _p in policies['AttachedPolicies']:
+                policy = Policy(arn=_p['PolicyArn'], policy_name=_p['PolicyName'])
+                policy.default_version_id = \
+                    client.get_policy(PolicyArn=policy.arn)['Policy']['DefaultVersionId']
+                iam_user.actions = get_actions_from_policy(client, policy, cache)
+        iam_user.simplify_actions()
+        iam_users.append(iam_user)
+    return iam_users
 
 def iam_display_roles(
     client,

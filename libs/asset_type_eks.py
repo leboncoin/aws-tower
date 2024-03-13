@@ -30,7 +30,7 @@ class EKS(AssetType):
         self.endpoint = endpoint
         self.version = version
 
-    def report(self, report, brief=False):
+    def report(self, report, brief=False, with_fpkey=False):
         """
         Add an asset with only relevent informations
         """
@@ -44,7 +44,7 @@ class EKS(AssetType):
             if self.public:
                 asset_report['PubliclyAccessible'] = '[red]True[/red]'
             if self.security_issues:
-                self.update_audit_report(asset_report)
+                self.update_audit_report(asset_report, with_fpkey)
         if 'EKS' not in report[self.location.region]:
             report[self.location.region]['EKS'] = { self.name: asset_report }
             return report

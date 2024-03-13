@@ -1,5 +1,5 @@
 ---
-version: 4.4.0
+version: 4.6.0
 types:
   security_group:
     description: Check each rule on each security group and on each source
@@ -145,7 +145,7 @@ types:
               - type: variable
                 name: source
                 value: source
-        severity: medium
+        severity: low
         metadata:
           risks: ['LAN reachable asset']
           visibility: ['T1578.002', 'T1578.003', 'T1578.004']
@@ -300,6 +300,39 @@ types:
               - type: variable
                 name: asset
                 value: asset
+        metadata:
+          risks: ['Powerful asset']
+          visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          detection: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
+          protection: ['T1190', 'T1530', 'T1580', 'T1619']
+      - message:
+          text: '[{resource_id}] Old access keys are attached to IAM user'
+          args:
+            resource_id:
+              type: attribute
+              key: resource_id
+        severity: medium
+        rules:
+          - type: has_attribute
+            description: Check if old_access_keys exists
+            conditions:
+              - type: constant
+                name: attribute
+                value: old_access_keys
+            data_sources:
+              - type: variable
+                name: asset
+                value: asset
+          - type: has_attribute_not_equal
+            description: Check if old_access_keys is in the asset
+            conditions:
+              - type: constant
+                name: attribute_value
+                value: []
+            data_sources:
+              - type: attribute
+                name: attribute_value
+                value: old_access_keys
         metadata:
           risks: ['Powerful asset']
           visibility: ['T1485', 'T1537', 'T1578.002', 'T1578.003', 'T1578.004']
@@ -689,7 +722,7 @@ types:
                 value: aws_service
         metadata:
           risks: ['WAN reachable asset']
-# https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MySQL.html
+# https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MySQL.Concepts.VersionMgmt.html
 # https://dev.mysql.com/doc/relnotes/mysql/8.0/en/
 # https://dev.mysql.com/doc/relnotes/mysql/5.7/en/
 # https://nvd.nist.gov/vuln/search/results?form_type=Advanced&results_type=overview&isCpeNameSearch=true&seach_type=all&query=cpe:2.3:a:oracle:mysql:8.0.29:*:*:*:*:*:*:*
@@ -723,16 +756,16 @@ types:
               - type: constant
                 name: versions
                 value:
-                  - '5.7.38'
-                  - '8.0.29'
+                  - '5.7.44'
+                  - '8.0.36'
             data_sources:
               - type: attribute
                 name: attribute_value
                 value: engine
         metadata:
           risks: ['LAN reachable asset', 'Application vulnerability', 'Sensitive asset']
+# https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MariaDB.Concepts.VersionMgmt.html
 # https://mariadb.com/kb/en/security/
-# https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MariaDB.html
       - message:
           text: '[{service_name}] Deprecated mariadb engine version ({current_version})'
           args:
@@ -763,19 +796,17 @@ types:
               - type: constant
                 name: versions
                 value:
-                  - '10.3.36'
-                  - '10.4.26'
-                  - '10.5.17'
-                  - '10.6.9'
-                  - '10.7.5'
-                  - '10.8.4'
-                  - '10.9.2'
+                  - '10.4.33'
+                  - '10.5.24'
+                  - '10.6.17'
+                  - '10.11.7'
             data_sources:
               - type: attribute
                 name: attribute_value
                 value: engine
         metadata:
           risks: ['LAN reachable asset', 'Application vulnerability', 'Sensitive asset']
+# https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/doc-history.html
 # https://www.postgresql.org/support/security/
       - message:
           text: '[{service_name}] Deprecated postgres engine version ({current_version})'
@@ -807,11 +838,11 @@ types:
               - type: constant
                 name: versions
                 value:
-                  - '10.21'
-                  - '11.16'
-                  - '12.11'
-                  - '13.7'
-                  - '14.4'
+                  - '12.18'
+                  - '13.14'
+                  - '14.11'
+                  - '15.6'
+                  - '16.2'
             data_sources:
               - type: attribute
                 name: attribute_value
@@ -849,10 +880,10 @@ types:
               - type: constant
                 name: versions
                 value:
-                  - '12.00.5571.0.v1'
-                  - '13.00.5820.21.v1'
-                  - '14.00.3294.2.v1'
-                  - '15.00.4043.16.v1'
+                  - '13.00.6435.1.v1'
+                  - '14.00.3465.1.v1'
+                  - '15.00.4355.3.v1'
+                  - '16.00.4105.2.v1'
             data_sources:
               - type: attribute
                 name: attribute_value
@@ -960,7 +991,7 @@ types:
               - type: constant
                 name: versions
                 value:
-                  - '1.21'
+                  - '1.23'
             data_sources:
               - type: attribute
                 name: attribute_value
