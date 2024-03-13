@@ -723,6 +723,9 @@ types:
         metadata:
           risks: ['WAN reachable asset']
 # https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MySQL.Concepts.VersionMgmt.html
+# https://dev.mysql.com/doc/relnotes/mysql/8.0/en/
+# https://dev.mysql.com/doc/relnotes/mysql/5.7/en/
+# https://nvd.nist.gov/vuln/search/results?form_type=Advanced&results_type=overview&isCpeNameSearch=true&seach_type=all&query=cpe:2.3:a:oracle:mysql:8.0.29:*:*:*:*:*:*:*
       - message:
           text: '[{service_name}] Deprecated mysql engine version ({current_version})'
           args:
