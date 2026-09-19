@@ -29,7 +29,7 @@ class ELB(AssetType):
 
     def report(self, report, brief=False):
         """
-        Add an asset with only relevent informations
+        Add an asset with only relevant informations
         """
         if brief:
             asset_report = self.report_brief()
@@ -135,7 +135,7 @@ def scan(elb, sg_raw, subnets_raw, public_only):
 @log_me('Scanning Elastic Load Balancer...')
 def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, cache, _):
     """
-    Parsing the raw data to extracts assets,
+    Parsing the raw data to extract assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     for elb in raw_data['elb_raw']:
