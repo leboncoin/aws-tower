@@ -30,7 +30,7 @@ LOGGER = logging.getLogger('aws-tower')
 
 def get_raw_data(boto_session, meta_types, cache, console):
     """
-    Returned raw data and authorization failure for logging
+    Return raw data and authorization failure for logging
     """
     authorizations = {
         'apigw': True,
@@ -133,11 +133,11 @@ def log_authorization_errors(authorizations, console):
     Print authorizations errors during scan
     """
     if not console:
-        LOGGER.critical(f'A "False" suggest that something fail, too few authorizations?: {authorizations}')
+        LOGGER.critical(f'A "False" suggests that something failed, too few authorizations?: {authorizations}')
     else:
         for auth in authorizations:
             if not authorizations[auth]:
-                console.print(f'[red]Error scannig [bold]{auth}[/bold], maybe not enough permissions...')
+                console.print(f'[red]Error scanning [bold]{auth}[/bold], maybe not enough permissions...')
 
 def aws_scan(
     boto_session,

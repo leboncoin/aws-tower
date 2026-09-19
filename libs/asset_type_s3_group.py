@@ -42,7 +42,7 @@ class S3Group(AssetType):
 
     def report(self, report, brief=False):
         """
-        Add an asset with only relevent informations
+        Add an asset with only relevant informations
         """
         if brief:
             asset_report = self.report_brief()
@@ -127,7 +127,7 @@ def scan(s_three, configuration, region, acls, public_only):
 @log_me('Scanning S3...')
 def parse_raw_data(assets, authorizations, raw_data, name_filter, public_only, cache, _):
     """
-    Parsing the raw data to extracts assets,
+    Parsing the raw data to extract assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     s3group = S3Group(name='S3 buckets')

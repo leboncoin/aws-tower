@@ -59,7 +59,7 @@ class CloudFront(AssetType):
 
     def report(self, report, brief=False):
         """
-        Add an asset with only relevent informations
+        Add an asset with only relevant informations
         """
         if brief:
             asset_report = self.report_brief()
@@ -142,7 +142,7 @@ def scan(cf_dist):
 @log_me('Scanning Cloudfront...')
 def parse_raw_data(assets, authorizations, raw_data, name_filter, cache, _):
     """
-    Parsing the raw data to extracts assets,
+    Parsing the raw data to extract assets,
     enrich the assets list and add a 'False' in authorizations in case of errors
     """
     if 'Items' in raw_data['cf_raw']:

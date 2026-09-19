@@ -27,7 +27,7 @@ class RDS(AssetType):
 
     def report(self, report, brief=False):
         """
-        Add an asset with only relevent informations
+        Add an asset with only relevant informations
         """
         if brief:
             asset_report = self.report_brief()
